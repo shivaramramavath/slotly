@@ -1,0 +1,10 @@
+packages:
+  - 'client'
+  - 'server'
+  - 'packages/*'
+
+allowBuilds:
+  '@parcel/watcher': true
+  argon2: true
+  esbuild: true
+  msgpackr-extract: true

@@ -1,0 +1,22 @@
+{
+  "name": "slotly-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "docker compose up -d && concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"pnpm --filter server start:dev\" \"pnpm --filter client dev\"",
+    "dev:apps": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"pnpm --filter server start:dev\" \"pnpm --filter client dev\"",
+    "build": "pnpm --filter @slotly/contracts build && pnpm -r --filter=!slotly-monorepo build",
+    "lint": "pnpm -r --filter=!slotly-monorepo lint",
+    "typecheck": "pnpm -r --filter=!slotly-monorepo typecheck",
+    "test": "pnpm -r --filter=!slotly-monorepo test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.5.2",
+    "typescript": "^5.7.3"
+  },
+  "packageManager": "pnpm@12.15.0"
+}
