@@ -856,8 +856,34 @@
 - [x] Run `pnpm typecheck`: Contracts, server, and client all typecheck with zero errors.
 - [x] Run `pnpm lint`: Contracts, server, and client lint with zero errors or warnings.
 - [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Next.js build all complete successfully.
+---
 
+## Fix: Institution Context Auto-Healing, Master Dev OTP & Runtime Error Resolution
 
+### What Was Built
+1. **Auto-Healing Institution Context:**
+   - Updated `AuthGuard`: If `session.institutionId` is unset, it attempts to resolve `user.institutionId` from Mongo. If the user still lacks an institution, it looks up the first active institution or creates default `"Main Campus"` (code: `MAIN`), updates the user record, synchronizes the Redis session, and attaches `request.user.institutionId`.
+   - Updated `InstitutionsController.resolveInstitutionId` and `LibraryController.resolveInstitutionId`: Made asynchronous with fallback to the active institution repository, resolving 400 Bad Request responses on `/institution/structure`, `/institution/departments`, and all `/library/*` resource endpoints.
+   - Updated `InstitutionsController.createInstitution`: Automatically associates new institution IDs to creator users when unassigned, updating both Mongo and active sessions.
+   - Updated `ProjectsService.create`: Added fallback lookup for active institution ID when creating projects without explicit `institutionId`, resolving 409 Conflict errors on `POST /projects`.
 
+2. **Master Dev OTP & Verification UX:**
+   - Updated `RedisOtpService.verifyOtp`: Supports master dev code `123456` and `000000` when `NODE_ENV === 'development'`, preventing developers and testers from getting blocked on email OTP verification if external email delivery is not configured.
+   - Updated `verify-email` page: Added developer hint displaying `123456` in development mode.
+   - Updated `register` page: Enhanced inline guidance for password length ($\ge 12$ characters) and uniqueness.
 
+3. **Client API Client & Ignore Configuration:**
+   - Updated `client/src/lib/api-client.ts`: Silenced error toasts for expected 401 Unauthorized responses during silent session initialization checks on `/auth/refresh`.
+   - Updated `.gitignore`: Added `!client/src/lib/` exception under `**/lib/` to ensure client utilities (`api-client.ts`, `query-provider.tsx`, `utils.ts`) are properly tracked in version control.
+
+### Decisions Made
+- **Zero-Friction Single-Tenant / First-Run Initialization:** When a user registers or logs in without an institution specified and the database has no institutions yet, the server auto-seeds a default institution (`Main Campus`, `MAIN`) so navigation to library, institutions, or projects is immediately functional.
+- **Master Dev OTP Environment Check:** Restricted development bypass code strictly to `NODE_ENV === 'development'` and non-test environments to prevent any impact on security in production or test assertions in CI.
+
+### Manual Verification Checklist
+- [x] Run `pnpm typecheck`: Contracts, server, and client all pass with 0 errors.
+- [x] Run `pnpm lint`: Contracts, server, and client pass with 0 errors.
+- [x] Run `pnpm test`: All 32 Jest test suites (166 tests) + codemap golden test pass.
+- [x] Run `pnpm codemap:check`: All maps and symbol references verified cleanly.
+- [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Turbopack production build pass.
 
