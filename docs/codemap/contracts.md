@@ -1,0 +1,321 @@
+# Shared Contracts Code Map
+
+### `packages/contracts/src/index.ts`
+*==========================================*
+
+- **Interface** `PaginatedResult`
+- **Interface** `SectionNode` extends `SectionDto`
+- **Interface** `SemesterNode` extends `SemesterDto`
+- **Interface** `AcademicYearNode` extends `AcademicYearDto`
+- **Interface** `ProgramNode` extends `ProgramDto`
+- **Interface** `DepartmentNode` extends `DepartmentDto`
+- **Interface** `InstitutionStructureDto`
+- **Type** `ApiErrorResponse`
+- **Type** `PaginationQuery`
+- **Type** `RevisionConflict`
+- **Type** `UserRole`
+- **Type** `Permission`
+- **Type** `UserDto`
+- **Type** `RegisterDto`
+- **Type** `LoginDto`
+- **Type** `AuthResponse`
+- **Type** `VerifyEmailDto`
+- **Type** `ResendEmailDto`
+- **Type** `ForgotPasswordDto`
+- **Type** `ResetPasswordDto`
+- **Type** `ChangePasswordDto`
+- **Type** `MfaEnrollResponse`
+- **Type** `MfaVerifyDto`
+- **Type** `MfaRecoveryDto`
+- **Type** `StepUpDto`
+- **Type** `SessionDto`
+- **Type** `DeviceDto`
+- **Type** `SecurityActivityDto`
+- **Type** `ReasonCode`
+- **Type** `FixHint`
+- **Type** `GateFailure`
+- **Type** `NodeStatus`
+- **Type** `BlueprintNodeType`
+- **Type** `NodeType`
+- **Type** `MissingField`
+- **Type** `NodeComputedStatus`
+- **Type** `ProjectLifecycleStatus`
+- **Type** `HealthResponse`
+- **Type** `PeriodBreak`
+- **Type** `PeriodConfig`
+- **Type** `InstitutionDto`
+- **Type** `CreateInstitutionDto`
+- **Type** `UpdateInstitutionDto`
+- **Type** `DepartmentDto`
+- **Type** `CreateDepartmentDto`
+- **Type** `UpdateDepartmentDto`
+- **Type** `ProgramDto`
+- **Type** `CreateProgramDto`
+- **Type** `UpdateProgramDto`
+- **Type** `AcademicYearDto`
+- **Type** `CreateAcademicYearDto`
+- **Type** `UpdateAcademicYearDto`
+- **Type** `SemesterDto`
+- **Type** `CreateSemesterDto`
+- **Type** `UpdateSemesterDto`
+- **Type** `BatchDto`
+- **Type** `SectionDto`
+- **Type** `CreateSectionDto`
+- **Type** `UpdateSectionDto`
+- **Type** `HolidayDto`
+- **Type** `CreateHolidayDto`
+- **Type** `UpdateHolidayDto`
+- **Type** `SlotCoordinate`
+- **Type** `FacultyDto`
+- **Type** `CreateFacultyDto`
+- **Type** `UpdateFacultyDto`
+- **Type** `FacultyWorkloadDto`
+- **Type** `SubjectType`
+- **Type** `RoomType`
+- **Type** `SubjectRequirements`
+- **Type** `SubjectDto`
+- **Type** `CreateSubjectDto`
+- **Type** `UpdateSubjectDto`
+- **Type** `ElectiveGroupDto`
+- **Type** `CreateElectiveGroupDto`
+- **Type** `UpdateElectiveGroupDto`
+- **Type** `RoomDto`
+- **Type** `CreateRoomDto`
+- **Type** `UpdateRoomDto`
+- **Type** `RoomMatchRequest`
+- **Type** `RoomMatchResult`
+- **Type** `FacultyQualificationRequest`
+- **Type** `FacultyQualificationResult`
+- **Type** `ImportEntity`
+- **Type** `ImportRowError`
+- **Type** `ImportValidationReport`
+- **Type** `ImportJobStatus`
+- **Type** `TermKind`
+- **Type** `ProjectTerm`
+- **Type** `PerDayOverride`
+- **Type** `ProjectSettings`
+- **Type** `ProjectStrictness`
+- **Type** `ProjectDto`
+- **Type** `CreateProjectDto`
+- **Type** `UpdateProjectDto`
+- **Type** `DuplicateProjectDto`
+- **Type** `NodePosition`
+- **Type** `BlueprintNodeDto`
+- **Type** `BlueprintEdgeDto`
+- **Type** `BlueprintGraphDto`
+- **Type** `BlueprintOpType`
+- **Type** `BlueprintOp`
+- **Type** `ApplyOperationsDto`
+- **Type** `OperationResultApplied`
+- **Type** `OperationResultSkipped`
+- **Type** `BatchOperationResult`
+- **Type** `BlueprintMissingItem`
+- **Type** `BlueprintReadinessDto`
+- **Type** `BlueprintImpactDto`
+- **Type** `BlueprintRecommendationType`
+- **Type** `BlueprintRecommendationDto`
+- **Type** `GraphTemplateSubtree`
+- **Type** `GraphTemplateDto`
+- **Type** `CreateGraphTemplateDto`
+- **Type** `ApplyTemplateDto`
+- **Type** `BlueprintHistoryEntryDto`
+- **Type** `BlueprintSnapshotDto`
+- **Type** `CreateBlueprintSnapshotDto`
+- **Type** `BlueprintCommentDto`
+- **Type** `CreateBlueprintCommentDto`
+- **Type** `ProjectJoinPayload`
+- **Type** `ProjectLeavePayload`
+- **Type** `CursorUpdatePayload`
+- **Type** `NodeLockPayload`
+- **Type** `NodeUnlockPayload`
+- **Type** `PresenceUser`
+- **Type** `PresenceChangedPayload`
+- **Type** `NodeStatusChangedPayload`
+- **Type** `OpsAppliedPayload`
+- **Type** `NodeLockedPayload`
+- **Type** `NodeUnlockedPayload`
+- **Type** `RevisionConflictPayload`
+- **Type** `NodeMovePayload`
+- **Type** `NodeUpdatePayload`
+- **Type** `NodeAddPayload`
+- **Type** `NodeDeletePayload`
+- **Type** `EdgeAddPayload`
+- **Type** `EdgeDeletePayload`
+- **Type** `SlotType`
+- **Type** `SlotDto`
+- **Type** `ViolationSeverity`
+- **Type** `ViolationSuggestion`
+- **Type** `ViolationDto`
+- **Type** `PreBuildCheckError`
+- **Type** `ValidationReportDto`
+- **Type** `ValidateProjectDto`
+- **Type** `ValidateVersionDto`
+- **Type** `ConstraintScope`
+- **Type** `HardConstraintsConfig`
+- **Type** `SoftConstraintsConfig`
+- **Type** `ConstraintGroupConfig`
+- **Type** `ScheduleVersionKind`
+- **Type** `ScheduleVersionStatus`
+- **Type** `ScheduleVersionStats`
+- **Type** `ScheduleVersionDto`
+- **Type** `BuildProfile`
+- **Type** `BuildMode`
+- **Type** `CreateBuildDto`
+- **Type** `BuildJobStatus`
+- **Type** `BuildProgressPayload`
+- **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse`
+- **Zod Schema** `PaginationQuerySchema` -> `PaginationQuery`
+- **Zod Schema** `RevisionConflictSchema` -> `RevisionConflict`
+- **Zod Schema** `UserRoleSchema` -> `UserRole`
+- **Zod Schema** `PermissionSchema` -> `Permission`
+- **Const** `RolePermissions`: `Record<"SUPER_ADMIN" | "ADMIN" | "DESIGNER" | "...`
+- **Zod Schema** `UserDtoSchema` -> `UserDto`
+- **Zod Schema** `RegisterDtoSchema` -> `RegisterDto`
+- **Zod Schema** `LoginDtoSchema` -> `LoginDto`
+- **Zod Schema** `AuthResponseSchema` -> `AuthResponse`
+- **Zod Schema** `VerifyEmailDtoSchema` -> `VerifyEmailDto`
+- **Zod Schema** `ResendEmailDtoSchema` -> `ResendEmailDto`
+- **Zod Schema** `ForgotPasswordDtoSchema` -> `ForgotPasswordDto`
+- **Zod Schema** `ResetPasswordDtoSchema` -> `ResetPasswordDto`
+- **Zod Schema** `ChangePasswordDtoSchema` -> `ChangePasswordDto`
+- **Zod Schema** `MfaEnrollResponseSchema` -> `MfaEnrollResponse`
+- **Zod Schema** `MfaVerifyDtoSchema` -> `MfaVerifyDto`
+- **Zod Schema** `MfaRecoveryDtoSchema` -> `MfaRecoveryDto`
+- **Zod Schema** `StepUpDtoSchema` -> `StepUpDto`
+- **Zod Schema** `SessionDtoSchema` -> `SessionDto`
+- **Zod Schema** `DeviceDtoSchema` -> `DeviceDto`
+- **Zod Schema** `SecurityActivityDtoSchema` -> `SecurityActivityDto`
+- **Zod Schema** `ReasonCodeSchema` -> `ReasonCode`
+- **Zod Schema** `FixHintSchema` -> `FixHint`
+- **Zod Schema** `GateFailureSchema` -> `GateFailure`
+- **Zod Schema** `NodeStatusSchema` -> `NodeStatus`
+- **Zod Schema** `BlueprintNodeTypeSchema` -> `BlueprintNodeType`
+- **Zod Schema** `NodeTypeSchema` -> `NodeType`
+- **Zod Schema** `MissingFieldSchema` -> `MissingField`
+- **Zod Schema** `NodeComputedStatusSchema` -> `NodeComputedStatus`
+- **Zod Schema** `ProjectLifecycleStatusSchema` -> `ProjectLifecycleStatus`
+- **Const** `SocketEvents`: `{ readonly NODE_STATUS_CHANGED: "node:status-ch...`
+- **Zod Schema** `HealthResponseSchema` -> `HealthResponse`
+- **Zod Schema** `PeriodBreakSchema` -> `PeriodBreak`
+- **Zod Schema** `PeriodConfigSchema` -> `PeriodConfig`
+- **Zod Schema** `InstitutionDtoSchema` -> `InstitutionDto`
+- **Zod Schema** `CreateInstitutionDtoSchema` -> `CreateInstitutionDto`
+- **Zod Schema** `UpdateInstitutionDtoSchema` -> `UpdateInstitutionDto`
+- **Zod Schema** `DepartmentDtoSchema` -> `DepartmentDto`
+- **Zod Schema** `CreateDepartmentDtoSchema` -> `CreateDepartmentDto`
+- **Zod Schema** `UpdateDepartmentDtoSchema` -> `UpdateDepartmentDto`
+- **Zod Schema** `ProgramDtoSchema` -> `ProgramDto`
+- **Zod Schema** `CreateProgramDtoSchema` -> `CreateProgramDto`
+- **Zod Schema** `UpdateProgramDtoSchema` -> `UpdateProgramDto`
+- **Zod Schema** `AcademicYearDtoSchema` -> `AcademicYearDto`
+- **Zod Schema** `CreateAcademicYearDtoSchema` -> `CreateAcademicYearDto`
+- **Zod Schema** `UpdateAcademicYearDtoSchema` -> `UpdateAcademicYearDto`
+- **Zod Schema** `SemesterDtoSchema` -> `SemesterDto`
+- **Zod Schema** `CreateSemesterDtoSchema` -> `CreateSemesterDto`
+- **Zod Schema** `UpdateSemesterDtoSchema` -> `UpdateSemesterDto`
+- **Zod Schema** `BatchDtoSchema` -> `BatchDto`
+- **Zod Schema** `SectionDtoSchema` -> `SectionDto`
+- **Zod Schema** `CreateSectionDtoSchema` -> `CreateSectionDto`
+- **Zod Schema** `UpdateSectionDtoSchema` -> `UpdateSectionDto`
+- **Zod Schema** `HolidayDtoSchema` -> `HolidayDto`
+- **Zod Schema** `CreateHolidayDtoSchema` -> `CreateHolidayDto`
+- **Zod Schema** `UpdateHolidayDtoSchema` -> `UpdateHolidayDto`
+- **Zod Schema** `SlotCoordinateSchema` -> `SlotCoordinate`
+- **Zod Schema** `FacultyDtoSchema` -> `FacultyDto`
+- **Zod Schema** `CreateFacultyDtoSchema` -> `CreateFacultyDto`
+- **Zod Schema** `UpdateFacultyDtoSchema` -> `UpdateFacultyDto`
+- **Zod Schema** `FacultyWorkloadDtoSchema` -> `FacultyWorkloadDto`
+- **Zod Schema** `SubjectTypeSchema` -> `SubjectType`
+- **Zod Schema** `RoomTypeSchema` -> `RoomType`
+- **Zod Schema** `SubjectRequirementsSchema` -> `SubjectRequirements`
+- **Zod Schema** `SubjectDtoSchema` -> `SubjectDto`
+- **Zod Schema** `CreateSubjectDtoSchema` -> `CreateSubjectDto`
+- **Zod Schema** `UpdateSubjectDtoSchema` -> `UpdateSubjectDto`
+- **Zod Schema** `ElectiveGroupDtoSchema` -> `ElectiveGroupDto`
+- **Zod Schema** `CreateElectiveGroupDtoSchema` -> `CreateElectiveGroupDto`
+- **Zod Schema** `UpdateElectiveGroupDtoSchema` -> `UpdateElectiveGroupDto`
+- **Zod Schema** `RoomDtoSchema` -> `RoomDto`
+- **Zod Schema** `CreateRoomDtoSchema` -> `CreateRoomDto`
+- **Zod Schema** `UpdateRoomDtoSchema` -> `UpdateRoomDto`
+- **Zod Schema** `RoomMatchRequestSchema` -> `RoomMatchRequest`
+- **Zod Schema** `RoomMatchResultSchema` -> `RoomMatchResult`
+- **Zod Schema** `FacultyQualificationRequestSchema` -> `FacultyQualificationRequest`
+- **Zod Schema** `FacultyQualificationResultSchema` -> `FacultyQualificationResult`
+- **Zod Schema** `ImportEntitySchema` -> `ImportEntity`
+- **Zod Schema** `ImportRowErrorSchema` -> `ImportRowError`
+- **Zod Schema** `ImportValidationReportSchema` -> `ImportValidationReport`
+- **Zod Schema** `ImportJobStatusSchema` -> `ImportJobStatus`
+- **Zod Schema** `TermKindSchema` -> `TermKind`
+- **Zod Schema** `ProjectTermSchema` -> `ProjectTerm`
+- **Zod Schema** `PerDayOverrideSchema` -> `PerDayOverride`
+- **Zod Schema** `ProjectSettingsSchema` -> `ProjectSettings`
+- **Zod Schema** `ProjectStrictnessSchema` -> `ProjectStrictness`
+- **Zod Schema** `ProjectDtoSchema` -> `ProjectDto`
+- **Zod Schema** `CreateProjectDtoSchema` -> `CreateProjectDto`
+- **Zod Schema** `UpdateProjectDtoSchema` -> `UpdateProjectDto`
+- **Zod Schema** `DuplicateProjectDtoSchema` -> `DuplicateProjectDto`
+- **Zod Schema** `NodePositionSchema` -> `NodePosition`
+- **Zod Schema** `BlueprintNodeDtoSchema` -> `BlueprintNodeDto`
+- **Zod Schema** `BlueprintEdgeDtoSchema` -> `BlueprintEdgeDto`
+- **Zod Schema** `BlueprintGraphDtoSchema` -> `BlueprintGraphDto`
+- **Zod Schema** `BlueprintOpTypeSchema` -> `BlueprintOpType`
+- **Zod Schema** `BlueprintOpSchema` -> `BlueprintOp`
+- **Zod Schema** `ApplyOperationsDtoSchema` -> `ApplyOperationsDto`
+- **Zod Schema** `OperationResultAppliedSchema` -> `OperationResultApplied`
+- **Zod Schema** `OperationResultSkippedSchema` -> `OperationResultSkipped`
+- **Zod Schema** `BatchOperationResultSchema` -> `BatchOperationResult`
+- **Zod Schema** `BlueprintMissingItemSchema` -> `BlueprintMissingItem`
+- **Zod Schema** `BlueprintReadinessDtoSchema` -> `BlueprintReadinessDto`
+- **Zod Schema** `BlueprintImpactDtoSchema` -> `BlueprintImpactDto`
+- **Zod Schema** `BlueprintRecommendationTypeSchema` -> `BlueprintRecommendationType`
+- **Zod Schema** `BlueprintRecommendationDtoSchema` -> `BlueprintRecommendationDto`
+- **Zod Schema** `GraphTemplateSubtreeSchema` -> `GraphTemplateSubtree`
+- **Zod Schema** `GraphTemplateDtoSchema` -> `GraphTemplateDto`
+- **Zod Schema** `CreateGraphTemplateDtoSchema` -> `CreateGraphTemplateDto`
+- **Zod Schema** `ApplyTemplateDtoSchema` -> `ApplyTemplateDto`
+- **Zod Schema** `BlueprintHistoryEntryDtoSchema` -> `BlueprintHistoryEntryDto`
+- **Zod Schema** `BlueprintSnapshotDtoSchema` -> `BlueprintSnapshotDto`
+- **Zod Schema** `CreateBlueprintSnapshotDtoSchema` -> `CreateBlueprintSnapshotDto`
+- **Zod Schema** `BlueprintCommentDtoSchema` -> `BlueprintCommentDto`
+- **Zod Schema** `CreateBlueprintCommentDtoSchema` -> `CreateBlueprintCommentDto`
+- **Zod Schema** `ProjectJoinPayloadSchema` -> `ProjectJoinPayload`
+- **Zod Schema** `ProjectLeavePayloadSchema` -> `ProjectLeavePayload`
+- **Zod Schema** `CursorUpdatePayloadSchema` -> `CursorUpdatePayload`
+- **Zod Schema** `NodeLockPayloadSchema` -> `NodeLockPayload`
+- **Zod Schema** `NodeUnlockPayloadSchema` -> `NodeUnlockPayload`
+- **Zod Schema** `PresenceUserSchema` -> `PresenceUser`
+- **Zod Schema** `PresenceChangedPayloadSchema` -> `PresenceChangedPayload`
+- **Zod Schema** `NodeStatusChangedPayloadSchema` -> `NodeStatusChangedPayload`
+- **Zod Schema** `OpsAppliedPayloadSchema` -> `OpsAppliedPayload`
+- **Zod Schema** `NodeLockedPayloadSchema` -> `NodeLockedPayload`
+- **Zod Schema** `NodeUnlockedPayloadSchema` -> `NodeUnlockedPayload`
+- **Zod Schema** `RevisionConflictPayloadSchema` -> `RevisionConflictPayload`
+- **Zod Schema** `NodeMovePayloadSchema` -> `NodeMovePayload`
+- **Zod Schema** `NodeUpdatePayloadSchema` -> `NodeUpdatePayload`
+- **Zod Schema** `NodeAddPayloadSchema` -> `NodeAddPayload`
+- **Zod Schema** `NodeDeletePayloadSchema` -> `NodeDeletePayload`
+- **Zod Schema** `EdgeAddPayloadSchema` -> `EdgeAddPayload`
+- **Zod Schema** `EdgeDeletePayloadSchema` -> `EdgeDeletePayload`
+- **Zod Schema** `SlotTypeSchema` -> `SlotType`
+- **Zod Schema** `SlotDtoSchema` -> `SlotDto`
+- **Zod Schema** `ViolationSeveritySchema` -> `ViolationSeverity`
+- **Zod Schema** `ViolationSuggestionSchema` -> `ViolationSuggestion`
+- **Zod Schema** `ViolationDtoSchema` -> `ViolationDto`
+- **Zod Schema** `PreBuildCheckErrorSchema` -> `PreBuildCheckError`
+- **Zod Schema** `ValidationReportDtoSchema` -> `ValidationReportDto`
+- **Zod Schema** `ValidateProjectDtoSchema` -> `ValidateProjectDto`
+- **Zod Schema** `ValidateVersionDtoSchema` -> `ValidateVersionDto`
+- **Zod Schema** `ConstraintScopeSchema` -> `ConstraintScope`
+- **Zod Schema** `HardConstraintsConfigSchema` -> `HardConstraintsConfig`
+- **Zod Schema** `SoftConstraintsConfigSchema` -> `SoftConstraintsConfig`
+- **Zod Schema** `ConstraintGroupConfigSchema` -> `ConstraintGroupConfig`
+- **Zod Schema** `ScheduleVersionKindSchema` -> `ScheduleVersionKind`
+- **Zod Schema** `ScheduleVersionStatusSchema` -> `ScheduleVersionStatus`
+- **Zod Schema** `ScheduleVersionStatsSchema` -> `ScheduleVersionStats`
+- **Zod Schema** `ScheduleVersionDtoSchema` -> `ScheduleVersionDto`
+- **Zod Schema** `BuildProfileSchema` -> `BuildProfile`
+- **Zod Schema** `BuildModeSchema` -> `BuildMode`
+- **Zod Schema** `CreateBuildDtoSchema` -> `CreateBuildDto`
+- **Zod Schema** `BuildJobStatusSchema` -> `BuildJobStatus`
+- **Zod Schema** `BuildProgressPayloadSchema` -> `BuildProgressPayload`
+
