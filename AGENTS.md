@@ -164,3 +164,24 @@ FINISH
     "Phase <NN>: <title>" with the PROGRESS entry and the manual test checklist
     as the body. Do NOT merge it.
 11. Report: branch name, list of commits, tag, PR link, test results.
+
+CODE MAP RULES (mandatory)
+
+- docs/CODEMAP.md is the entry point. Read it BEFORE writing any new function,
+  class, hook, component, schema, util or registry entry. It lists what exists,
+  where it lives and what it does. Per-package detail is in docs/codemap/*.md.
+- Reuse first: search the map for an existing thing that does the job. Extend or
+  compose it. Never create a second helper that does the same thing. If you must
+  create something new, say why in the commit message.
+- The map can be stale. After finding an entry, open the file and confirm before
+  changing it.
+- Every new file starts with a header comment (first line = one-sentence purpose).
+  Every exported function, class, hook, component, schema and constant has a
+  one-line JSDoc summary. Mark private-but-exported items with @internal.
+- Run `pnpm codemap` before the final commit of every phase and commit the result.
+  `pnpm codemap:check` must pass (it fails if the generated map is out of date).
+- Never edit the generated parts of the map by hand. Curated sections live between
+  <!-- MANUAL:START --> and <!-- MANUAL:END --> markers and are kept by the
+  generator.
+- When you add a new extension point (a registry, a strategy family, a gate, an
+  exporter, a metric), add it to the "Extension points" section of docs/CODEMAP.md.
