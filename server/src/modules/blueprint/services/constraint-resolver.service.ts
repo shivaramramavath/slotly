@@ -1,6 +1,8 @@
+// Domain service orchestrating constraint-resolver.service business logic.
 import { Injectable } from '@nestjs/common';
 import type { BlueprintNodeDto } from '@slotly/contracts';
 
+/** Injectable service providing constraint resolver service logic. */
 @Injectable()
 export class ConstraintResolverService {
   /**

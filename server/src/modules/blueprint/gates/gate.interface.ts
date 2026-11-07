@@ -1,3 +1,4 @@
+// Core implementation for gate.interface in server/src/modules/blueprint/gates.
 import type {
   BlueprintEdgeDto,
   BlueprintNodeDto,
@@ -6,6 +7,7 @@ import type {
   ReasonCode,
 } from '@slotly/contracts';
 
+/** Interface defining structure for gate context. */
 export interface GateContext {
   operation: BlueprintOp;
   project: {
@@ -27,6 +29,7 @@ export interface GateContext {
   };
 }
 
+/** Interface defining structure for gate result. */
 export interface GateResult {
   allowed: boolean;
   reasonCode?: ReasonCode;
@@ -34,6 +37,7 @@ export interface GateResult {
   fixHint?: FixHint;
 }
 
+/** Interface defining structure for gate. */
 export interface IGate {
   readonly name: string;
   evaluate(context: GateContext): Promise<GateResult> | GateResult;

@@ -1,9 +1,12 @@
+// Data schema and persistence model for blueprint-template.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 import type { GraphTemplateSubtree } from '@slotly/contracts';
 
+/** Type alias for blueprint template document. */
 export type BlueprintTemplateDocument = BlueprintTemplate & Document;
 
+/** Class implementing blueprint template. */
 @Schema({ timestamps: true, collection: 'blueprint_templates' })
 export class BlueprintTemplate {
   _id?: string;
@@ -46,5 +49,6 @@ export class BlueprintTemplate {
   anchorNodeType?: string | null;
 }
 
+/** Zod schema validating blueprint template. */
 export const BlueprintTemplateSchema =
   SchemaFactory.createForClass(BlueprintTemplate);

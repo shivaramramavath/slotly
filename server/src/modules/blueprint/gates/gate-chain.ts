@@ -1,3 +1,4 @@
+// Core implementation for gate-chain in server/src/modules/blueprint/gates.
 import { Injectable } from '@nestjs/common';
 import type { GateContext, GateResult, IGate } from './gate.interface';
 import { NodeTypeRegistry } from '../model/node-type.registry';
@@ -15,6 +16,7 @@ import {
   SingleParentGate,
 } from './blueprint-gates';
 
+/** Injectable service providing gate chain logic. */
 @Injectable()
 export class GateChain {
   private readonly gates: IGate[] = [];

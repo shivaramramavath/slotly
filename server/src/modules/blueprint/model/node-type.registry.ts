@@ -1,3 +1,4 @@
+// Core implementation for node-type.registry in server/src/modules/blueprint/model.
 import { Injectable } from '@nestjs/common';
 import type { BlueprintNodeType } from '@slotly/contracts';
 import type { CompletionRuleStrategy } from './completion-rule.strategy';
@@ -15,6 +16,7 @@ import {
   SubjectAssignmentCompletionRule,
 } from './rules/blueprint-completion.rules';
 
+/** Interface defining structure for node type definition. */
 export interface NodeTypeDefinition {
   type: BlueprintNodeType;
   allowedParentTypes: BlueprintNodeType[];
@@ -24,6 +26,7 @@ export interface NodeTypeDefinition {
   isResource: boolean;
 }
 
+/** Injectable service providing node type registry logic. */
 @Injectable()
 export class NodeTypeRegistry {
   private readonly definitions = new Map<

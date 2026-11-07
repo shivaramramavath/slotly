@@ -1,3 +1,4 @@
+// Database repository managing cached-blueprint.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { CachedRepository } from '../../../common/database/cached.repository';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
@@ -7,6 +8,7 @@ import type { IBlueprintRepository } from './blueprint.repository.interface';
 import { MongoBlueprintRepository } from './mongo-blueprint.repository';
 import type { BlueprintGraphDto, NodePosition } from '@slotly/contracts';
 
+/** Injectable service providing cached blueprint repository logic. */
 @Injectable()
 export class CachedBlueprintRepository
   extends CachedRepository<Blueprint>

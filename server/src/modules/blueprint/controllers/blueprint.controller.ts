@@ -1,3 +1,4 @@
+// HTTP controller handling blueprint.controller endpoints.
 import {
   Body,
   Controller,
@@ -27,6 +28,7 @@ import type {
   CreateBlueprintSnapshotDto,
 } from '@slotly/contracts';
 
+/** Controller handling blueprint controller HTTP endpoints. */
 @Controller('projects/:projectId/blueprint')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class BlueprintController {

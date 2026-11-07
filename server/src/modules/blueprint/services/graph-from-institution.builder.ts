@@ -1,3 +1,4 @@
+// Domain service orchestrating graph-from-institution.builder business logic.
 import { Injectable } from '@nestjs/common';
 import type {
   BlueprintEdgeDto,
@@ -7,6 +8,7 @@ import type {
 } from '@slotly/contracts';
 import { CompletionService } from './completion.service';
 
+/** Interface defining structure for structure build input. */
 export interface StructureBuildInput {
   institution:
     | InstitutionDto
@@ -28,6 +30,7 @@ export interface StructureBuildInput {
   rooms?: Array<{ id: string; name: string; type: string; capacity: number }>;
 }
 
+/** Injectable service providing graph from institution builder logic. */
 @Injectable()
 export class GraphFromInstitutionBuilder {
   constructor(private readonly completionService: CompletionService) {}

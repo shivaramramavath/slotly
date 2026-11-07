@@ -1,3 +1,4 @@
+// Domain service orchestrating recommendations.service business logic.
 import { Injectable } from '@nestjs/common';
 import type {
   BlueprintEdgeDto,
@@ -5,6 +6,7 @@ import type {
   BlueprintRecommendationDto,
 } from '@slotly/contracts';
 
+/** Interface defining structure for recommender strategy. */
 export interface IRecommenderStrategy {
   recommend(
     nodes: BlueprintNodeDto[],
@@ -21,6 +23,7 @@ function getNodeName(node?: BlueprintNodeDto | null, fallback = ''): string {
     : node.id || fallback;
 }
 
+/** Class implementing faculty recommender. */
 export class FacultyRecommender implements IRecommenderStrategy {
   recommend(
     nodes: BlueprintNodeDto[],
@@ -69,6 +72,7 @@ export class FacultyRecommender implements IRecommenderStrategy {
   }
 }
 
+/** Class implementing room recommender. */
 export class RoomRecommender implements IRecommenderStrategy {
   recommend(
     nodes: BlueprintNodeDto[],
@@ -110,6 +114,7 @@ export class RoomRecommender implements IRecommenderStrategy {
   }
 }
 
+/** Class implementing missing connection detector. */
 export class MissingConnectionDetector implements IRecommenderStrategy {
   recommend(nodes: BlueprintNodeDto[]): BlueprintRecommendationDto[] {
     const recommendations: BlueprintRecommendationDto[] = [];
@@ -138,6 +143,7 @@ export class MissingConnectionDetector implements IRecommenderStrategy {
   }
 }
 
+/** Class implementing unused resource detector. */
 export class UnusedResourceDetector implements IRecommenderStrategy {
   recommend(
     nodes: BlueprintNodeDto[],
@@ -175,6 +181,7 @@ export class UnusedResourceDetector implements IRecommenderStrategy {
   }
 }
 
+/** Injectable service providing recommendations service logic. */
 @Injectable()
 export class RecommendationsService {
   private readonly strategies: IRecommenderStrategy[] = [

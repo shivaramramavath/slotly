@@ -1,3 +1,4 @@
+// HTTP controller handling template.controller endpoints.
 import {
   Body,
   Controller,
@@ -19,6 +20,7 @@ import type {
   GraphTemplateDto,
 } from '@slotly/contracts';
 
+/** Controller handling template controller HTTP endpoints. */
 @Controller('blueprint-templates')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class TemplateController {

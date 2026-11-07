@@ -1,8 +1,11 @@
+// Data schema and persistence model for blueprint-history.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
+/** Type alias for blueprint history document. */
 export type BlueprintHistoryDocument = BlueprintHistory & Document;
 
+/** Class implementing blueprint history. */
 @Schema({ timestamps: true, collection: 'blueprint_history' })
 export class BlueprintHistory {
   _id?: string;
@@ -34,6 +37,7 @@ export class BlueprintHistory {
   timestamp!: Date;
 }
 
+/** Zod schema validating blueprint history. */
 export const BlueprintHistorySchema =
   SchemaFactory.createForClass(BlueprintHistory);
 BlueprintHistorySchema.index({ projectId: 1, revision: -1 });

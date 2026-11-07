@@ -1,3 +1,4 @@
+// Domain service orchestrating operation.service business logic.
 import { Injectable } from '@nestjs/common';
 import type {
   BlueprintEdgeDto,
@@ -9,6 +10,7 @@ import type {
 import { GateChain } from '../gates/gate-chain';
 import { CompletionService } from './completion.service';
 
+/** Interface defining structure for apply batch result. */
 export interface ApplyBatchResult {
   applied: OperationResultApplied[];
   skipped: OperationResultSkipped[];
@@ -16,6 +18,7 @@ export interface ApplyBatchResult {
   edges: BlueprintEdgeDto[];
 }
 
+/** Injectable service providing operation service logic. */
 @Injectable()
 export class OperationService {
   constructor(

@@ -1,3 +1,4 @@
+// Domain service orchestrating readiness.service business logic.
 import { Injectable } from '@nestjs/common';
 import type {
   BlueprintMissingItem,
@@ -5,6 +6,7 @@ import type {
   BlueprintReadinessDto,
 } from '@slotly/contracts';
 
+/** Injectable service providing readiness service logic. */
 @Injectable()
 export class ReadinessService {
   computeReadiness(nodes: BlueprintNodeDto[]): BlueprintReadinessDto {

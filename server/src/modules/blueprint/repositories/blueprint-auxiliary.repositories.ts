@@ -1,3 +1,4 @@
+// Core implementation for blueprint-auxiliary.repositories in server/src/modules/blueprint/repositories.
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -19,6 +20,7 @@ import {
   BlueprintCommentDocument,
 } from '../schemas/blueprint-comment.schema';
 
+/** Injectable service providing blueprint template repository logic. */
 @Injectable()
 export class BlueprintTemplateRepository extends MongoBaseRepository<
   BlueprintTemplate,
@@ -55,6 +57,7 @@ export class BlueprintTemplateRepository extends MongoBaseRepository<
   }
 }
 
+/** Injectable service providing blueprint history repository logic. */
 @Injectable()
 export class BlueprintHistoryRepository extends MongoBaseRepository<
   BlueprintHistory,
@@ -79,6 +82,7 @@ export class BlueprintHistoryRepository extends MongoBaseRepository<
   }
 }
 
+/** Injectable service providing blueprint snapshot repository logic. */
 @Injectable()
 export class BlueprintSnapshotRepository extends MongoBaseRepository<
   BlueprintSnapshot,
@@ -100,6 +104,7 @@ export class BlueprintSnapshotRepository extends MongoBaseRepository<
   }
 }
 
+/** Injectable service providing blueprint comment repository logic. */
 @Injectable()
 export class BlueprintCommentRepository extends MongoBaseRepository<
   BlueprintComment,
