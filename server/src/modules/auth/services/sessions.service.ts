@@ -1,3 +1,4 @@
+// Domain service orchestrating sessions.service business logic.
 import {
   Injectable,
   UnauthorizedException,
@@ -9,8 +10,10 @@ import { UserRole } from '@slotly/contracts';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 
+/** Constant representing sessions service. */
 export const SESSIONS_SERVICE = Symbol('SESSIONS_SERVICE');
 
+/** Interface defining structure for session data. */
 export interface SessionData {
   sessionId: string;
   userId: string;
@@ -31,12 +34,14 @@ export interface SessionData {
   version: number;
 }
 
+/** Interface defining structure for rotated tokens. */
 export interface RotatedTokens {
   accessToken: string;
   refreshToken: string;
   session: SessionData;
 }
 
+/** Interface defining structure for sessions service. */
 export interface SessionsService {
   createSession(
     userId: string,
@@ -79,6 +84,7 @@ export interface SessionsService {
   ): string;
 }
 
+/** Injectable service providing redis sessions service logic. */
 @Injectable()
 export class RedisSessionsService implements SessionsService {
   private readonly logger = new Logger(RedisSessionsService.name);

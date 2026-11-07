@@ -1,3 +1,4 @@
+// Route guard controlling access for auth.guard.
 import {
   CanActivate,
   ExecutionContext,
@@ -15,6 +16,7 @@ import { USER_REPOSITORY } from '../../users/repositories/user.repository';
 import type { UserRepository } from '../../users/repositories/user.repository';
 import type { UserRole } from '@slotly/contracts';
 
+/** Interface defining structure for request user. */
 export interface RequestUser {
   id: string;
   role: UserRole;
@@ -23,6 +25,7 @@ export interface RequestUser {
   email?: string | undefined;
 }
 
+/** Injectable service providing auth guard logic. */
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(

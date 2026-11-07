@@ -1,15 +1,19 @@
+// Core implementation for totp.adapter in server/src/modules/auth/adapters.
 import { Injectable } from '@nestjs/common';
 import * as QRCode from 'qrcode';
 import { randomBytes, createHash, createHmac } from 'crypto';
 
+/** Constant representing totp adapter. */
 export const TOTP_ADAPTER = Symbol('TOTP_ADAPTER');
 
+/** Interface defining structure for totp enrollment. */
 export interface TotpEnrollment {
   secret: string;
   qrCodeUrl: string;
   recoveryCodes: string[];
 }
 
+/** Interface defining structure for totp adapter. */
 export interface TotpAdapter {
   generateEnrollment(email: string, issuer?: string): Promise<TotpEnrollment>;
   generateCode(secret: string, timestampMs?: number): string;
@@ -68,6 +72,7 @@ function base32Decode(base32: string): Buffer {
   return Buffer.from(bytes);
 }
 
+/** Injectable service providing otplib totp adapter logic. */
 @Injectable()
 export class OtplibTotpAdapter implements TotpAdapter {
   async generateEnrollment(

@@ -1,3 +1,4 @@
+// Domain service orchestrating auth.service business logic.
 import {
   Injectable,
   UnauthorizedException,
@@ -46,6 +47,7 @@ import { CACHE_SERVICE } from '../../common/cache/cache.interface';
 import type { CacheService } from '../../common/cache/cache.interface';
 import type { User } from '../users/schemas/user.schema';
 
+/** Injectable service providing default auth service logic. */
 @Injectable()
 export class DefaultAuthService implements AuthService {
   constructor(

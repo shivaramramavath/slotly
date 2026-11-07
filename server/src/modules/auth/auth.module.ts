@@ -1,3 +1,4 @@
+// Core implementation for auth.module in server/src/modules/auth.
 import { Global, Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { AuthController } from './auth.controller';
@@ -31,6 +32,7 @@ import { PermissionsGuard } from '../../common/rbac/permissions.guard';
 import { UsersModule } from '../users/users.module';
 import { InstitutionsModule } from '../institutions/institutions.module';
 
+/** Class implementing auth module. */
 @Global()
 @Module({
   imports: [

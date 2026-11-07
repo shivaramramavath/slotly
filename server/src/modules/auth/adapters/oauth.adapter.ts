@@ -1,7 +1,10 @@
+// Core implementation for oauth.adapter in server/src/modules/auth/adapters.
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 
+/** Constant representing oauth verifier. */
 export const OAUTH_VERIFIER = Symbol('OAUTH_VERIFIER');
 
+/** Interface defining structure for o auth user profile. */
 export interface OAuthUserProfile {
   providerId: string;
   email: string;
@@ -9,10 +12,12 @@ export interface OAuthUserProfile {
   avatarUrl?: string | undefined;
 }
 
+/** Interface defining structure for o auth verifier. */
 export interface OAuthVerifier {
   verifyGoogleToken(idToken: string): Promise<OAuthUserProfile>;
 }
 
+/** Injectable service providing google o auth verifier logic. */
 @Injectable()
 export class GoogleOAuthVerifier implements OAuthVerifier {
   async verifyGoogleToken(idToken: string): Promise<OAuthUserProfile> {

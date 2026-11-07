@@ -1,3 +1,4 @@
+// Domain service orchestrating otp.service business logic.
 import {
   Injectable,
   BadRequestException,
@@ -8,8 +9,10 @@ import { createHash, randomInt } from 'crypto';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 
+/** Constant representing otp service. */
 export const OTP_SERVICE = Symbol('OTP_SERVICE');
 
+/** Interface defining structure for otp record. */
 export interface OtpRecord {
   codeHash: string;
   attempts: number;
@@ -17,6 +20,7 @@ export interface OtpRecord {
   resendAvailableAt: number;
 }
 
+/** Interface defining structure for otp service. */
 export interface OtpService {
   createOtp(
     email: string,
@@ -28,6 +32,7 @@ export interface OtpService {
   invalidateOtp(email: string, purpose: string): Promise<void>;
 }
 
+/** Injectable service providing redis otp service logic. */
 @Injectable()
 export class RedisOtpService implements OtpService {
   constructor(@Inject(CACHE_SERVICE) private readonly cache: CacheService) {}

@@ -1,8 +1,11 @@
+// Core implementation for email.adapter in server/src/modules/auth/adapters.
 import { Injectable, Logger } from '@nestjs/common';
 import { EmailService } from '../../../common/email/email.service';
 
+/** Constant representing email adapter. */
 export const EMAIL_ADAPTER = Symbol('EMAIL_ADAPTER');
 
+/** Interface defining structure for email adapter. */
 export interface EmailAdapter {
   sendOtp(
     email: string,
@@ -16,6 +19,7 @@ export interface EmailAdapter {
   ): Promise<void>;
 }
 
+/** Injectable service providing queue email adapter logic. */
 @Injectable()
 export class QueueEmailAdapter implements EmailAdapter {
   private readonly logger = new Logger(QueueEmailAdapter.name);

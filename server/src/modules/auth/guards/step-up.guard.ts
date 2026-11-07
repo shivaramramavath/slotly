@@ -1,3 +1,4 @@
+// Route guard controlling access for step-up.guard.
 import {
   CanActivate,
   ExecutionContext,
@@ -9,8 +10,10 @@ import { SESSIONS_SERVICE } from '../services/sessions.service';
 import type { SessionsService } from '../services/sessions.service';
 import type { RequestUser } from './auth.guard';
 
+/** Constant representing require step up key. */
 export const REQUIRE_STEP_UP_KEY = 'requireStepUp';
 
+/** Injectable service providing step up guard logic. */
 @Injectable()
 export class StepUpGuard implements CanActivate {
   constructor(
