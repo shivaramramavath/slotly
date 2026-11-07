@@ -2,20 +2,23 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Bell, Plus, Settings, LayoutGrid, LogOut, User as UserIcon } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/store/auth.store';
 import { authApi } from '@/features/auth/services/auth.api';
+import { getActiveNavSection } from '@/components/layouts/nav-active';
 
 export interface AppLayoutProps {
   children: React.ReactNode;
   activePath?: string;
 }
 
-export function AppLayout({ children, activePath = '/dashboard' }: AppLayoutProps) {
+export function AppLayout({ children, activePath }: AppLayoutProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const activeSection = getActiveNavSection(pathname || activePath);
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
@@ -42,7 +45,7 @@ export function AppLayout({ children, activePath = '/dashboard' }: AppLayoutProp
             <Link
               href="/dashboard"
               className={`px-3 py-1.5 rounded transition-colors ${
-                activePath === '/dashboard'
+                activeSection === 'projects'
                   ? 'bg-[#181818] text-[#FAFAFA] font-medium'
                   : 'text-[#8A8A8A] hover:text-[#FAFAFA]'
               }`}
@@ -52,7 +55,7 @@ export function AppLayout({ children, activePath = '/dashboard' }: AppLayoutProp
             <Link
               href="/institutions"
               className={`px-3 py-1.5 rounded transition-colors ${
-                activePath === '/institutions'
+                activeSection === 'institution'
                   ? 'bg-[#181818] text-[#FAFAFA] font-medium'
                   : 'text-[#8A8A8A] hover:text-[#FAFAFA]'
               }`}
@@ -62,7 +65,7 @@ export function AppLayout({ children, activePath = '/dashboard' }: AppLayoutProp
             <Link
               href="/library"
               className={`px-3 py-1.5 rounded transition-colors ${
-                activePath === '/library'
+                activeSection === 'library'
                   ? 'bg-[#181818] text-[#FAFAFA] font-medium'
                   : 'text-[#8A8A8A] hover:text-[#FAFAFA]'
               }`}
@@ -72,7 +75,7 @@ export function AppLayout({ children, activePath = '/dashboard' }: AppLayoutProp
             <Link
               href="/blueprint-templates"
               className={`px-3 py-1.5 rounded transition-colors ${
-                activePath === '/blueprint-templates'
+                activeSection === 'templates'
                   ? 'bg-[#181818] text-[#FAFAFA] font-medium'
                   : 'text-[#8A8A8A] hover:text-[#FAFAFA]'
               }`}
