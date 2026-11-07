@@ -79,6 +79,21 @@ export class DefaultAuthService implements AuthService {
     };
   }
 
+  private getEntityId(
+    entity: { id?: string | undefined; _id?: unknown } | null | undefined,
+  ): string | undefined {
+    if (!entity) return undefined;
+    if (entity.id) return entity.id;
+    if (typeof entity._id === 'string') return entity._id;
+    if (
+      entity._id &&
+      typeof (entity._id as { toString?: () => string }).toString === 'function'
+    ) {
+      return (entity._id as { toString: () => string }).toString();
+    }
+    return undefined;
+  }
+
   async register(
     dto: RegisterDto,
     meta: ClientMeta,
@@ -107,7 +122,10 @@ export class DefaultAuthService implements AuthService {
         const instName = dto.institutionName.trim();
         const instCode =
           dto.institutionCode?.trim().toUpperCase() ||
-          instName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() ||
+          instName
+            .replace(/[^a-zA-Z0-9]/g, '')
+            .slice(0, 6)
+            .toUpperCase() ||
           'INST';
         const newInst = await this.institutionRepo.create({
           name: instName,
@@ -117,18 +135,22 @@ export class DefaultAuthService implements AuthService {
             startTime: '09:00',
             periodDuration: 50,
             periodsPerDay: 7,
-            breaks: [{ name: 'Lunch Break', afterPeriod: 4, durationMinutes: 50 }],
+            breaks: [
+              { name: 'Lunch Break', afterPeriod: 4, durationMinutes: 50 },
+            ],
           },
           isComplete: true,
           isDeleted: false,
         });
-        const id = newInst.id || (newInst as unknown as { _id?: unknown })._id;
-        if (id) institutionId = new Types.ObjectId(id.toString());
+        const id = this.getEntityId(newInst);
+        if (id) institutionId = new Types.ObjectId(id);
       } else {
-        const firstInst = await this.institutionRepo.findOne({ isDeleted: false });
+        const firstInst = await this.institutionRepo.findOne({
+          isDeleted: false,
+        });
         if (firstInst) {
-          const id = firstInst.id || (firstInst as unknown as { _id?: unknown })._id;
-          if (id) institutionId = new Types.ObjectId(id.toString());
+          const id = this.getEntityId(firstInst);
+          if (id) institutionId = new Types.ObjectId(id);
         }
       }
     }
@@ -235,14 +257,16 @@ export class DefaultAuthService implements AuthService {
     const userDto = this.toUserDto(user);
 
     if (!user.institutionId && this.institutionRepo) {
-      const firstInst = await this.institutionRepo.findOne({ isDeleted: false });
+      const firstInst = await this.institutionRepo.findOne({
+        isDeleted: false,
+      });
       if (firstInst) {
-        const id = firstInst.id || (firstInst as unknown as { _id?: unknown })._id;
+        const id = this.getEntityId(firstInst);
         if (id) {
-          const instObjId = new Types.ObjectId(id.toString());
+          const instObjId = new Types.ObjectId(id);
           user.institutionId = instObjId;
-          userDto.institutionId = id.toString();
-          const uId = (user.id || user._id)?.toString();
+          userDto.institutionId = id;
+          const uId = this.getEntityId(user);
           if (uId) {
             await this.userRepo.update(uId, { institutionId: instObjId });
           }
@@ -666,14 +690,16 @@ export class DefaultAuthService implements AuthService {
     const userDto = this.toUserDto(user);
 
     if (!user.institutionId && this.institutionRepo) {
-      const firstInst = await this.institutionRepo.findOne({ isDeleted: false });
+      const firstInst = await this.institutionRepo.findOne({
+        isDeleted: false,
+      });
       if (firstInst) {
-        const id = firstInst.id || (firstInst as unknown as { _id?: unknown })._id;
+        const id = this.getEntityId(firstInst);
         if (id) {
-          const instObjId = new Types.ObjectId(id.toString());
+          const instObjId = new Types.ObjectId(id);
           user.institutionId = instObjId;
-          userDto.institutionId = id.toString();
-          const uId = (user.id || user._id)?.toString();
+          userDto.institutionId = id;
+          const uId = this.getEntityId(user);
           if (uId) {
             await this.userRepo.update(uId, { institutionId: instObjId });
           }
@@ -768,14 +794,16 @@ export class DefaultAuthService implements AuthService {
     const userDto = this.toUserDto(user);
 
     if (!user.institutionId && this.institutionRepo) {
-      const firstInst = await this.institutionRepo.findOne({ isDeleted: false });
+      const firstInst = await this.institutionRepo.findOne({
+        isDeleted: false,
+      });
       if (firstInst) {
-        const id = firstInst.id || (firstInst as unknown as { _id?: unknown })._id;
+        const id = this.getEntityId(firstInst);
         if (id) {
-          const instObjId = new Types.ObjectId(id.toString());
+          const instObjId = new Types.ObjectId(id);
           user.institutionId = instObjId;
-          userDto.institutionId = id.toString();
-          const uId = (user.id || user._id)?.toString();
+          userDto.institutionId = id;
+          const uId = this.getEntityId(user);
           if (uId) {
             await this.userRepo.update(uId, { institutionId: instObjId });
           }

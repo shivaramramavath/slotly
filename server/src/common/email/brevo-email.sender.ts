@@ -102,7 +102,7 @@ export class BrevoEmailSender implements IEmailSender {
         );
         if (message.variables?.['code']) {
           this.logger.warn(
-            `[BREVO FALLBACK] Delivery failed via Brevo. Code for ${recipients.map((r) => r.email).join(', ')} is: >>> ${message.variables['code']} <<<`,
+            `[BREVO FALLBACK] Delivery failed via Brevo. Code for ${recipients.map((r) => r.email).join(', ')} is: >>> ${message.variables['code'] as string} <<<`,
           );
         }
         return {
