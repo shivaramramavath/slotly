@@ -1,7 +1,9 @@
+// Core implementation for department-rules.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing department rules constraint. */
 export class DepartmentRulesConstraint implements IConstraint {
   readonly id = 'department-rules';
   readonly name = 'Department Rules';

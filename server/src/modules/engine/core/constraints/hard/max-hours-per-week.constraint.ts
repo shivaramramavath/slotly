@@ -1,7 +1,9 @@
+// Core implementation for max-hours-per-week.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing max hours per week constraint. */
 export class MaxHoursPerWeekConstraint implements IConstraint {
   readonly id = 'max-hours-per-week';
   readonly name = 'Max Hours Per Week';

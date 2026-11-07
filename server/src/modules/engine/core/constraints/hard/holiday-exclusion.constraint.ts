@@ -1,7 +1,9 @@
+// Core implementation for holiday-exclusion.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing holiday exclusion constraint. */
 export class HolidayExclusionConstraint implements IConstraint {
   readonly id = 'holiday-exclusion';
   readonly name = 'Holiday Exclusion';

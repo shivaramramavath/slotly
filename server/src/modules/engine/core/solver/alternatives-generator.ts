@@ -1,3 +1,4 @@
+// Core implementation for alternatives-generator in server/src/modules/engine/core/solver.
 import type { EngineInput } from '../types';
 import type { SolverOptions, AlternativeResult } from './types';
 import { TimetableSolver } from './timetable-solver';

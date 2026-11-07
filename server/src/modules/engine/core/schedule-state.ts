@@ -1,3 +1,4 @@
+// Core implementation for schedule-state in server/src/modules/engine/core.
 import type {
   EngineInput,
   Slot,
@@ -9,6 +10,7 @@ import type {
   EngineBatch,
 } from './types';
 
+/** Class implementing schedule state. */
 export class ScheduleState {
   readonly input: EngineInput;
   readonly slots: Slot[];

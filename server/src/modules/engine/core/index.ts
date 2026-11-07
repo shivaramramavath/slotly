@@ -1,3 +1,4 @@
+// Core implementation for index in server/src/modules/engine/core.
 export * from './types';
 export * from './schedule-state';
 export * from './constraint.interface';

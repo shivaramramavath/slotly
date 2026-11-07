@@ -1,7 +1,9 @@
+// Core implementation for minimize-room-changes.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing minimize room changes constraint. */
 export class MinimizeRoomChangesConstraint implements IConstraint {
   readonly id = 'minimize-room-changes';
   readonly name = 'Minimize Room Changes';

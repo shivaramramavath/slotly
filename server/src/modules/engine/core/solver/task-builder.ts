@@ -1,6 +1,8 @@
+// Core implementation for task-builder in server/src/modules/engine/core/solver.
 import type { EngineInput, EngineSection } from '../types';
 import type { SolveTask, ElectiveTaskBundle } from './types';
 
+/** Class implementing task builder. */
 export class TaskBuilder {
   /**
    * Deconstructs engine input subjects into atomic scheduling tasks with MRV/degree hardness ratings.

@@ -1,7 +1,9 @@
+// Core implementation for room-no-double-booking.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing room no double booking constraint. */
 export class RoomNoDoubleBookingConstraint implements IConstraint {
   readonly id = 'room-no-double-booking';
   readonly name = 'Room No Double Booking';

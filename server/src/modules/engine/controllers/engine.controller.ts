@@ -1,3 +1,4 @@
+// HTTP controller handling engine.controller endpoints.
 import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { PermissionsGuard } from '../../../common/rbac/permissions.guard';
@@ -9,6 +10,7 @@ import type {
   ValidationReportDto,
 } from '@slotly/contracts';
 
+/** Controller handling engine controller HTTP endpoints. */
 @Controller()
 @UseGuards(AuthGuard, PermissionsGuard)
 export class EngineController {

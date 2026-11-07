@@ -1,7 +1,9 @@
+// Core implementation for room-capacity-fits-section.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing room capacity fits section constraint. */
 export class RoomCapacityFitsSectionConstraint implements IConstraint {
   readonly id = 'room-capacity-fits-section';
   readonly name = 'Room Capacity Fits Section';

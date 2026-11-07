@@ -1,3 +1,4 @@
+// Core implementation for types in server/src/modules/engine/core.
 import type {
   SlotType,
   SlotDto,
@@ -20,9 +21,12 @@ export type {
   SoftConstraintsConfig,
 };
 
+/** Type alias for slot. */
 export type Slot = SlotDto;
+/** Type alias for violation. */
 export type Violation = ViolationDto;
 
+/** Interface defining structure for engine section. */
 export interface EngineSection {
   id: string;
   name: string;
@@ -34,6 +38,7 @@ export interface EngineSection {
   workingDays?: number[] | undefined;
 }
 
+/** Interface defining structure for engine batch. */
 export interface EngineBatch {
   id: string;
   sectionId: string;
@@ -41,6 +46,7 @@ export interface EngineBatch {
   size: number;
 }
 
+/** Interface defining structure for engine faculty. */
 export interface EngineFaculty {
   id: string;
   name: string;
@@ -55,6 +61,7 @@ export interface EngineFaculty {
   qualifications?: string[] | undefined;
 }
 
+/** Interface defining structure for engine room. */
 export interface EngineRoom {
   id: string;
   name: string;
@@ -67,6 +74,7 @@ export interface EngineRoom {
   shared?: boolean | undefined;
 }
 
+/** Interface defining structure for engine subject. */
 export interface EngineSubject {
   id: string;
   code: string;
@@ -90,6 +98,7 @@ export interface EngineSubject {
   batchId?: string | undefined;
 }
 
+/** Interface defining structure for engine elective group. */
 export interface EngineElectiveGroup {
   id: string;
   name: string;
@@ -97,12 +106,14 @@ export interface EngineElectiveGroup {
   mustBeSimultaneous: boolean;
 }
 
+/** Interface defining structure for engine break. */
 export interface EngineBreak {
   day?: number | undefined;
   period: number;
   name?: string | undefined;
 }
 
+/** Interface defining structure for engine settings. */
 export interface EngineSettings {
   days: string[];
   periodsPerDay: number;
@@ -117,11 +128,13 @@ export interface EngineSettings {
     | undefined;
 }
 
+/** Interface defining structure for engine calendar. */
 export interface EngineCalendar {
   holidays: Array<{ date: string; name: string }>;
   events?: Array<{ date: string; name: string }> | undefined;
 }
 
+/** Interface defining structure for engine input. */
 export interface EngineInput {
   settings: EngineSettings;
   perDayConfig?:
@@ -139,6 +152,7 @@ export interface EngineInput {
   preferences?: Record<string, unknown> | undefined;
 }
 
+/** Interface defining structure for move. */
 export interface Move {
   slot: Slot;
   target: {

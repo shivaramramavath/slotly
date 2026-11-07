@@ -1,7 +1,9 @@
+// Core implementation for room-type-matches-subject.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing room type matches subject constraint. */
 export class RoomTypeMatchesSubjectConstraint implements IConstraint {
   readonly id = 'room-type-matches-subject';
   readonly name = 'Room Type Matches Subject';

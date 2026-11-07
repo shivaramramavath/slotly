@@ -1,5 +1,7 @@
+// Core implementation for pre-build.checker in server/src/modules/engine/core.
 import type { EngineInput, PreBuildCheckError } from './types';
 
+/** Class implementing pre build checker. */
 export class PreBuildChecker {
   /**
    * Evaluates institutional preconditions before running the timetable solver.

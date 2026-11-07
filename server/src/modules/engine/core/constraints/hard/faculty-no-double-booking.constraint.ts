@@ -1,7 +1,9 @@
+// Core implementation for faculty-no-double-booking.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing faculty no double booking constraint. */
 export class FacultyNoDoubleBookingConstraint implements IConstraint {
   readonly id = 'faculty-no-double-booking';
   readonly name = 'Faculty No Double Booking';

@@ -1,5 +1,7 @@
+// Core implementation for constraint.registry in server/src/modules/engine/core.
 import type { IConstraint } from './constraint.interface';
 
+/** Class implementing constraint registry. */
 export class ConstraintRegistry {
   private readonly constraints = new Map<string, IConstraint>();
 

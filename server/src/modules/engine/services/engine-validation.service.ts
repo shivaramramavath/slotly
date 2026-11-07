@@ -1,3 +1,4 @@
+// Domain service orchestrating engine-validation.service business logic.
 import {
   Injectable,
   Inject,
@@ -70,6 +71,7 @@ function getString(val: unknown, fallback: string): string {
   return fallback;
 }
 
+/** Injectable service providing engine validation service logic. */
 @Injectable()
 export class EngineValidationService {
   private readonly pureValidator: ValidationService;

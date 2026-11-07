@@ -1,7 +1,9 @@
+// Core implementation for faculty-availability.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing faculty availability constraint. */
 export class FacultyAvailabilityConstraint implements IConstraint {
   readonly id = 'faculty-availability';
   readonly name = 'Faculty Availability';

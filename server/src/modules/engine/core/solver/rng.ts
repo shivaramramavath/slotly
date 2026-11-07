@@ -1,3 +1,4 @@
+// Core implementation for rng in server/src/modules/engine/core/solver.
 /**
  * Deterministic Pseudo-Random Number Generator using Mulberry32.
  * Produces reproducible sequences given a numeric seed.

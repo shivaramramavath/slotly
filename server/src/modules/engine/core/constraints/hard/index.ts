@@ -1,3 +1,4 @@
+// Core implementation for index in server/src/modules/engine/core/constraints/hard.
 export * from './faculty-no-double-booking.constraint';
 export * from './room-no-double-booking.constraint';
 export * from './section-no-double-booking.constraint';

@@ -1,7 +1,9 @@
+// Core implementation for max-classes-per-day.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing max classes per day constraint. */
 export class MaxClassesPerDayConstraint implements IConstraint {
   readonly id = 'max-classes-per-day';
   readonly name = 'Max Classes Per Day';

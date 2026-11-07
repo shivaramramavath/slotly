@@ -1,7 +1,9 @@
+// Core implementation for faculty-preferred-periods.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing faculty preferred periods constraint. */
 export class FacultyPreferredPeriodsConstraint implements IConstraint {
   readonly id = 'faculty-preferred-periods';
   readonly name = 'Faculty Preferred Periods';

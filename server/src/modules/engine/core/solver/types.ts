@@ -1,3 +1,4 @@
+// Core implementation for types in server/src/modules/engine/core/solver.
 import type { EngineSubject, Slot, SlotType, Violation } from '../types';
 import type {
   BuildProfile,
@@ -5,6 +6,7 @@ import type {
   ScheduleVersionStats,
 } from '@slotly/contracts';
 
+/** Interface defining structure for solver options. */
 export interface SolverOptions {
   seed?: number | undefined;
   timeLimitMs?: number | undefined;
@@ -13,6 +15,7 @@ export interface SolverOptions {
   swapIterations?: number | undefined;
 }
 
+/** Interface defining structure for solve task. */
 export interface SolveTask {
   taskId: string;
   subjectId: string;
@@ -27,6 +30,7 @@ export interface SolveTask {
   hardness: number;
 }
 
+/** Interface defining structure for elective task bundle. */
 export interface ElectiveTaskBundle {
   bundleId: string;
   electiveGroupId: string;
@@ -34,6 +38,7 @@ export interface ElectiveTaskBundle {
   hardness: number;
 }
 
+/** Interface defining structure for solver result. */
 export interface SolverResult {
   slots: Slot[];
   score: number;
@@ -44,6 +49,7 @@ export interface SolverResult {
   unplacedTasksCount: number;
 }
 
+/** Interface defining structure for alternative result. */
 export interface AlternativeResult {
   id: string;
   versionNo: number;

@@ -1,7 +1,9 @@
+// Core implementation for min-breaks.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing min breaks constraint. */
 export class MinBreaksConstraint implements IConstraint {
   readonly id = 'min-breaks';
   readonly name = 'Minimum Breaks';

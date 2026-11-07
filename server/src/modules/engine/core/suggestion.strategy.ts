@@ -1,7 +1,9 @@
+// Strategy implementation for suggestion.strategy.
 import type { Violation, ViolationSuggestion } from './types';
 import type { ScheduleState } from './schedule-state';
 import type { ConstraintRegistry } from './constraint.registry';
 
+/** Class implementing suggestion strategy. */
 export class SuggestionStrategy {
   constructor(private readonly registry: ConstraintRegistry) {}
 

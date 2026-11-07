@@ -1,7 +1,9 @@
+// Core implementation for limit-consecutive-same-subject.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing limit consecutive same subject constraint. */
 export class LimitConsecutiveSameSubjectConstraint implements IConstraint {
   readonly id = 'limit-consecutive-same-subject';
   readonly name = 'Limit Consecutive Same Subject';

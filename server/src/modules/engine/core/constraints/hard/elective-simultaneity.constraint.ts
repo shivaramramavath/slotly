@@ -1,7 +1,9 @@
+// Core implementation for elective-simultaneity.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing elective simultaneity constraint. */
 export class ElectiveSimultaneityConstraint implements IConstraint {
   readonly id = 'elective-simultaneity';
   readonly name = 'Elective Simultaneity';

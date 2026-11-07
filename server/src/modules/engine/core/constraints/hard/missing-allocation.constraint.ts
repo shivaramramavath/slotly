@@ -1,7 +1,9 @@
+// Core implementation for missing-allocation.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing missing allocation constraint. */
 export class MissingAllocationConstraint implements IConstraint {
   readonly id = 'missing-allocation';
   readonly name = 'Missing Allocation';

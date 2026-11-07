@@ -1,7 +1,9 @@
+// Core implementation for break-not-overwritable.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing break not overwritable constraint. */
 export class BreakNotOverwritableConstraint implements IConstraint {
   readonly id = 'break-not-overwritable';
   readonly name = 'Break Not Overwritable';

@@ -1,7 +1,9 @@
+// Core implementation for labs-in-afternoon.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing labs in afternoon constraint. */
 export class LabsInAfternoonConstraint implements IConstraint {
   readonly id = 'labs-in-afternoon';
   readonly name = 'Labs In Afternoon';

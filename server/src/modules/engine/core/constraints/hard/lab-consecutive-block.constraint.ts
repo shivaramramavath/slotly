@@ -1,7 +1,9 @@
+// Core implementation for lab-consecutive-block.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing lab consecutive block constraint. */
 export class LabConsecutiveBlockConstraint implements IConstraint {
   readonly id = 'lab-consecutive-block';
   readonly name = 'Lab Consecutive Block';

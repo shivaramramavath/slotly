@@ -1,7 +1,9 @@
+// Core implementation for weekly-hours-met.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing weekly hours met constraint. */
 export class WeeklyHoursMetConstraint implements IConstraint {
   readonly id = 'weekly-hours-met';
   readonly name = 'Weekly Hours Met';

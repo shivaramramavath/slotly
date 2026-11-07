@@ -1,3 +1,4 @@
+// Domain service orchestrating validation.service business logic.
 import type {
   EngineInput,
   Slot,
@@ -40,6 +41,7 @@ import {
   DepartmentRulesConstraint,
 } from './constraints/soft';
 
+/** Class implementing validation service. */
 export class ValidationService {
   private readonly registry: ConstraintRegistry;
   private readonly suggestionStrategy: SuggestionStrategy;

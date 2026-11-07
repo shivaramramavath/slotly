@@ -1,7 +1,9 @@
+// Core implementation for section-no-double-booking.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing section no double booking constraint. */
 export class SectionNoDoubleBookingConstraint implements IConstraint {
   readonly id = 'section-no-double-booking';
   readonly name = 'Section No Double Booking';

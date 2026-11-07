@@ -1,3 +1,4 @@
+// Core implementation for timetable-solver in server/src/modules/engine/core/solver.
 import type {
   EngineInput,
   EngineSubject,
@@ -25,6 +26,7 @@ interface CandidatePlacement {
   score: number;
 }
 
+/** Class implementing timetable solver. */
 export class TimetableSolver {
   private readonly rng: SeededRng;
   private readonly validator: ValidationService;
