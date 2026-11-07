@@ -952,6 +952,13 @@ export const ImportJobStatusSchema = z.object({
 });
 export type ImportJobStatus = z.infer<typeof ImportJobStatusSchema>;
 
+export const LibraryCountsDtoSchema = z.object({
+  faculty: z.number().nonnegative(),
+  subjects: z.number().nonnegative(),
+  rooms: z.number().nonnegative(),
+});
+export type LibraryCountsDto = z.infer<typeof LibraryCountsDtoSchema>;
+
 // ==========================================
 // PROJECTS & SETTINGS
 // ==========================================

@@ -46,6 +46,7 @@ import {
   type FacultyWorkloadDto,
   type ImportEntity,
   type ImportValidationReport,
+  type LibraryCountsDto,
 } from '@slotly/contracts';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import type { RequestUser } from '../../auth/guards/auth.guard';
@@ -72,6 +73,33 @@ export class LibraryController {
       );
     }
     return id;
+  }
+
+  // ==========================================
+  // COUNTS ENDPOINTS
+  // ==========================================
+  @Get('counts')
+  @RequirePermissions('FACULTY_READ')
+  async getCounts(
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
+    @Query('institutionId') queryInstId?: string,
+    @Query('departmentId') departmentId?: string,
+    @Query('archived') archivedStr?: string,
+  ): Promise<LibraryCountsDto> {
+    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const archived =
+      archivedStr === 'true'
+        ? true
+        : archivedStr === 'false'
+          ? false
+          : undefined;
+    return this.libraryService.getCounts(institutionId, {
+      departmentId,
+      archived,
+    });
   }
 
   // ==========================================

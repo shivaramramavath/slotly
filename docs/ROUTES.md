@@ -39,6 +39,10 @@ POST   /versions/:versionId/redo
 GET    /versions/:versionId/periods
 PUT    /versions/:versionId/periods
 
+LIBRARY ADDITIONS
+GET    /library/counts?departmentId=&archived=   returns { faculty, subjects, rooms }
+GET    /library/export/:entity?format=xlsx|csv
+
 SOCKET ADDITIONS (/blueprint)
 server -> client: node:status-changed, ops:applied, presence:changed,
                   node:locked, node:unlocked, revision:conflict

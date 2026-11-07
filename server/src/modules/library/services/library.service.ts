@@ -20,9 +20,12 @@ import type {
   FacultyWorkloadDto,
   ImportEntity,
   ImportValidationReport,
+  LibraryCountsDto,
 } from '@slotly/contracts';
 import { EventBus } from '../../../common/events/event-bus.service';
 import { AuditService } from '../../../common/audit/audit.service';
+import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
+import type { CacheService } from '../../../common/cache/cache.interface';
 import { FACULTY_REPOSITORY } from '../repositories/faculty.repository';
 import type { FacultyRepository } from '../repositories/faculty.repository';
 import { SUBJECT_REPOSITORY } from '../repositories/subject.repository';
@@ -81,7 +84,56 @@ export class LibraryService {
     private readonly importService: LibraryImportService,
     private readonly eventBus: EventBus,
     private readonly auditService: AuditService,
+    @Inject(CACHE_SERVICE)
+    private readonly cache: CacheService,
   ) {}
+
+  // ==========================================
+  // COUNTS
+  // ==========================================
+  async getCounts(
+    institutionId: string,
+    options?: {
+      departmentId?: string;
+      archived?: boolean;
+    },
+  ): Promise<LibraryCountsDto> {
+    const deptPart = options?.departmentId || 'all';
+    const archPart =
+      options?.archived === undefined ? 'all' : String(options.archived);
+    const cacheKey = `slotly:library:counts:${institutionId}:${deptPart}:${archPart}`;
+
+    return this.cache.remember<LibraryCountsDto>(
+      cacheKey,
+      3600,
+      async () => {
+        const [facultyRes, subjectRes, roomRes] = await Promise.all([
+          this.facultyRepo.findByInstitution(institutionId, {
+            departmentId: options?.departmentId,
+            archived: options?.archived,
+            limit: 1,
+          }),
+          this.subjectRepo.findByInstitution(institutionId, {
+            departmentId: options?.departmentId,
+            archived: options?.archived,
+            limit: 1,
+          }),
+          this.roomRepo.findByInstitution(institutionId, {
+            departmentId: options?.departmentId,
+            archived: options?.archived,
+            limit: 1,
+          }),
+        ]);
+
+        return {
+          faculty: facultyRes.total,
+          subjects: subjectRes.total,
+          rooms: roomRes.total,
+        };
+      },
+      [`library:${institutionId}`],
+    );
+  }
 
   // ==========================================
   // FACULTY
