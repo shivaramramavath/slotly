@@ -1,3 +1,4 @@
+// React component for history-dialog.
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,6 +17,7 @@ import { blueprintApi } from '@/features/projects/services/blueprint.api';
 import { toast } from '@/components/ui/toast';
 import type { BlueprintHistoryEntryDto } from '@slotly/contracts';
 
+/** React component rendering history dialog. */
 export function HistoryDialog() {
   const isHistoryOpen = useBlueprintStore((s) => s.isHistoryOpen);
   const setIsHistoryOpen = useBlueprintStore((s) => s.setIsHistoryOpen);

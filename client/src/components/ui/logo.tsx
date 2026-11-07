@@ -1,11 +1,14 @@
+// React component for logo.
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
+/** Interface defining structure for logo props. */
 export interface LogoProps {
   className?: string;
   href?: string;
 }
 
+/** React component rendering logo. */
 export function Logo({ className, href = '/' }: LogoProps) {
   const content = (
     <div className={cn('inline-flex items-center gap-2.5 select-none cursor-pointer', className)}>

@@ -1,3 +1,4 @@
+// React component for compare-dialog.
 'use client';
 
 import Link from 'next/link';
@@ -16,6 +17,7 @@ interface CompareDialogProps {
   projectId: string;
 }
 
+/** React component rendering compare dialog. */
 export function CompareDialog({
   isOpen,
   onClose,

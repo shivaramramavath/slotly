@@ -1,3 +1,4 @@
+// Domain service orchestrating blueprint.api business logic.
 import { apiClient } from '@/lib/api-client';
 import type {
   ApplyOperationsDto,
@@ -19,6 +20,7 @@ import type {
   ValidationReportDto,
 } from '@slotly/contracts';
 
+/** Constant representing blueprint api. */
 export const blueprintApi = {
   async getGraph(projectId: string): Promise<BlueprintGraphDto> {
     return apiClient<BlueprintGraphDto>(`/projects/${projectId}/blueprint`);

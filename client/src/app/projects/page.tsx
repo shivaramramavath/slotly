@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import { useState } from 'react';
@@ -25,6 +26,7 @@ import { ProjectStatusBadge } from '@/features/projects/components/project-statu
 import { projectsApi } from '@/features/projects/services/projects.api';
 import type { ProjectDto } from '@slotly/contracts';
 
+/** React component rendering projects page. */
 export default function ProjectsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');

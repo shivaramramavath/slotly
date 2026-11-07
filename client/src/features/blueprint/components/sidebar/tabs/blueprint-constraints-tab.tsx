@@ -1,3 +1,4 @@
+// React component for blueprint-constraints-tab.
 'use client';
 
 import { useState } from 'react';
@@ -23,6 +24,7 @@ interface BlueprintConstraintsTabProps {
   projectId: string;
 }
 
+/** React component rendering blueprint constraints tab. */
 export function BlueprintConstraintsTab({ projectId }: BlueprintConstraintsTabProps) {
   const selectedNodeId = useBlueprintStore((s) => s.selectedNodeId);
   const nodes = useBlueprintStore((s) => s.nodes);

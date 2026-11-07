@@ -1,11 +1,14 @@
+// React component for button.
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+/** Interface defining structure for button props. */
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'outline' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg' | 'icon';
 }
 
+/** Constant representing button. */
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', disabled, ...props }, ref) => {
     const baseStyles =

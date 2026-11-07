@@ -1,7 +1,7 @@
 # Client Library Feature Code Map
 
 ### `client/src/features/library/components/availability-grid.tsx`
-*(no description)*
+*React component for availability-grid.*
 
 - **Component** `AvailabilityGrid({
   value,
@@ -9,10 +9,10 @@
   daysCount = 7,
   periodsCount = 8,
   readOnly = false,
-}: AvailabilityGridProps)`
+}: AvailabilityGridProps)` - React component rendering availability grid.
 
 ### `client/src/features/library/components/elective-group-dialog.tsx`
-*(no description)*
+*React component for elective-group-dialog.*
 
 - **Component** `ElectiveGroupDialog({
   open,
@@ -20,10 +20,10 @@
   group,
   subjects,
   onSuccess,
-}: ElectiveGroupDialogProps)`
+}: ElectiveGroupDialogProps)` - React component rendering elective group dialog.
 
 ### `client/src/features/library/components/faculty-dialog.tsx`
-*(no description)*
+*React component for faculty-dialog.*
 
 - **Component** `FacultyDialog({
   open,
@@ -33,30 +33,30 @@
   subjects,
   defaultDepartmentId,
   onSuccess,
-}: FacultyDialogProps)`
+}: FacultyDialogProps)` - React component rendering faculty dialog.
 
 ### `client/src/features/library/components/import-wizard-dialog.tsx`
-*(no description)*
+*React component for import-wizard-dialog.*
 
 - **Component** `ImportWizardDialog({
   open,
   onOpenChange,
   defaultEntity = 'faculty',
   onSuccess,
-}: ImportWizardDialogProps)`
+}: ImportWizardDialogProps)` - React component rendering import wizard dialog.
 
 ### `client/src/features/library/components/room-dialog.tsx`
-*(no description)*
+*React component for room-dialog.*
 
 - **Component** `RoomDialog({
   open,
   onOpenChange,
   room,
   onSuccess,
-}: RoomDialogProps)`
+}: RoomDialogProps)` - React component rendering room dialog.
 
 ### `client/src/features/library/components/subject-dialog.tsx`
-*(no description)*
+*React component for subject-dialog.*
 
 - **Component** `SubjectDialog({
   open,
@@ -66,20 +66,20 @@
   electiveGroups,
   defaultDepartmentId,
   onSuccess,
-}: SubjectDialogProps)`
+}: SubjectDialogProps)` - React component rendering subject dialog.
 
 ### `client/src/features/library/components/workload-bar.tsx`
-*(no description)*
+*React component for workload-bar.*
 
 - **Component** `WorkloadBar({
   assignedHours,
   maxHours,
   minHours = 0,
   showDetails = true,
-}: WorkloadBarProps)`
+}: WorkloadBarProps)` - React component rendering workload bar.
 
 ### `client/src/features/library/services/library.api.ts`
-*(no description)*
+*Domain service orchestrating library.api business logic.*
 
-- **Const** `libraryApi`: `{ listFaculty(params?: { departmentId?: string ...`
+- **Const** `libraryApi`: `{ listFaculty(params?: { departmentId?: string ...` - Constant representing library api.
 

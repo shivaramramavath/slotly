@@ -1,7 +1,9 @@
+// Custom React hook for use-blueprint-commands.
 import { useCallback } from 'react';
 import { useBlueprintStore } from '../store/blueprint.store';
 import type { Command } from '../types/canvas.types';
 
+/** Custom React hook for use blueprint commands. */
 export function useBlueprintCommands() {
   const pushCommand = useBlueprintStore((s) => s.pushCommand);
   const undo = useBlueprintStore((s) => s.undo);

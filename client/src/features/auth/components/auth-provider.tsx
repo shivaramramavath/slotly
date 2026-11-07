@@ -1,3 +1,4 @@
+// React component for auth-provider.
 'use client';
 
 import React, { useEffect } from 'react';
@@ -9,6 +10,7 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+/** React component rendering auth provider. */
 export function AuthProvider({ children }: AuthProviderProps) {
   const { status, setAuth, clearAuth, setStatus } = useAuthStore();
 

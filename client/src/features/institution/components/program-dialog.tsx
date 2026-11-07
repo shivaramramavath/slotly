@@ -1,3 +1,4 @@
+// React component for program-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -24,6 +25,7 @@ interface ProgramDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering program dialog. */
 export function ProgramDialog({
   open,
   onOpenChange,

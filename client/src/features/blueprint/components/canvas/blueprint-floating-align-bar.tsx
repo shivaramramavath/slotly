@@ -1,3 +1,4 @@
+// React component for blueprint-floating-align-bar.
 'use client';
 
 import {
@@ -14,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useBlueprintStore } from '../../store/blueprint.store';
 
+/** React component rendering blueprint floating align bar. */
 export function BlueprintFloatingAlignBar() {
   const selectedNodeIds = useBlueprintStore((s) => s.selectedNodeIds);
   const alignSelectedNodes = useBlueprintStore((s) => s.alignSelectedNodes);

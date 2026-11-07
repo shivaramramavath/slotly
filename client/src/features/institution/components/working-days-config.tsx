@@ -1,3 +1,4 @@
+// React component for working-days-config.
 'use client';
 
 import React, { useState } from 'react';
@@ -23,6 +24,7 @@ const DAYS_OF_WEEK = [
   { index: 0, label: 'Sun', full: 'Sunday' },
 ];
 
+/** React component rendering working days config. */
 export function WorkingDaysConfig({ institution, onSuccess }: WorkingDaysConfigProps) {
   const [workingDays, setWorkingDays] = useState<number[]>(institution.workingDays || [1, 2, 3, 4, 5]);
   const [startTime, setStartTime] = useState(institution.defaultPeriodConfig?.startTime || '09:00');

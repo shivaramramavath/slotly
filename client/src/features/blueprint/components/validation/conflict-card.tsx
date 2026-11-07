@@ -1,3 +1,4 @@
+// React component for conflict-card.
 'use client';
 
 import { AlertTriangle, AlertCircle, Sparkles, ArrowRight } from 'lucide-react';
@@ -12,6 +13,7 @@ interface ConflictCardProps {
   className?: string;
 }
 
+/** React component rendering conflict card. */
 export function ConflictCard({
   violation,
   onApplySuggestion,

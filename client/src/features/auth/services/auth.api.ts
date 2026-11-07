@@ -1,3 +1,4 @@
+// Domain service orchestrating auth.api business logic.
 import { apiClient, setAccessToken } from '@/lib/api-client';
 import type {
   RegisterDto,
@@ -17,6 +18,7 @@ import type {
   SecurityActivityDto,
 } from '@slotly/contracts';
 
+/** Interface defining structure for security overview. */
 export interface SecurityOverview {
   email: string;
   isEmailVerified: boolean;
@@ -25,6 +27,7 @@ export interface SecurityOverview {
   devicesCount: number;
 }
 
+/** Constant representing auth api. */
 export const authApi = {
   async register(dto: RegisterDto): Promise<AuthResponse> {
     const res = await apiClient<AuthResponse>('/auth/register', {

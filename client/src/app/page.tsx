@@ -1,3 +1,4 @@
+// React component for page.
 import Link from 'next/link';
 import { ArrowRight, Layers, Sliders, Cpu, ShieldCheck } from 'lucide-react';
 import { PublicLayout } from '@/components/layouts/public-layout';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
+/** React component rendering home page. */
 export default function HomePage() {
   return (
     <PublicLayout>

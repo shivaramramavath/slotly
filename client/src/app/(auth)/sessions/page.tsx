@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -9,6 +10,7 @@ import { authApi } from '@/features/auth/services/auth.api';
 import type { SessionDto } from '@slotly/contracts';
 import { toast } from '@/components/ui/toast';
 
+/** React component rendering sessions page. */
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [loading, setLoading] = useState(true);

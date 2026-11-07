@@ -1,3 +1,4 @@
+// React component for elective-group-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -23,6 +24,7 @@ interface ElectiveGroupDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering elective group dialog. */
 export function ElectiveGroupDialog({
   open,
   onOpenChange,

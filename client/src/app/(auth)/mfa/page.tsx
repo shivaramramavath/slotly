@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import { authApi } from '@/features/auth/services/auth.api';
 import { useAuthStore } from '@/features/auth/store/auth.store';
 import { toast } from '@/components/ui/toast';
 
+/** React component rendering mfa challenge page. */
 export default function MfaChallengePage() {
   const router = useRouter();
   const mfaToken = useAuthStore((s) => s.mfaToken);

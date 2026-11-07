@@ -1,3 +1,4 @@
+// React component for build-config-card.
 'use client';
 
 import { Play, Sparkles, RefreshCw, Cpu } from 'lucide-react';
@@ -11,6 +12,7 @@ interface BuildConfigCardProps {
   isLoading?: boolean;
 }
 
+/** React component rendering build config card. */
 export function BuildConfigCard({
   config,
   onChange,

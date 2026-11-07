@@ -1,14 +1,17 @@
+// React component for tooltip.
 'use client';
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+/** Interface defining structure for tooltip props. */
 export interface TooltipProps {
   content: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }
 
+/** React component rendering tooltip. */
 export function Tooltip({ content, children, className }: TooltipProps) {
   const [visible, setVisible] = React.useState(false);
 

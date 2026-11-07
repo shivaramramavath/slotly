@@ -1,3 +1,4 @@
+// React component for bulk-add-dialog.
 'use client';
 
 import { useState } from 'react';
@@ -21,6 +22,7 @@ interface BulkAddDialogProps {
   ) => Promise<void>;
 }
 
+/** React component rendering bulk add dialog. */
 export function BulkAddDialog({ onAddBatchNodes }: BulkAddDialogProps) {
   const isBulkAddOpen = useBlueprintStore((s) => s.isBulkAddOpen);
   const setIsBulkAddOpen = useBlueprintStore((s) => s.setIsBulkAddOpen);

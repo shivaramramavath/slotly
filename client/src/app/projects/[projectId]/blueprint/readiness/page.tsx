@@ -1,9 +1,11 @@
+// React component for page.
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+/** React component rendering readiness page. */
 export default async function ReadinessPage({
   params,
 }: {

@@ -1,3 +1,4 @@
+// React component for build-progress-panel.
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -15,6 +16,7 @@ interface BuildProgressPanelProps {
   isCancelling?: boolean;
 }
 
+/** React component rendering build progress panel. */
 export function BuildProgressPanel({
   status,
   progress,

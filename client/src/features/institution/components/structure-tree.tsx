@@ -1,3 +1,4 @@
+// React component for structure-tree.
 'use client';
 
 import { useState } from 'react';
@@ -37,6 +38,7 @@ interface StructureTreeProps {
   onDeleteSection: (id: string, name: string) => void;
 }
 
+/** React component rendering structure tree. */
 export function StructureTree({
   departments,
   onAddDepartment,

@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -117,6 +118,7 @@ function VerifyEmailForm() {
   );
 }
 
+/** React component rendering verify email page. */
 export default function VerifyEmailPage() {
   return (
     <Suspense fallback={<div className="p-8 text-center text-xs font-mono text-[#8A8A8A]">Loading verification...</div>}>

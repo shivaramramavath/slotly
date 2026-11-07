@@ -1,11 +1,14 @@
+// React component for toast.
 'use client';
 
 import { create } from 'zustand';
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+/** Type alias for toast variant. */
 export type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 
+/** Interface defining structure for toast item. */
 export interface ToastItem {
   id: string;
   title: string;
@@ -19,6 +22,7 @@ interface ToastStore {
   removeToast: (id: string) => void;
 }
 
+/** Zustand store managing use toast store state. */
 export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
   addToast: (toast) => {
@@ -32,6 +36,7 @@ export const useToastStore = create<ToastStore>((set) => ({
     set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 }));
 
+/** Constant representing toast. */
 export const toast = {
   success: (title: string, description?: string) =>
     useToastStore.getState().addToast({ title, description, variant: 'success' }),
@@ -60,6 +65,7 @@ export const toast = {
   },
 };
 
+/** React component rendering toast container. */
 export function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
 

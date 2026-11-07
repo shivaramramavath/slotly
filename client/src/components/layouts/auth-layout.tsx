@@ -1,7 +1,9 @@
+// React component for auth-layout.
 import * as React from 'react';
 import { Logo } from '@/components/ui/logo';
 import { Badge } from '@/components/ui/badge';
 
+/** React component rendering auth layout. */
 export function AuthLayout({
   children,
   subtitle,

@@ -1,3 +1,4 @@
+// React component for combobox.
 'use client';
 
 import * as React from 'react';
@@ -5,11 +6,13 @@ import { ChevronsUpDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from './input';
 
+/** Interface defining structure for combobox option. */
 export interface ComboboxOption {
   value: string;
   label: string;
 }
 
+/** Interface defining structure for combobox props. */
 export interface ComboboxProps {
   options: ComboboxOption[];
   value?: string;
@@ -18,6 +21,7 @@ export interface ComboboxProps {
   className?: string;
 }
 
+/** React component rendering combobox. */
 export function Combobox({
   options,
   value,

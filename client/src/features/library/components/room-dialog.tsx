@@ -1,3 +1,4 @@
+// React component for room-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -25,6 +26,7 @@ interface RoomDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering room dialog. */
 export function RoomDialog({
   open,
   onOpenChange,

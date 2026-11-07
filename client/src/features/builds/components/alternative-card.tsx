@@ -1,3 +1,4 @@
+// React component for alternative-card.
 'use client';
 
 import Link from 'next/link';
@@ -19,6 +20,7 @@ interface AlternativeCardProps {
   isComparingFull?: boolean;
 }
 
+/** React component rendering alternative card. */
 export function AlternativeCard({
   version,
   projectId,

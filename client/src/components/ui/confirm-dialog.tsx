@@ -1,8 +1,10 @@
+// React component for confirm-dialog.
 'use client';
 
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './dialog';
 import { Button } from './button';
 
+/** Interface defining structure for confirm dialog props. */
 export interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -14,6 +16,7 @@ export interface ConfirmDialogProps {
   onConfirm: () => void;
 }
 
+/** React component rendering confirm dialog. */
 export function ConfirmDialog({
   open,
   onOpenChange,

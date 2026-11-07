@@ -1,8 +1,10 @@
+// React component for public-layout.
 import * as React from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 
+/** React component rendering public layout. */
 export function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-[#0A0A0A] text-[#FAFAFA]">

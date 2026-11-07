@@ -1,3 +1,4 @@
+// Zustand store managing application state for institution.store.
 import { create } from 'zustand';
 import type { InstitutionStructureDto } from '@slotly/contracts';
 
@@ -19,6 +20,7 @@ interface InstitutionState {
   setSelectedSemesterId: (id: string | null) => void;
 }
 
+/** Zustand store managing use institution store state. */
 export const useInstitutionStore = create<InstitutionState>((set) => ({
   structure: null,
   loading: false,

@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -36,6 +37,7 @@ import {
   Trash2,
 } from 'lucide-react';
 
+/** React component rendering institutions page. */
 export default function InstitutionsPage() {
   const [structure, setStructure] = useState<InstitutionStructureDto | null>(null);
   const [loading, setLoading] = useState(true);

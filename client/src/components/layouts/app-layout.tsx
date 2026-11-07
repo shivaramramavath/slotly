@@ -1,3 +1,4 @@
+// React component for app-layout.
 'use client';
 
 import * as React from 'react';
@@ -9,11 +10,13 @@ import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/store/auth.store';
 import { authApi } from '@/features/auth/services/auth.api';
 
+/** Interface defining structure for app layout props. */
 export interface AppLayoutProps {
   children: React.ReactNode;
   activePath?: string;
 }
 
+/** React component rendering app layout. */
 export function AppLayout({ children, activePath = '/dashboard' }: AppLayoutProps) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);

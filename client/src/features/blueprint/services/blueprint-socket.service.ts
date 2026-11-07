@@ -1,3 +1,4 @@
+// Domain service orchestrating blueprint-socket.service business logic.
 import { io, Socket } from 'socket.io-client';
 import {
   SocketEvents,
@@ -13,8 +14,10 @@ import {
 } from '@slotly/contracts';
 import { getAccessToken } from '@/lib/api-client';
 
+/** Type alias for socket status. */
 export type SocketStatus = 'connected' | 'connecting' | 'disconnected' | 'reconnecting';
 
+/** Interface defining structure for blueprint socket callbacks. */
 export interface BlueprintSocketCallbacks {
   onStatusChange?: (status: SocketStatus) => void;
   onPresenceChange?: (payload: PresenceChangedPayload) => void;
@@ -28,6 +31,7 @@ export interface BlueprintSocketCallbacks {
   onNodeUpdated?: (payload: { nodeId: string; data: Record<string, unknown> }) => void;
 }
 
+/** Class implementing blueprint socket service. */
 export class BlueprintSocketService {
   private socket: Socket | null = null;
   private currentProjectId: string | null = null;

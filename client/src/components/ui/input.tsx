@@ -1,8 +1,11 @@
+// React component for input.
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+/** Type alias for input props. */
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
+/** Constant representing input. */
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type = 'text', ...props }, ref) => {
     return (

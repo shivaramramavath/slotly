@@ -1,3 +1,4 @@
+// React component for holiday-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -20,6 +21,7 @@ interface HolidayDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering holiday dialog. */
 export function HolidayDialog({
   open,
   onOpenChange,

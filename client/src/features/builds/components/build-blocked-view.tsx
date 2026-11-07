@@ -1,3 +1,4 @@
+// React component for build-blocked-view.
 'use client';
 
 import Link from 'next/link';
@@ -9,6 +10,7 @@ interface BuildBlockedViewProps {
   readiness: BlueprintReadinessDto;
 }
 
+/** React component rendering build blocked view. */
 export function BuildBlockedView({ projectId, readiness }: BuildBlockedViewProps) {
   return (
     <div className="rounded-xl border border-[#232323] bg-[#0A0A0A] p-6 text-[#FAFAFA]">

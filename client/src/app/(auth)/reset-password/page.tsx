@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import React, { useState, Suspense } from 'react';
@@ -106,6 +107,7 @@ function ResetPasswordForm() {
   );
 }
 
+/** React component rendering reset password page. */
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={<div className="p-8 text-center text-xs font-mono text-[#8A8A8A]">Loading reset form...</div>}>

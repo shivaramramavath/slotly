@@ -1,3 +1,4 @@
+// Core implementation for index in client/src/features/institution.
 export * from './services/institution.api';
 export * from './store/institution.store';
 export * from './components/structure-tree';

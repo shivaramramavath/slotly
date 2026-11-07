@@ -1,3 +1,4 @@
+// React component for export-dialog.
 'use client';
 
 import {
@@ -12,6 +13,7 @@ import { Download, FileJson, Image as ImageIcon } from 'lucide-react';
 import { useBlueprintStore } from '../../store/blueprint.store';
 import { toast } from '@/components/ui/toast';
 
+/** React component rendering export dialog. */
 export function ExportDialog() {
   const isExportOpen = useBlueprintStore((s) => s.isExportOpen);
   const setIsExportOpen = useBlueprintStore((s) => s.setIsExportOpen);

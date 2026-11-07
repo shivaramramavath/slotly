@@ -1,3 +1,4 @@
+// React component for semester-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -25,6 +26,7 @@ interface SemesterDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering semester dialog. */
 export function SemesterDialog({
   open,
   onOpenChange,

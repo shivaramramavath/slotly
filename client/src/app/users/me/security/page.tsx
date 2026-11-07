@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -31,6 +32,7 @@ import type {
 import { toast } from '@/components/ui/toast';
 import { Shield, Key, Smartphone, History, Check, Copy } from 'lucide-react';
 
+/** React component rendering security settings page. */
 export default function SecuritySettingsPage() {
   const [overview, setOverview] = useState<SecurityOverview | null>(null);
   const [sessions, setSessions] = useState<SessionDto[]>([]);

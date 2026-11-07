@@ -1,9 +1,11 @@
+// Custom React hook for use-permission.
 'use client';
 
 import { useAuthStore } from '../store/auth.store';
 import { Permission, RolePermissions } from '@slotly/contracts';
 import type { UserRole } from '@slotly/contracts';
 
+/** Custom React hook for use permission. */
 export function usePermission() {
   const user = useAuthStore((s) => s.user);
 

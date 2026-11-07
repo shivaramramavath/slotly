@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import React, { useState } from 'react';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { authApi } from '@/features/auth/services/auth.api';
 import { toast } from '@/components/ui/toast';
 
+/** React component rendering register page. */
 export default function RegisterPage() {
   const router = useRouter();
 

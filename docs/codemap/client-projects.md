@@ -1,18 +1,18 @@
 # Client Projects Feature Code Map
 
 ### `client/src/features/projects/components/project-status-badge.tsx`
-*(no description)*
+*React component for project-status-badge.*
 
-- **Interface** `ProjectStatusBadgeProps`
-- **Component** `ProjectStatusBadge({ status }: import("E:/Shiva Ram/Projects/slotly/client/src/features/projects/components/project-status-badge").ProjectStatusBadgeProps)`
+- **Interface** `ProjectStatusBadgeProps` - Interface defining structure for project status badge props.
+- **Component** `ProjectStatusBadge({ status }: import("E:/Shiva Ram/Projects/slotly/client/src/features/projects/components/project-status-badge").ProjectStatusBadgeProps)` - React component rendering project status badge.
 
 ### `client/src/features/projects/services/blueprint.api.ts`
-*(no description)*
+*Domain service orchestrating blueprint.api business logic.*
 
-- **Const** `blueprintApi`: `{ getGraph(projectId: string): Promise<{ revisi...`
+- **Const** `blueprintApi`: `{ getGraph(projectId: string): Promise<{ revisi...` - Constant representing blueprint api.
 
 ### `client/src/features/projects/services/projects.api.ts`
-*(no description)*
+*Domain service orchestrating projects.api business logic.*
 
-- **Const** `projectsApi`: `{ listProjects(params?: { status?: string | und...`
+- **Const** `projectsApi`: `{ listProjects(params?: { status?: string | und...` - Constant representing projects api.
 

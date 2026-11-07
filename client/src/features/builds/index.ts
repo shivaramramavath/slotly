@@ -1,3 +1,4 @@
+// Core implementation for index in client/src/features/builds.
 export * from './components/build-view';
 export * from './components/build-blocked-view';
 export * from './components/build-config-card';

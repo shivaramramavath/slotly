@@ -1,3 +1,4 @@
+// React component for save-template-dialog.
 'use client';
 
 import { useState } from 'react';
@@ -15,6 +16,7 @@ import { useBlueprintStore } from '../../store/blueprint.store';
 import { blueprintApi } from '@/features/projects/services/blueprint.api';
 import { toast } from '@/components/ui/toast';
 
+/** React component rendering save template dialog. */
 export function SaveTemplateDialog() {
   const isSaveTemplateOpen = useBlueprintStore((s) => s.isSaveTemplateOpen);
   const setIsSaveTemplateOpen = useBlueprintStore((s) => s.setIsSaveTemplateOpen);

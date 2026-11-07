@@ -1,3 +1,4 @@
+// React component for academic-year-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -24,6 +25,7 @@ interface AcademicYearDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering academic year dialog. */
 export function AcademicYearDialog({
   open,
   onOpenChange,

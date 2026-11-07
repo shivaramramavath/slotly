@@ -1,3 +1,4 @@
+// React component for faculty-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -26,6 +27,7 @@ interface FacultyDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering faculty dialog. */
 export function FacultyDialog({
   open,
   onOpenChange,

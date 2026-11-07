@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import { use, useState } from 'react';
@@ -36,6 +37,7 @@ const DAYS_OF_WEEK = [
   { id: 0, label: 'Sun' },
 ];
 
+/** React component rendering project settings page. */
 export default function ProjectSettingsPage({
   params,
 }: {

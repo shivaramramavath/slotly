@@ -1,3 +1,4 @@
+// React component for department-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -21,6 +22,7 @@ interface DepartmentDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering department dialog. */
 export function DepartmentDialog({
   open,
   onOpenChange,

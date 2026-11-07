@@ -1,3 +1,4 @@
+// React component for build-view.
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -21,6 +22,7 @@ interface BuildViewProps {
   projectId: string;
 }
 
+/** React component rendering build view. */
 export function BuildView({ projectId }: BuildViewProps) {
   const {
     status,

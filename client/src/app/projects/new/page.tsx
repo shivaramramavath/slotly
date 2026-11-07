@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import { useState } from 'react';
@@ -33,6 +34,7 @@ const DAYS_OF_WEEK = [
   { id: 0, label: 'Sun' },
 ];
 
+/** React component rendering new project wizard page. */
 export default function NewProjectWizardPage() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);

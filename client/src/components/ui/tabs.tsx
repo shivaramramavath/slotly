@@ -1,3 +1,4 @@
+// React component for tabs.
 'use client';
 
 import * as React from 'react';
@@ -10,6 +11,7 @@ interface TabsContextValue {
 
 const TabsContext = React.createContext<TabsContextValue | null>(null);
 
+/** Interface defining structure for tabs props. */
 export interface TabsProps {
   value?: string;
   defaultValue?: string;
@@ -18,6 +20,7 @@ export interface TabsProps {
   className?: string;
 }
 
+/** React component rendering tabs. */
 export function Tabs({
   value: controlledValue,
   defaultValue = '',
@@ -43,6 +46,7 @@ export function Tabs({
   );
 }
 
+/** React component rendering tabs list. */
 export function TabsList({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
@@ -55,10 +59,12 @@ export function TabsList({ className, ...props }: React.HTMLAttributes<HTMLDivEl
   );
 }
 
+/** Interface defining structure for tabs trigger props. */
 export interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   value: string;
 }
 
+/** React component rendering tabs trigger. */
 export function TabsTrigger({ value, className, children, ...props }: TabsTriggerProps) {
   const context = React.useContext(TabsContext);
   if (!context) throw new Error('TabsTrigger must be used within Tabs');
@@ -81,10 +87,12 @@ export function TabsTrigger({ value, className, children, ...props }: TabsTrigge
   );
 }
 
+/** Interface defining structure for tabs content props. */
 export interface TabsContentProps extends React.HTMLAttributes<HTMLDivElement> {
   value: string;
 }
 
+/** React component rendering tabs content. */
 export function TabsContent({ value, className, children, ...props }: TabsContentProps) {
   const context = React.useContext(TabsContext);
   if (!context) throw new Error('TabsContent must be used within Tabs');

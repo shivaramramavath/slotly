@@ -1,3 +1,4 @@
+// Custom React hook for use-guided-mode.
 import { useCallback } from 'react';
 import type { BlueprintCanvasNode } from '../types/canvas.types';
 import type { BlueprintNodeType } from '@slotly/contracts';
@@ -18,6 +19,7 @@ const HIERARCHY_ORDER: BlueprintNodeType[] = [
   'room',
 ];
 
+/** Custom React hook for use guided mode. */
 export function useGuidedMode() {
   const nodes = useBlueprintStore((s) => s.nodes);
   const selectNode = useBlueprintStore((s) => s.selectNode);

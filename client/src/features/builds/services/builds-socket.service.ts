@@ -1,13 +1,16 @@
+// Domain service orchestrating builds-socket.service business logic.
 import { io, Socket } from 'socket.io-client';
 import type { BuildProgressPayload } from '@slotly/contracts';
 import { getAccessToken } from '@/lib/api-client';
 
+/** Type alias for build socket status. */
 export type BuildSocketStatus =
   | 'connected'
   | 'connecting'
   | 'disconnected'
   | 'reconnecting';
 
+/** Interface defining structure for builds socket callbacks. */
 export interface BuildsSocketCallbacks {
   onStatusChange?: (status: BuildSocketStatus) => void;
   onProgress?: (payload: BuildProgressPayload) => void;
@@ -15,6 +18,7 @@ export interface BuildsSocketCallbacks {
   onFailed?: (payload: BuildProgressPayload) => void;
 }
 
+/** Class implementing builds socket service. */
 export class BuildsSocketService {
   private socket: Socket | null = null;
   private currentProjectId: string | null = null;

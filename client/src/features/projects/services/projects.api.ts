@@ -1,3 +1,4 @@
+// Domain service orchestrating projects.api business logic.
 import { apiClient } from '@/lib/api-client';
 import type {
   CreateProjectDto,
@@ -6,6 +7,7 @@ import type {
   UpdateProjectDto,
 } from '@slotly/contracts';
 
+/** Constant representing projects api. */
 export const projectsApi = {
   async listProjects(params?: {
     status?: string | undefined;

@@ -1,3 +1,4 @@
+// React component for snapshots-dialog.
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,6 +22,7 @@ interface SnapshotsDialogProps {
   onSnapshotRestored: () => Promise<void>;
 }
 
+/** React component rendering snapshots dialog. */
 export function SnapshotsDialog({ onSnapshotRestored }: SnapshotsDialogProps) {
   const isSnapshotsOpen = useBlueprintStore((s) => s.isSnapshotsOpen);
   const setIsSnapshotsOpen = useBlueprintStore((s) => s.setIsSnapshotsOpen);

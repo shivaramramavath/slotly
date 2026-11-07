@@ -1,3 +1,4 @@
+// Custom React hook for use-blueprint-layout.
 import { useCallback, useRef } from 'react';
 import dagre from 'dagre';
 import type { BlueprintCanvasNode, BlueprintCanvasEdge, LayoutDirection, LayoutAlgorithm } from '../types/canvas.types';
@@ -191,6 +192,7 @@ function getLayoutedElements(
   return { nodes: avoidOverlapsHelper(layoutedNodes), edges: edgesList };
 }
 
+/** Custom React hook for use blueprint layout. */
 export function useBlueprintLayout() {
   const previousPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const nodes = useBlueprintStore((s) => s.nodes);

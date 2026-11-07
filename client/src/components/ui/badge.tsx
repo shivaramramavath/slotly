@@ -1,10 +1,13 @@
+// React component for badge.
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+/** Interface defining structure for badge props. */
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: 'green' | 'yellow' | 'red' | 'neutral';
 }
 
+/** React component rendering badge. */
 export function Badge({ className, variant = 'neutral', ...props }: BadgeProps) {
   const variants = {
     green: 'border-[#22C55E]/30 bg-[#22C55E]/10 text-[#22C55E]',

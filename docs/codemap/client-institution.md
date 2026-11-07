@@ -1,7 +1,7 @@
 # Client Institution Feature Code Map
 
 ### `client/src/features/institution/components/academic-year-dialog.tsx`
-*(no description)*
+*React component for academic-year-dialog.*
 
 - **Component** `AcademicYearDialog({
   open,
@@ -10,38 +10,38 @@
   programs,
   defaultProgramId,
   onSuccess,
-}: AcademicYearDialogProps)`
+}: AcademicYearDialogProps)` - React component rendering academic year dialog.
 
 ### `client/src/features/institution/components/department-dialog.tsx`
-*(no description)*
+*React component for department-dialog.*
 
 - **Component** `DepartmentDialog({
   open,
   onOpenChange,
   department,
   onSuccess,
-}: DepartmentDialogProps)`
+}: DepartmentDialogProps)` - React component rendering department dialog.
 
 ### `client/src/features/institution/components/holiday-calendar.tsx`
-*(no description)*
+*React component for holiday-calendar.*
 
 - **Component** `HolidayCalendar({
   holidays,
   onAddHoliday,
   onDeleteHoliday,
-}: HolidayCalendarProps)`
+}: HolidayCalendarProps)` - React component rendering holiday calendar.
 
 ### `client/src/features/institution/components/holiday-dialog.tsx`
-*(no description)*
+*React component for holiday-dialog.*
 
 - **Component** `HolidayDialog({
   open,
   onOpenChange,
   onSuccess,
-}: HolidayDialogProps)`
+}: HolidayDialogProps)` - React component rendering holiday dialog.
 
 ### `client/src/features/institution/components/program-dialog.tsx`
-*(no description)*
+*React component for program-dialog.*
 
 - **Component** `ProgramDialog({
   open,
@@ -50,10 +50,10 @@
   departments,
   defaultDepartmentId,
   onSuccess,
-}: ProgramDialogProps)`
+}: ProgramDialogProps)` - React component rendering program dialog.
 
 ### `client/src/features/institution/components/section-dialog.tsx`
-*(no description)*
+*React component for section-dialog.*
 
 - **Component** `SectionDialog({
   open,
@@ -62,10 +62,10 @@
   semesters,
   defaultSemesterId,
   onSuccess,
-}: SectionDialogProps)`
+}: SectionDialogProps)` - React component rendering section dialog.
 
 ### `client/src/features/institution/components/semester-dialog.tsx`
-*(no description)*
+*React component for semester-dialog.*
 
 - **Component** `SemesterDialog({
   open,
@@ -74,10 +74,10 @@
   academicYears,
   defaultAcademicYearId,
   onSuccess,
-}: SemesterDialogProps)`
+}: SemesterDialogProps)` - React component rendering semester dialog.
 
 ### `client/src/features/institution/components/structure-tree.tsx`
-*(no description)*
+*React component for structure-tree.*
 
 - **Component** `StructureTree({
   departments,
@@ -91,25 +91,25 @@
   onDeleteYear,
   onDeleteSemester,
   onDeleteSection,
-}: StructureTreeProps)`
+}: StructureTreeProps)` - React component rendering structure tree.
 
 ### `client/src/features/institution/components/working-days-config.tsx`
-*(no description)*
+*React component for working-days-config.*
 
-- **Component** `WorkingDaysConfig({ institution, onSuccess }: WorkingDaysConfigProps)`
+- **Component** `WorkingDaysConfig({ institution, onSuccess }: WorkingDaysConfigProps)` - React component rendering working days config.
 
 ### `client/src/features/institution/index.ts`
-*(no description)*
+*Core implementation for index in client/src/features/institution.*
 
 *(No public exports)*
 
 ### `client/src/features/institution/services/institution.api.ts`
-*(no description)*
+*Domain service orchestrating institution.api business logic.*
 
-- **Const** `institutionApi`: `{ getStructure(institutionId?: string | undefin...`
+- **Const** `institutionApi`: `{ getStructure(institutionId?: string | undefin...` - Constant representing institution api.
 
 ### `client/src/features/institution/store/institution.store.ts`
-*(no description)*
+*Zustand store managing application state for institution.store.*
 
-- **Zustand Store** `useInstitutionStore` (actions: setStructure, setLoading, setActiveTab, setSelectedDepartmentId, setSelectedProgramId, setSelectedAcademicYearId, setSelectedSemesterId)
+- **Zustand Store** `useInstitutionStore` (actions: setStructure, setLoading, setActiveTab, setSelectedDepartmentId, setSelectedProgramId, setSelectedAcademicYearId, setSelectedSemesterId) - Zustand store managing use institution store state.
 

@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import Link from 'next/link';
@@ -11,6 +12,7 @@ import { authApi } from '@/features/auth/services/auth.api';
 import { toast } from '@/components/ui/toast';
 import { Shield, KeyRound, LogOut } from 'lucide-react';
 
+/** React component rendering profile page. */
 export default function ProfilePage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);

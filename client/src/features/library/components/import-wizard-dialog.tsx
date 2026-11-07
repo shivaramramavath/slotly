@@ -1,3 +1,4 @@
+// React component for import-wizard-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -23,6 +24,7 @@ interface ImportWizardDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering import wizard dialog. */
 export function ImportWizardDialog({
   open,
   onOpenChange,

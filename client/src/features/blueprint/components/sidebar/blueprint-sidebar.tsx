@@ -1,3 +1,4 @@
+// React component for blueprint-sidebar.
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -476,6 +477,7 @@ function NodeConfigForm({ node, onUpdateConfig, recommendations }: NodeConfigFor
   );
 }
 
+/** React component rendering blueprint sidebar. */
 export function BlueprintSidebar({ projectId, onUpdateConfig }: BlueprintSidebarProps) {
   const selectedNodeId = useBlueprintStore((s) => s.selectedNodeId);
   const nodes = useBlueprintStore((s) => s.nodes);

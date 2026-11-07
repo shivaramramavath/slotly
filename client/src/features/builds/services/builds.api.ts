@@ -1,3 +1,4 @@
+// Domain service orchestrating builds.api business logic.
 import { apiClient } from '@/lib/api-client';
 import type {
   CreateBuildDto,
@@ -5,6 +6,7 @@ import type {
   BlueprintReadinessDto,
 } from '@slotly/contracts';
 
+/** Constant representing builds api. */
 export const buildsApi = {
   async startBuild(
     projectId: string,

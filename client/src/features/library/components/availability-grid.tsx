@@ -1,3 +1,4 @@
+// React component for availability-grid.
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ interface AvailabilityGridProps {
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+/** React component rendering availability grid. */
 export function AvailabilityGrid({
   value,
   onChange,

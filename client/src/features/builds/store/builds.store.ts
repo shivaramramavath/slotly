@@ -1,3 +1,4 @@
+// Zustand store managing application state for builds.store.
 import { create } from 'zustand';
 import type {
   BuildProgressPayload,
@@ -7,6 +8,7 @@ import type {
   ScheduleVersionDto,
 } from '@slotly/contracts';
 
+/** Interface defining structure for build log entry. */
 export interface BuildLogEntry {
   id: string;
   timestamp: string;
@@ -14,6 +16,7 @@ export interface BuildLogEntry {
   message: string;
 }
 
+/** Interface defining structure for builds state. */
 export interface BuildsState {
   projectId: string | null;
   status: 'idle' | 'building' | 'completed' | 'failed';
@@ -45,6 +48,7 @@ export interface BuildsState {
   resetLogs: () => void;
 }
 
+/** Zustand store managing use builds store state. */
 export const useBuildsStore = create<BuildsState>((set, get) => ({
   projectId: null,
   status: 'idle',

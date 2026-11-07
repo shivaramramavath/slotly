@@ -1,3 +1,4 @@
+// React component for shortcuts-dialog.
 'use client';
 
 import {
@@ -28,6 +29,7 @@ const SHORTCUTS = [
   { keys: ['?'], description: 'Open shortcuts cheat sheet' },
 ];
 
+/** React component rendering shortcuts dialog. */
 export function ShortcutsDialog() {
   const isShortcutsOpen = useBlueprintStore((s) => s.isShortcutsOpen);
   const setIsShortcutsOpen = useBlueprintStore((s) => s.setIsShortcutsOpen);

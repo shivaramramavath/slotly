@@ -1,3 +1,4 @@
+// Zustand store managing application state for blueprint.store.
 import { create } from 'zustand';
 import type {
   BlueprintCanvasNode,
@@ -154,6 +155,7 @@ function dtoToCanvasNode(dto: BlueprintNodeDto): BlueprintCanvasNode {
   };
 }
 
+/** Zustand store managing use blueprint store state. */
 export const useBlueprintStore = create<BlueprintState>((set, get) => ({
   projectId: '',
   revision: 0,
