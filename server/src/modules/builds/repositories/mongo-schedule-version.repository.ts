@@ -1,3 +1,4 @@
+// Database repository managing mongo-schedule-version.repository persistence.
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,6 +9,7 @@ import {
 import type { IScheduleVersionRepository } from './schedule-version.repository.interface';
 import type { ScheduleVersionDto } from '@slotly/contracts';
 
+/** Injectable service providing mongo schedule version repository logic. */
 @Injectable()
 export class MongoScheduleVersionRepository implements IScheduleVersionRepository {
   constructor(

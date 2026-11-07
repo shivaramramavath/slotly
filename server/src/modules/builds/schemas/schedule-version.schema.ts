@@ -1,3 +1,4 @@
+// Data schema and persistence model for schedule-version.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import type {
@@ -7,8 +8,10 @@ import type {
 } from '@slotly/contracts';
 import type { Slot, Violation } from '../../engine/core/types';
 
+/** Type alias for schedule version document. */
 export type ScheduleVersionDocument = ScheduleVersion & Document;
 
+/** Class implementing schedule version. */
 @Schema({ timestamps: true, collection: 'schedule_versions' })
 export class ScheduleVersion {
   @Prop({ required: true, index: true })
@@ -48,6 +51,7 @@ export class ScheduleVersion {
   updatedAt?: Date;
 }
 
+/** Zod schema validating schedule version. */
 export const ScheduleVersionSchema =
   SchemaFactory.createForClass(ScheduleVersion);
 

@@ -1,3 +1,4 @@
+// Domain service orchestrating build.facade business logic.
 import {
   Injectable,
   Inject,
@@ -19,6 +20,7 @@ import type { IScheduleVersionRepository } from '../repositories/schedule-versio
 import { EventBus } from '../../../common/events/event-bus.service';
 import { AuditService } from '../../../common/audit/audit.service';
 
+/** Injectable service providing build facade logic. */
 @Injectable()
 export class BuildFacade {
   private readonly logger = new Logger(BuildFacade.name);

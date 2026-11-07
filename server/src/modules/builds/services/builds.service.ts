@@ -1,3 +1,4 @@
+// Domain service orchestrating builds.service business logic.
 import { Injectable, Inject, ConflictException, Logger } from '@nestjs/common';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
@@ -7,8 +8,10 @@ import { SCHEDULE_VERSION_REPOSITORY } from '../repositories/schedule-version.re
 import type { IScheduleVersionRepository } from '../repositories/schedule-version.repository.interface';
 import type { CreateBuildDto, ScheduleVersionDto } from '@slotly/contracts';
 
+/** Constant representing builds queue. */
 export const BUILDS_QUEUE = 'builds';
 
+/** Injectable service providing builds service logic. */
 @Injectable()
 export class BuildsService {
   private readonly logger = new Logger(BuildsService.name);

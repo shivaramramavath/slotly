@@ -1,3 +1,4 @@
+// Core implementation for builds.module in server/src/modules/builds.
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
@@ -20,6 +21,7 @@ import { AuthModule } from '../auth/auth.module';
 import { AuditModule } from '../../common/audit/audit.module';
 import { EventBus } from '../../common/events/event-bus.service';
 
+/** Class implementing builds module. */
 @Module({
   imports: [
     MongooseModule.forFeature([

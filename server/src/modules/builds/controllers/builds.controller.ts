@@ -1,3 +1,4 @@
+// HTTP controller handling builds.controller endpoints.
 import {
   Body,
   Controller,
@@ -15,6 +16,7 @@ import { RequirePermissions } from '../../../common/rbac/roles.decorator';
 import { BuildsService } from '../services/builds.service';
 import type { CreateBuildDto, ScheduleVersionDto } from '@slotly/contracts';
 
+/** Controller handling builds controller HTTP endpoints. */
 @Controller()
 @UseGuards(AuthGuard, PermissionsGuard)
 export class BuildsController {

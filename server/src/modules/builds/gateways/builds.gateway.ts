@@ -1,3 +1,4 @@
+// WebSocket gateway managing real-time events for builds.gateway.
 import {
   ConnectedSocket,
   MessageBody,
@@ -15,6 +16,7 @@ import type { BuildProgressPayload, UserRole } from '@slotly/contracts';
 import { SESSIONS_SERVICE } from '../../auth/services/sessions.service';
 import type { SessionsService } from '../../auth/services/sessions.service';
 
+/** Interface defining structure for socket user data. */
 export interface SocketUserData {
   id: string;
   role: UserRole;
@@ -22,10 +24,12 @@ export interface SocketUserData {
   name: string;
 }
 
+/** Interface defining structure for socket data. */
 export interface SocketData {
   user?: SocketUserData;
 }
 
+/** Type alias for authenticated socket. */
 export type AuthenticatedSocket = Socket<
   DefaultEventsMap,
   DefaultEventsMap,
@@ -33,6 +37,7 @@ export type AuthenticatedSocket = Socket<
   SocketData
 >;
 
+/** WebSocket gateway handling builds gateway real-time events. */
 @WebSocketGateway({
   namespace: '/builds',
   cors: {

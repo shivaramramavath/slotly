@@ -1,3 +1,4 @@
+// Database repository managing cached-schedule-version.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
@@ -5,6 +6,7 @@ import type { IScheduleVersionRepository } from './schedule-version.repository.i
 import type { ScheduleVersionDto } from '@slotly/contracts';
 import { MongoScheduleVersionRepository } from './mongo-schedule-version.repository';
 
+/** Injectable service providing cached schedule version repository logic. */
 @Injectable()
 export class CachedScheduleVersionRepository implements IScheduleVersionRepository {
   constructor(
