@@ -1,9 +1,12 @@
+// Data schema and persistence model for faculty.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import type { SlotCoordinate } from '@slotly/contracts';
 
+/** Type alias for faculty document. */
 export type FacultyDocument = Faculty & Document;
 
+/** Class implementing faculty. */
 @Schema({ timestamps: true, collection: 'faculties' })
 export class Faculty {
   id?: string | undefined;
@@ -62,6 +65,7 @@ export class Faculty {
   deletedAt?: Date | undefined;
 }
 
+/** Zod schema validating faculty. */
 export const FacultySchema = SchemaFactory.createForClass(Faculty);
 FacultySchema.index({ institutionId: 1, code: 1 }, { unique: true });
 FacultySchema.index({ institutionId: 1, departmentId: 1 });

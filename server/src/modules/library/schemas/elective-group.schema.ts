@@ -1,8 +1,11 @@
+// Data schema and persistence model for elective-group.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
+/** Type alias for elective group document. */
 export type ElectiveGroupDocument = ElectiveGroup & Document;
 
+/** Class implementing elective group. */
 @Schema({ timestamps: true, collection: 'elective_groups' })
 export class ElectiveGroup {
   id?: string | undefined;
@@ -30,6 +33,7 @@ export class ElectiveGroup {
   deletedAt?: Date | undefined;
 }
 
+/** Zod schema validating elective group. */
 export const ElectiveGroupSchema = SchemaFactory.createForClass(ElectiveGroup);
 ElectiveGroupSchema.index({ institutionId: 1, name: 1 });
 ElectiveGroupSchema.index({ institutionId: 1, isDeleted: 1 });

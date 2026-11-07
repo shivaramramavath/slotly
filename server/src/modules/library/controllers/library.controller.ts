@@ -1,3 +1,4 @@
+// HTTP controller handling library.controller endpoints.
 import {
   Controller,
   Get,
@@ -54,6 +55,7 @@ import { RequirePermissions } from '../../../common/rbac/roles.decorator';
 import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
 import { LibraryService } from '../services/library.service';
 
+/** Controller handling library controller HTTP endpoints. */
 @Controller('library')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class LibraryController {

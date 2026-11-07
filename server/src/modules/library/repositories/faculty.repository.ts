@@ -1,3 +1,4 @@
+// Database repository managing faculty.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,8 +9,10 @@ import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import { Faculty, FacultyDocument } from '../schemas/faculty.schema';
 
+/** Constant representing faculty repository. */
 export const FACULTY_REPOSITORY = Symbol('FACULTY_REPOSITORY');
 
+/** Interface defining structure for faculty filter options. */
 export interface FacultyFilterOptions {
   departmentId?: string;
   archived?: boolean;
@@ -18,6 +21,7 @@ export interface FacultyFilterOptions {
   limit?: number;
 }
 
+/** Interface defining structure for faculty repository. */
 export interface FacultyRepository extends BaseRepository<Faculty> {
   findByInstitution(
     institutionId: string,
@@ -33,6 +37,7 @@ export interface FacultyRepository extends BaseRepository<Faculty> {
   countByInstitution(institutionId: string): Promise<number>;
 }
 
+/** Injectable service providing mongo faculty repository logic. */
 @Injectable()
 export class MongoFacultyRepository
   extends MongoBaseRepository<Faculty, FacultyDocument>
@@ -135,6 +140,7 @@ export class MongoFacultyRepository
   }
 }
 
+/** Injectable service providing cached faculty repository logic. */
 @Injectable()
 export class CachedFacultyRepository
   extends CachedRepository<Faculty>

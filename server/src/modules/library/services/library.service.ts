@@ -1,3 +1,4 @@
+// Domain service orchestrating library.service business logic.
 import {
   Injectable,
   Inject,
@@ -62,6 +63,7 @@ function sanitizeUpdate<T>(dto: Record<string, unknown>): Partial<T> {
   return result as unknown as Partial<T>;
 }
 
+/** Injectable service providing library service logic. */
 @Injectable()
 export class LibraryService {
   constructor(

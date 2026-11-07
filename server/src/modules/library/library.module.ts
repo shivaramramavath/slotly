@@ -1,3 +1,4 @@
+// Core implementation for library.module in server/src/modules/library.
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CacheModule } from '../../common/cache/cache.module';
@@ -43,6 +44,7 @@ import { LibraryImportService } from './services/library-import.service';
 import { LibraryService } from './services/library.service';
 import { LibraryController } from './controllers/library.controller';
 
+/** Class implementing library module. */
 @Module({
   imports: [
     MongooseModule.forFeature([

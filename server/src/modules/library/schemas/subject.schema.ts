@@ -1,9 +1,12 @@
+// Data schema and persistence model for subject.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import type { SubjectType, SubjectRequirements } from '@slotly/contracts';
 
+/** Type alias for subject document. */
 export type SubjectDocument = Subject & Document;
 
+/** Class implementing subject. */
 @Schema({ timestamps: true, collection: 'subjects' })
 export class Subject {
   id?: string | undefined;
@@ -77,6 +80,7 @@ export class Subject {
   deletedAt?: Date | undefined;
 }
 
+/** Zod schema validating subject. */
 export const SubjectSchema = SchemaFactory.createForClass(Subject);
 SubjectSchema.index({ institutionId: 1, code: 1 }, { unique: true });
 SubjectSchema.index({ institutionId: 1, departmentId: 1 });

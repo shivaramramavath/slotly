@@ -1,3 +1,4 @@
+// Domain service orchestrating library-import.service business logic.
 import { Injectable } from '@nestjs/common';
 import type {
   ImportEntity,
@@ -16,6 +17,7 @@ function strVal(val: unknown): string {
   return '';
 }
 
+/** Injectable service providing library import service logic. */
 @Injectable()
 export class LibraryImportService {
   private readonly parsers: IFileParser[] = [
