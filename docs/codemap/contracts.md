@@ -163,6 +163,7 @@
 - **Type** `CreateBuildDto` - TypeScript type inferred from create build dto Zod schema.
 - **Type** `BuildJobStatus` - TypeScript type inferred from build job status Zod schema.
 - **Type** `BuildProgressPayload` - TypeScript type inferred from build progress payload Zod schema.
+- **Function** `normalizeAvailabilityMatrix(matrix: boolean[][] | null | undefined, daysCount: number, periodsCount: number)`: `boolean[][]` - Function normalizing availability matrix dimensions according to days and periods per day.
 - **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse` - Zod schema validating api error response.
 - **Zod Schema** `PaginationQuerySchema` -> `PaginationQuery` - Zod schema validating pagination query.
 - **Zod Schema** `RevisionConflictSchema` -> `RevisionConflict` - Zod schema validating revision conflict.

@@ -1,6 +1,9 @@
 // Core implementation for node-type.registry in server/src/modules/blueprint/model.
 import { Injectable } from '@nestjs/common';
-import type { BlueprintNodeType } from '@slotly/contracts';
+import {
+  type BlueprintNodeType,
+  normalizeAvailabilityMatrix,
+} from '@slotly/contracts';
 import type { CompletionRuleStrategy } from './completion-rule.strategy';
 import {
   AcademicYearCompletionRule,
@@ -141,9 +144,7 @@ export class NodeTypeRegistry {
       allowedParentTypes: [],
       defaultData: {
         name: '',
-        availability: Array.from({ length: 7 }, () =>
-          Array<boolean>(10).fill(true),
-        ),
+        availability: normalizeAvailabilityMatrix(undefined),
         maxHoursPerDay: 4,
         maxHoursPerWeek: 16,
       },

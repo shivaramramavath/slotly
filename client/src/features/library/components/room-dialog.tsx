@@ -16,7 +16,11 @@ import { Switch } from '@/components/ui/switch';
 import { AvailabilityGrid } from './availability-grid';
 import { libraryApi } from '../services/library.api';
 import { toast } from '@/components/ui/toast';
-import type { RoomDto, RoomType } from '@slotly/contracts';
+import {
+  type RoomDto,
+  type RoomType,
+  normalizeAvailabilityMatrix,
+} from '@slotly/contracts';
 import { Plus, X } from 'lucide-react';
 
 interface RoomDialogProps {
@@ -43,8 +47,8 @@ export function RoomDialog({
     room?.equipment || ['Projector'],
   );
   const [newEquipment, setNewEquipment] = useState('');
-  const [availability, setAvailability] = useState<boolean[][]>(
-    room?.availability || Array.from({ length: 7 }, () => Array(8).fill(true)),
+  const [availability, setAvailability] = useState<boolean[][]>(() =>
+    normalizeAvailabilityMatrix(room?.availability, 5, 7),
   );
   const [loading, setLoading] = useState(false);
   const [prevRoom, setPrevRoom] = useState(room);
@@ -63,8 +67,7 @@ export function RoomDialog({
       setShared(room.shared);
       setEquipmentList(room.equipment || []);
       setAvailability(
-        room.availability ||
-          Array.from({ length: 7 }, () => Array(8).fill(true)),
+        normalizeAvailabilityMatrix(room.availability, 5, 7),
       );
     } else {
       setCode('');

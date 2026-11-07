@@ -6,8 +6,8 @@
 - **Component** `AvailabilityGrid({
   value,
   onChange,
-  daysCount = 7,
-  periodsCount = 8,
+  daysCount = 5,
+  periodsCount = 7,
   readOnly = false,
 }: AvailabilityGridProps)` - React component rendering availability grid.
 

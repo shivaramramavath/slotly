@@ -834,6 +834,27 @@ export const FacultyDtoSchema = z.object({
 /** TypeScript type inferred from faculty dto Zod schema. */
 export type FacultyDto = z.infer<typeof FacultyDtoSchema>;
 
+/** Function normalizing availability matrix dimensions according to days and periods per day. */
+export function normalizeAvailabilityMatrix(
+  matrix?: boolean[][] | null,
+  daysCount = 5,
+  periodsCount = 7,
+): boolean[][] {
+  const dCount = Math.max(daysCount, 1);
+  const pCount = Math.max(periodsCount, 1);
+
+  return Array.from({ length: dCount }, (_, d) => {
+    const existingRow =
+      matrix && Array.isArray(matrix[d]) ? matrix[d] : undefined;
+    return Array.from({ length: pCount }, (_, p) => {
+      if (existingRow && typeof existingRow[p] === 'boolean') {
+        return existingRow[p];
+      }
+      return true;
+    });
+  });
+}
+
 /** Zod schema validating create faculty dto. */
 export const CreateFacultyDtoSchema = z.object({
   institutionId: z.string().optional(),
