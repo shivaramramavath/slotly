@@ -7,8 +7,15 @@ export type BlueprintHistoryDocument = BlueprintHistory & Document;
 export class BlueprintHistory {
   _id?: string;
   id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Project', required: true, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Project',
+    required: true,
+    index: true,
+  })
   projectId!: string;
 
   @Prop({ type: Number, required: true })
@@ -27,5 +34,6 @@ export class BlueprintHistory {
   timestamp!: Date;
 }
 
-export const BlueprintHistorySchema = SchemaFactory.createForClass(BlueprintHistory);
+export const BlueprintHistorySchema =
+  SchemaFactory.createForClass(BlueprintHistory);
 BlueprintHistorySchema.index({ projectId: 1, revision: -1 });

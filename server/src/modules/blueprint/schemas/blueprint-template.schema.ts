@@ -8,6 +8,8 @@ export type BlueprintTemplateDocument = BlueprintTemplate & Document;
 export class BlueprintTemplate {
   _id?: string;
   id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 
   @Prop({ required: true, trim: true })
   name!: string;
@@ -29,7 +31,12 @@ export class BlueprintTemplate {
   })
   visibility!: 'public' | 'institution' | 'private';
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Institution', default: null, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Institution',
+    default: null,
+    index: true,
+  })
   institutionId?: string | null;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', default: null })
@@ -39,4 +46,5 @@ export class BlueprintTemplate {
   anchorNodeType?: string | null;
 }
 
-export const BlueprintTemplateSchema = SchemaFactory.createForClass(BlueprintTemplate);
+export const BlueprintTemplateSchema =
+  SchemaFactory.createForClass(BlueprintTemplate);

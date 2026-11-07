@@ -291,5 +291,251 @@
 
 ---
 
+## Phase 5: Projects & The Blueprint Domain (Server Domain, No Canvas Yet)
+
+### What Was Built
+1. **Shared Contracts (`packages/contracts`):**
+   - **Projects:**
+     - `ProjectLifecycleStatusSchema`: State pattern values (`draft`, `building`, `ready`, `pending_approval`, `published`, `archived`).
+     - `ProjectStrictnessSchema`: (`strict`, `flexible`, `relaxed`).
+     - `ProjectTermSchema`: Term kinds (`odd`, `even`, `custom`), `startDate`, `endDate`, `academicYearLabel`.
+     - `ProjectSettingsSchema`: `days`, `periodsPerDay`, `periodDuration`, `startTime`, `breaks[]`, `perDayOverrides`.
+     - `ProjectDtoSchema`, `CreateProjectDtoSchema`, `UpdateProjectDtoSchema`, `DuplicateProjectDtoSchema`.
+   - **Blueprint & Gates:**
+     - `BlueprintNodeTypeSchema`: 11 node types (`institution`, `department`, `program`, `academicYear`, `semester`, `section`, `batch`, `subjectAssignment`, `electiveGroup`, `faculty`, `room`).
+     - `NodeStatusSchema`: (`complete`, `incomplete`, `blocked`).
+     - `MissingFieldSchema`: `{ field, reason }`.
+     - `BlueprintNodeDtoSchema` and `BlueprintEdgeDtoSchema`: Core schema model for the graph with positions, locks, visibility, metadata, constraints, status, and effectiveStatus.
+     - `BlueprintGraphDtoSchema`: Graph model with optimistic concurrency `revision`.
+     - `BlueprintOpSchema`: Atomic operations (`add_node`, `update_node`, `delete_node`, `add_edge`, `delete_edge`, `move_node`).
+     - `ApplyOperationsDtoSchema`: Client revision + operation list.
+     - `ReasonCodeSchema`: Exhaustive gate rejection codes (`PROJECT_LOCKED`, `UNAUTHORIZED`, `PARENT_NOT_FOUND`, `PARENT_TYPE_NOT_ALLOWED`, `PARENT_INCOMPLETE`, `SINGLE_PARENT_VIOLATION`, `CYCLE_DETECTED`, `DUPLICATE_NAME`, `CAPACITY_EXCEEDED`, `ENDPOINT_INCOMPLETE`, `NOT_QUALIFIED`, `INVALID_OPERATION`).
+     - `FixHintSchema`: `{ nodeId, field }`.
+     - `BatchOperationResultSchema`: `{ revision, applied[], skipped[] }`.
+     - `BlueprintReadinessDtoSchema`: Overall graph completion metrics, node counts, missing critical elements, readiness score (0-100), and solver readiness boolean.
+     - `BlueprintImpactDtoSchema`: Downstream affected nodes and cascade impact count for node modifications/deletions.
+     - `BlueprintRecommendationDtoSchema`: AI/heuristic recommendation structure with scores, target connections, and descriptions.
+     - `GraphTemplateDtoSchema`: Graph subtree templates with seeded starter kits.
+     - `BlueprintHistoryEntryDtoSchema`, `BlueprintSnapshotDtoSchema`, `BlueprintCommentDtoSchema`.
+   - **Permissions:**
+     - Added `PROJECT_ARCHIVE` to permission registry and updated `RolePermissions` for all roles.
+
+2. **Server Architecture (`server/src/modules/projects/` & `server/src/modules/blueprint/`):**
+   - **Project Lifecycle State Pattern (`ProjectState`):**
+     - `DraftState`, `BuildingState`, `ReadyState`, `PendingApprovalState`, `PublishedState`, `ArchivedState` managed via `ProjectStateFactory`. Enforces strict state transition rules (e.g., published and archived projects cannot be edited; published projects cannot be directly deleted).
+   - **NodeType Registry (Factory + Registry Pattern):**
+     - `NodeTypeRegistry` registering the 11 node types, each specifying `allowedParentTypes`, `defaultData`, `completionRule`, `constraintScope`, and `isResource` flag.
+   - **Completion Rules (Strategy Pattern):**
+     - Concrete strategies: `InstitutionCompletionRule`, `DepartmentCompletionRule`, `ProgramCompletionRule`, `AcademicYearCompletionRule`, `SemesterCompletionRule`, `SectionCompletionRule`, `BatchCompletionRule`, `SubjectAssignmentCompletionRule`, `ElectiveGroupCompletionRule`, `FacultyCompletionRule`, `RoomCompletionRule`.
+     - `CompletionService`: Computes node missing fields and status (`complete` vs `incomplete`). Evaluates ancestor tree regression (G3): when any ancestor is not complete, `effectiveStatus` becomes `blocked` down the entire descendant subtree. Recomputes status in topological order and caches in Redis (`slotly:project:{id}`).
+   - **GateChain (Chain of Responsibility Pattern):**
+     - Ordered chain of 11 validation gates:
+       1. `ProjectNotLockedGate`: Enforces project status mutability.
+       2. `PermissionGate`: Enforces RBAC permissions per operation.
+       3. `ParentExistsGate`: Ensures parent node exists in graph.
+       4. `ParentTypeAllowedGate`: Ensures child type is permitted under parent type.
+       5. `ParentCompleteGate` (G1 creation gate): Child node can only be created if its direct parent is `complete`.
+       6. `SingleParentGate`: Ensures nodes have at most one hierarchy parent edge.
+       7. `NoCycleGate`: Depth-first search cycle detection preventing cycles in hierarchy edges.
+       8. `DuplicateNameGate`: Prevents sibling nodes with identical names under the same parent container.
+       9. `CapacityGate`: Ensures sum of batch sizes does not exceed section capacity.
+       10. `ConnectionEndpointGate` (G2 connection gate): Requires both connection endpoints to be complete before creating edges.
+       11. `QualificationGate`: Validates faculty assignment against qualified subject IDs.
+     - Returns `{ allowed, reasonCode, message, fixHint }`.
+   - **Batch Operation Execution (`OperationService`):**
+     - Evaluates batches with topological ordering (parents processed before children).
+     - G6 Skip Cascade: When an operation fails a gate, all subsequent operations targeting or referencing that node or its descendants are skipped automatically with `PARENT_INCOMPLETE` / `INVALID_OPERATION`.
+     - In-memory graph staging before atomic persistence to MongoDB.
+   - **Impact Analyzer (`ImpactAnalyzerService`):**
+     - G4 Impact Cascade: Computes full downstream ripple effect of deleting or changing a node, identifying all affected child nodes, dependent assignments, and edges.
+   - **Constraint Inheritance Resolver (`ConstraintResolverService`):**
+     - G9 Constraint Inheritance: Traverses ancestor chain from Institution root to Batch leaf, applying hierarchical constraint inheritance with child override semantics.
+   - **Graph Hierarchy Builder (`GraphFromInstitutionBuilder`):**
+     - Builder pattern traversing Phase 3 institution structure (departments, programs, academic years, semesters, sections) and library resources to automatically construct a populated vertical blueprint graph.
+   - **Starter Kits & Templates (`TemplateService`):**
+     - Seeded templates: `School Kit` (K-12 grade/division hierarchy), `College Kit` (UG/PG semester/branch structure), `Lab-Heavy STEM Kit` (lab-intensive curriculum with equipment constraints).
+     - Supports template creation, listing, duplication, import, and subtree anchoring.
+   - **Heuristic Recommendations (`RecommendationsService`):**
+     - `FacultyRecommender`: Recommends optimal faculty based on qualifications and availability.
+     - `RoomRecommender`: Recommends rooms matching capacity and equipment specifications.
+     - `MissingConnectionDetector`: Flags orphaned nodes lacking hierarchy parents.
+     - `UnusedResourceDetector`: Flags registered faculty or rooms with no timetable assignments.
+   - **Readiness Calculation (`ReadinessService`):**
+     - Evaluates blueprint completeness score (0-100), counts node statuses (`complete`, `incomplete`, `blocked`), checks critical path requirements, and yields solver readiness.
+   - **Optimistic Concurrency & Caching:**
+     - Both project and blueprint writes require revision matching (`clientRevision` / `If-Match`), rejecting stale requests with `409 ConflictException` and `{ code: 'REVISION_CONFLICT', currentRevision, rejectedRevision, currentState }`.
+     - Redis cache-aside with tag-based invalidation (`project:{id}`).
+   - **Controllers:**
+     - `ProjectsController` (`/projects`): CRUD, list with filters/pagination, duplicate, archive.
+     - `BlueprintController` (`/projects/:projectId/blueprint`): Graph fetch, operations, readiness, node impact, history, snapshots, comments, recommendations, export/import.
+     - `TemplateController` (`/blueprint-templates`): Template list, details, apply, duplicate, export, import.
+
+3. **Client Architecture (No Canvas Yet):**
+   - **API Clients (`client/src/features/projects/services/`):**
+     - `projects.api.ts`: Typed client for project management, settings, list, duplicate, archive.
+     - `blueprint.api.ts`: Typed client for blueprint graph, operations, readiness, impact, history, snapshots, comments, and starter templates.
+   - **Pages & Components:**
+     - `/home`: Project dashboard shell with term summaries, quick links, and recent projects list.
+     - `/projects` (and `/dashboard` alias): Full project management view with search, status filters, lifecycle status badges, duplicate dialog, and archive dialog.
+     - `/projects/new`: 3-step project creation wizard:
+       1. Project Details & Term (kind, academic year, date range, strictness).
+       2. Source Selection (Blank slate, Auto-generate from Institution tree, Starter Kit).
+       3. Schedule Timing & Breaks (working days, periods per day, period duration, start time, recess/lunch break configuration).
+     - `/projects/[projectId]/settings`: Comprehensive project settings editor with General & Term tab, Schedule Timing & Breaks tab (including per-day overrides), and Danger Zone (archive/delete).
+     - `/blueprint-templates` (and `/kits` alias): Starter kits showcase with subtree inspector dialog and instant project instantiation.
+     - `ProjectStatusBadge`: Semantic color-coded badges strictly adhering to design rules (`#22C55E` ready/published, `#FACC15` draft/building, `#8A8A8A` pending_approval/archived).
+
+4. **Unit Tests (46 new tests across 6 test suites, monorepo total 97 tests passing):**
+   - `completion-rules.spec.ts`: Tests every CompletionRule strategy across all 11 node types.
+   - `gates.spec.ts`: Tests every gate in the GateChain (G1 creation gating, G2 connection gating, G7 duplicate naming, G8 capacity, qualification, cycles).
+   - `regression-propagation.spec.ts`: Tests G3 parent regression and blocked status cascade propagation down child subtrees.
+   - `operation-batch.spec.ts`: Tests topological sorting and G6 skip cascade behavior when operations fail.
+   - `constraint-resolver.spec.ts`: Tests G9 constraint inheritance from institution down to batches with leaf overrides.
+   - `impact-analyzer.spec.ts`: Tests G4 impact cascade reporting for deletion and updates.
+
+### Decisions Made
+- **Pure Server Domain First (No Canvas Yet):** Kept Phase 5 strictly focused on the core graph data structures, completion rules, gate chains, batch operation engine, and project lifecycle state machines on the server, paired with project management UI on the client, reserving the interactive React Flow visual canvas for Phase 6.
+- **Topological Operation Reordering:** When applying a batch of operations, additions are dynamically sorted by hierarchy depth so parent nodes are evaluated and persisted before child nodes, avoiding false parent-missing rejections during template applications.
+- **G6 Skip Cascade:** When an operation in a batch fails a gate check, subsequent operations that reference or target that node are automatically skipped with `PARENT_INCOMPLETE` without aborting the entire batch, returning a detailed `{ applied, skipped }` response.
+- **Optimistic Concurrency Revision Control:** Blueprint writes must match current revision. A revision conflict returns HTTP 409 carrying both the rejected and current revision alongside the complete current graph state so the client can resolve or overwrite.
+
+### What Was Skipped
+- Interactive React Flow / @xyflow canvas, custom node components, and visual drag-and-drop connections (scheduled for Phase 6: Blueprint Canvas).
+- Constraint solver engine and automated schedule generation (scheduled for Phase 7).
+
+---
+
+## Phase 6: Blueprint Canvas Core
+
+### What Was Built
+1. **Contracts Package (`@slotly/contracts`):**
+   - Added socket event constants and Zod schemas:
+     - Events: `PROJECT_JOIN`, `PROJECT_LEAVE`, `CURSOR_UPDATE`, `LOCK_NODE`, `UNLOCK_NODE`, `NODE_ADD`, `NODE_UPDATE`, `NODE_MOVE`, `NODE_DELETE`, `EDGE_ADD`, `EDGE_DELETE`, `PRESENCE_CHANGED`, `NODE_STATUS_CHANGED`, `OPS_APPLIED`, `NODE_LOCKED`, `NODE_UNLOCKED`, `REVISION_CONFLICT`.
+     - Typed payloads: `ProjectJoinPayload`, `ProjectLeavePayload`, `CursorUpdatePayload`, `NodeLockPayload`, `NodeUnlockPayload`, `PresenceUser`, `PresenceChangedPayload`, `NodeStatusChangedPayload`, `OpsAppliedPayload`, `NodeLockedPayload`, `NodeUnlockedPayload`, `RevisionConflictPayload`, `NodeMovePayload`, `NodeUpdatePayload`, `NodeAddPayload`, `NodeDeletePayload`, `EdgeAddPayload`, `EdgeDeletePayload`.
+   - Built to ESM, CJS, and DTS with `tsup`.
+
+2. **Server Architecture (WebSocket Gateway & Coalesced Write-Behind):**
+   - **`BlueprintGateway` (`/blueprint` namespace):**
+     - Handshake authentication validating short-lived JWT Bearer tokens and active session status in Redis via `SessionsService`.
+     - Multi-tenant room isolation with `project:{projectId}` room management.
+     - Role-based permissions guard (`DESIGNER` / `ADMIN` edit rights; `FACULTY` / `STUDENT` read-only).
+     - Ephemeral multi-user presence (`presence:changed`) with avatar color allocation and real-time cursor broadcasting.
+     - Collaborative node locking (`node:lock`, `node:unlock`, `node:locked`, `node:unlocked`) preventing concurrent edits on the same node.
+     - **Routing by Criticality:**
+       - *Critical Operations* (`node:add`, `node:delete`, `edge:add`, `edge:delete`): Evaluated synchronously through the server `GateChain` (`BlueprintService.applyOperations`), committed directly to MongoDB, cache invalidated, acknowledging with stable reason codes (`PARENT_MISSING`, `PARENT_INCOMPLETE`, `DUPLICATE_NAME`, `CAPACITY_EXCEEDED`, `CYCLE`, etc.) and `fixHint`, and broadcasting `ops:applied`.
+       - *Non-Critical Operations* (`node:move`, `node:update` autosave): Persisted immediately to Redis cache-aside for zero-latency peer updates, acknowledged instantly, enqueued to BullMQ write-behind queue with deterministic coalescing `jobId = node:${nodeId}`, recomputing completion status and broadcasting `node:status-changed` to all project collaborators.
+   - **`BlueprintWriteProcessor`:**
+     - Consumes BullMQ `sync-node` write-behind jobs, idempotently persisting coalesced node coordinates and configuration to MongoDB while decrementing the pending-writes consistency barrier counter.
+   - **Gateway Unit Tests (`blueprint-gateway.spec.ts` - 11 tests, monorepo total 108 tests passing):**
+     - Tests handshake presence and disconnect cleanups.
+     - Tests collaborative node lock acquisition, lock conflict rejection, and unlock broadcasts.
+     - Tests synchronous critical operations routing through the gate chain and rejection reason propagation.
+     - Tests Redis-first non-critical updates with write-behind job coalescing and completion regression status broadcasts.
+     - Tests processor persistence to MongoDB.
+
+3. **Client Architecture (`/projects/[projectId]/blueprint`):**
+   - **Core State Store (`useBlueprintStore` via Zustand):**
+     - Manages `nodes`, `edges`, `revision`, `layoutDirection`, `activeTab`, `presenceUsers`, `remoteCursors`, `lockedNodes`, `autosaveStatus`, `impactPreviewNode`, `regressionBanner`, `undoStack`, `redoStack`, and `fixHint`.
+     - Integrates Command pattern for undo/redo.
+   - **WebSocket Service & Hook (`useBlueprintSocket`):**
+     - Manages lifecycle of Socket.IO connection to `/blueprint` with automatic token handshake and exponential reconnect.
+     - Dispatches real-time events (`ops:applied`, `node:status-changed`, `presence:changed`, `node:locked`, `node:unlocked`, `revision:conflict`).
+   - **Visual Canvas (`BlueprintCanvas` via `@xyflow/react` + `dagre`):**
+     - Vertical hierarchy by default (`TB`), switchable to `LR`, `BT`, `RL`.
+     - MiniMap, controls, snap-to-grid (15x15), background grid, keyboard shortcuts (Delete, Ctrl+Z, Ctrl+Y).
+     - Remote cursors layer displaying collaborator movements in real time.
+     - Drag-and-drop support from the left node library palette.
+   - **Custom Node Factory (`NodeFactory` / `BlueprintNode`):**
+     - Custom renderers for all 11 node types (`institution`, `department`, `program`, `academicYear`, `semester`, `section`, `batch`, `subjectAssignment`, `electiveGroup`, `faculty`, `room`).
+     - Strict black-and-white aesthetic with thin 1px borders and semantic status rings:
+       - Green complete (`#22C55E`).
+       - Dashed yellow incomplete (`#FACC15`) with toggleable missing-fields checklist.
+       - Grey blocked (`#8A8A8A`) with "Parent incomplete" badge.
+     - Gating `+` add-child handle at node bottom that appears **only when the node is complete**, opening a dropdown of valid child types.
+     - Multi-user lock indicator badge.
+   - **Gating UX & Guided Mode:**
+     - `useGateValidation`: Mirrors server G1-G8 rules for client UI, providing disabled palette states with descriptive tooltip reasons (e.g., "Complete 'CSE Program' first") and validating connection handles.
+     - `useGuidedMode`: Implements G10 "Next step" algorithm that identifies the first incomplete node in hierarchy order, automatically focusing it in the canvas and opening the sidebar at the missing field.
+     - `ParentRegressionBanner`: Displays a persistent warning banner when an edit renders an ancestor incomplete, informing that descendants have become blocked.
+     - `ImpactPreviewDialog`: G4 delete confirmation modal computing full downstream ripple impact and displaying affected descendant nodes before cascade deletion.
+     - `ValidationPanel`: Slide-over health panel categorizing complete, incomplete, and blocked nodes with one-click "Go fix" jump navigation.
+   - **Right Configuration Sidebar (`BlueprintSidebar`):**
+     - Tabs for `Config`, `Constraints` (Phase 8 placeholder), and `Slotly AI` (Phase 10 placeholder).
+     - Dynamic forms per node type with required asterisks, inline validation, dirty tracking, Apply/Reset buttons, and `fixHint` highlight rings.
+     - Node selection state reset handled cleanly via keying (`key={selectedNode.id}`).
+
+### Decisions Made
+- **Pinning Socket Dependencies on NestJS 11:** Maintained `@nestjs/websockets@^11.0.1` and `@nestjs/platform-socket.io@^11.0.1` to align with the root NestJS 11 monorepo framework and preserve CommonJS Jest compatibility.
+- **Strict Generic Socket Data Typing:** Typed the server socket with `DefaultEventsMap` and `SocketData` to enforce strict TypeScript typing on authenticated user attributes (`client.data.user`), eliminating unsafe `any` assignments under ESLint.
+- **Key-Based Form Reset in React 19:** Utilized React 19 key-based remounting (`<NodeConfigForm key={selectedNode.id} ... />`) instead of `useEffect` setState synchronization for the node configuration form, preventing cascading render issues.
+- **Vertical Hierarchy Default with Animated Transitions:** Graph layout defaults to Dagre top-to-bottom (`TB`) ranking per `BLUEPRINT_RULES.md`, with animated `fitView` transitions upon switching to `LR`, `BT`, or `RL`.
+
+### What Was Skipped
+- Advanced designer tools, bulk generation, templates, snapshots, visual diff, align/distribute, containers/sub-flows, smart help recommendations, search/filter, and export/import (scheduled for Phase 7).
+- Timetable constraint solving engine execution and conflict detection (scheduled for Phase 8).
+
+---
+
+## Phase 7: Advanced Designer Features
+
+### What Was Built
+1. **Canvas & Editing Enhancements:**
+   - **Box Selection & Multi-Drag:** Enabled box drag selection (`selectionOnDrag`), multi-drag, and `Ctrl+A` select-all.
+   - **Smart Snapping & Align/Distribute:** Added `BlueprintFloatingAlignBar` activating whenever $\ge 2$ nodes are selected, providing alignment (Left, Center, Right, Top, Middle, Bottom), distribution (Horizontal, Vertical with equidistant spacing), and adjustable grid snapping (10px, 15px, 20px, 25px).
+   - **Keyboard Shortcuts (`?`):** Added `ShortcutsDialog` cheat sheet covering navigation, alignment, lock (`L`), hide (`H`), focus (`F`), duplicate (`Ctrl+D`), delete, undo/redo, and full-screen (`F11`).
+   - **Context Menu (`BlueprintContextMenu`):** Native right-click context menu offering Copy, Paste, Duplicate Subtree, Delete with G4 impact preview, Lock/Unlock, Hide/Show, Focus Mode, Comments, Save as Template, and Add Child.
+   - **Focus Mode & Visibility Controls:** Focus mode dims unselected graph branches with grayscale filtering; per-node hide/show toggles node visibility; per-node lock blocks drag and edit operations; canvas lock blocks all movements.
+   - **Subtree Copy, Paste & Duplicate:** Subtree duplicate and paste validate the target parent through the G1 gate chain (`effectiveStatus === 'complete'`), toast-notifying the exact reason code (`PARENT_INCOMPLETE`) if denied.
+   - **Bulk Add Children (`BulkAddDialog`):** Dialog for bulk generating standard academic batches (e.g., Sections A-D, Semesters 1-8, Batches B1-B3) under complete parent nodes.
+
+2. **Layout Engine (`useBlueprintLayout`):**
+   - Pure geometric layout engine supporting three distinct algorithms:
+     - **Hierarchical:** Standard top-to-bottom or left-to-right Dagre ranking.
+     - **Compact:** Reduced node and rank separation for dense term structures.
+     - **Department-Based:** Isolates separate department branches into distinct columns with institution top-centered and resource nodes aligned on the flank.
+   - **Overlap Avoidance (`avoidOverlaps`):** Continuous bounding-box collision detection and separation pushing intersecting nodes apart.
+   - **Layout Preview & Revert:** `saveSnapshotForReset()` and `resetLayout()` restore manual positions prior to layout calculation.
+
+3. **Sub-Flows & Container Groups:**
+   - Container node component `BlueprintGroupNode` (`blueprintGroup` type) for visually wrapping departments, programs, semesters, and sections.
+   - Collapsible sub-flows with completion summary pill (`X/Y Complete`), boundary movement dragging children, and context menu support.
+
+4. **History & Snapshots Persistence:**
+   - **History Timeline (`HistoryDialog`):** Audit log of all server revision operations with timestamps, operation types, and actor attribution.
+   - **Snapshots & Visual Diff (`SnapshotsDialog`):** Manual/automatic snapshot creation, instant restore (`POST .../snapshots/:id/restore`), and comparative visual diff modal displaying added, removed, and modified nodes between snapshot and current graph state.
+   - **Optimistic Concurrency Conflict Reconciliation (`RevisionConflictDialog`):** Automatic modal surfaced on server 409 or `revision:conflict` socket events offering "Keep Mine", "Take Theirs" (reloads server state), and "Review Differences".
+
+5. **Search, Filter & Viewport Navigation (`BlueprintSearchFilter`):**
+   - Search bar matching node labels, faculty codes, subject codes, departments, and room names.
+   - One-click viewport jump and centering (`fitBounds` / `setCenter`).
+   - Node type filter pills (`All`, `Section`, `Subject`, `Faculty`, `Room`) and "Hide Unrelated" toggle.
+
+6. **Templates, Import & Export:**
+   - **Templates (`TemplatesDialog` & `SaveTemplateDialog`):** Subtree extraction and template persistence with categories (`School`, `College`, `STEM`, `Custom`), versioning, and anchor node type verification.
+   - **Export (`ExportDialog`):** Client-side JSON backup download and vector SVG diagram generation with custom styled elements.
+   - **Import (`ImportDialog`):** JSON upload with client-side GateChain simulation preview tabulating applied elements and skipped items with reason codes.
+
+7. **Smart Help & Readiness:**
+   - **Smart Recommendations in `BlueprintSidebar`:** Integrates server recommendations service proposing qualified faculty for subjects with match reasoning, optimal rooms based on capacity and equipment, and unused resource / orphan connection flags.
+   - **Auto-Fix Safe Defaults:** "Fix automatically" button resolves missing required fields (e.g., default hours, capacity, codes) and updates node configuration with a single click.
+   - **Solver Readiness Gate (`ReadinessDialog`):** Comprehensive timetable readiness meter with health score percentage, category breakdowns, missing requirements checklist with "Go fix" jump links, and Build Schedule action gated strictly by G5.
+   - **Rich Node Badges:** Compact weekly availability matrix mini-grid rendered on faculty nodes; seating capacity on room nodes.
+
+8. **Collaboration Polish:**
+   - Threaded node comments dialog (`NodeCommentsDialog`) with `@mention` highlighting and instant posting.
+   - Real-time multi-user cursor tracking, presence avatars, and edit lock badges.
+
+### Decisions Made
+- **Pure Functional Layout Engine:** Structured the layout calculations (`calculateHierarchicalOrCompact`, `calculateDepartmentLayout`, `avoidOverlapsHelper`, `getLayoutedElements`) as pure functions outside React hooks to eliminate cyclic closures and avoid React 19 compiler hoisting issues.
+- **Client-Side Gate Simulation for Import:** Implemented a simulation phase in the Import dialog that verifies parent existence and completion before committing, presenting a clear summary table of valid vs skipped operations.
+- **Strict B&W Design Token Compliance:** Maintained monochrome `#0A0A0A` / `#111111` / `#232323` / `#FAFAFA` palette with accent indicators strictly constrained under 5% (`#22C55E` complete/valid, `#FACC15` warning/selected, `#EF4444` conflict/destructive, `#3B82F6` vector/info).
+
+### What Was Skipped
+- Timetable constraint solving engine, hard/soft constraint strategies, and worker solvers (scheduled for Phase 8).
+- Studio Grid timetable slot placement and drag-and-drop schedule editing (scheduled for Phase 9).
+
+---
+
 ## Next Steps
-- **Phase 5:** Blueprint Graph & Creation Gates (React Flow vertical hierarchy canvas, completion-gated child node creation, validation rules, drag-and-drop connections).
+- **Phase 8:** Constraint Solver Engine (Hard & soft constraint strategies, conflict detection, score calculators, BullMQ solver worker, timetable generation).
+

@@ -12,7 +12,6 @@ import {
   QualificationGate,
   SingleParentGate,
 } from '../gates/blueprint-gates';
-import type { GateContext } from '../gates/gate.interface';
 
 describe('Blueprint GateChain & Gates', () => {
   const registry = new NodeTypeRegistry();
@@ -88,7 +87,12 @@ describe('Blueprint GateChain & Gates', () => {
 
     it('should allow node addition when parent exists', () => {
       const res = gate.evaluate({
-        operation: { opId: '1', type: 'add_node', targetId: 'child_1', parentId: 'parent_1' },
+        operation: {
+          opId: '1',
+          type: 'add_node',
+          targetId: 'child_1',
+          parentId: 'parent_1',
+        },
         project: { id: 'p1', status: 'draft' },
         graph: {
           nodes: [
@@ -113,7 +117,12 @@ describe('Blueprint GateChain & Gates', () => {
 
     it('should reject node addition when parent does not exist', () => {
       const res = gate.evaluate({
-        operation: { opId: '1', type: 'add_node', targetId: 'child_1', parentId: 'nonexistent' },
+        operation: {
+          opId: '1',
+          type: 'add_node',
+          targetId: 'child_1',
+          parentId: 'nonexistent',
+        },
         project: { id: 'p1', status: 'draft' },
         graph: { nodes: [], edges: [] },
       });
@@ -244,7 +253,9 @@ describe('Blueprint GateChain & Gates', () => {
               locked: false,
               hidden: false,
               status: 'incomplete',
-              missing: [{ field: 'code', message: 'Institution code required' }],
+              missing: [
+                { field: 'code', message: 'Institution code required' },
+              ],
               effectiveStatus: 'incomplete',
             },
           ],
@@ -285,7 +296,15 @@ describe('Blueprint GateChain & Gates', () => {
               effectiveStatus: 'complete',
             },
           ],
-          edges: [{ id: 'edge_1', projectId: 'p1', source: 'parent_1', target: 'child_1', type: 'hierarchy' }],
+          edges: [
+            {
+              id: 'edge_1',
+              projectId: 'p1',
+              source: 'parent_1',
+              target: 'child_1',
+              type: 'hierarchy',
+            },
+          ],
         },
       });
       expect(res.allowed).toBe(false);

@@ -1,7 +1,18 @@
-import type { BlueprintNodeDto } from '@slotly/contracts';
+import type {
+  BlueprintNodeDto,
+  ProjectLifecycleStatus,
+} from '@slotly/contracts';
 import type { GateContext, GateResult, IGate } from './gate.interface';
 import { NodeTypeRegistry } from '../model/node-type.registry';
 import { ProjectStateFactory } from '../../projects/lifecycle/project-state.factory';
+
+function getNodeName(node?: BlueprintNodeDto | null, fallback = ''): string {
+  if (!node) return fallback;
+  const nameVal = node.data?.['name'];
+  return typeof nameVal === 'string' && nameVal.trim()
+    ? nameVal
+    : node.id || fallback;
+}
 
 export class ProjectNotLockedGate implements IGate {
   readonly name = 'ProjectNotLockedGate';
@@ -15,7 +26,9 @@ export class ProjectNotLockedGate implements IGate {
       };
     }
 
-    const state = ProjectStateFactory.create(ctx.project.status as any);
+    const state = ProjectStateFactory.create(
+      ctx.project.status as ProjectLifecycleStatus,
+    );
     if (!state.canEdit()) {
       return {
         allowed: false,
@@ -217,13 +230,16 @@ export class SingleParentGate implements IGate {
       return {
         allowed: false,
         reasonCode: 'SINGLE_PARENT_VIOLATION',
-        message: `Node "${targetNode.data?.['name'] || targetNode.id}" already has a parent`,
+        message: `Node "${getNodeName(targetNode)}" already has a parent`,
         fixHint: { nodeId: targetNode.id, field: 'parentId' },
       };
     }
 
     const existingIncoming = graph.edges.some(
-      (e) => e.target === edge.target && e.type === 'hierarchy' && e.source !== edge.source,
+      (e) =>
+        e.target === edge.target &&
+        e.type === 'hierarchy' &&
+        e.source !== edge.source,
     );
     if (existingIncoming) {
       return {
@@ -249,7 +265,10 @@ export class NoCycleGate implements IGate {
     if (operation.type === 'add_edge') {
       sourceId = operation.edge?.source;
       targetId = operation.edge?.target;
-    } else if (operation.type === 'move_node' || operation.type === 'update_node') {
+    } else if (
+      operation.type === 'move_node' ||
+      operation.type === 'update_node'
+    ) {
       targetId = operation.targetId;
       sourceId = operation.parentId ?? operation.node?.parentId ?? undefined;
     }
@@ -267,7 +286,9 @@ export class NoCycleGate implements IGate {
     }
 
     // Check if targetId is an ancestor of sourceId (which would create a cycle)
-    const nodesMap = new Map<string, BlueprintNodeDto>(graph.nodes.map((n) => [n.id, n]));
+    const nodesMap = new Map<string, BlueprintNodeDto>(
+      graph.nodes.map((n) => [n.id, n]),
+    );
     let curr = nodesMap.get(sourceId);
     const visited = new Set<string>();
 
@@ -298,7 +319,10 @@ export class DuplicateNameGate implements IGate {
     }
 
     const data = operation.data ?? operation.node?.data;
-    const name = typeof data?.['name'] === 'string' ? data['name'].trim().toLowerCase() : '';
+    const name =
+      typeof data?.['name'] === 'string'
+        ? data['name'].trim().toLowerCase()
+        : '';
     if (!name) {
       return { allowed: true };
     }
@@ -311,7 +335,10 @@ export class DuplicateNameGate implements IGate {
       if (n.id === targetId) return false;
       if (type && n.type !== type) return false;
       if (n.parentId !== (parentId ?? null)) return false;
-      const otherName = typeof n.data?.['name'] === 'string' ? n.data['name'].trim().toLowerCase() : '';
+      const otherName =
+        typeof n.data?.['name'] === 'string'
+          ? n.data['name'].trim().toLowerCase()
+          : '';
       return otherName === name;
     });
 
@@ -319,7 +346,7 @@ export class DuplicateNameGate implements IGate {
       return {
         allowed: false,
         reasonCode: 'DUPLICATE_NAME',
-        message: `A sibling ${type || 'node'} with the name "${data?.['name']}" already exists under this parent`,
+        message: `A sibling ${type || 'node'} with the name "${typeof data?.['name'] === 'string' ? data['name'] : ''}" already exists under this parent`,
         fixHint: { nodeId: targetId, field: 'name' },
       };
     }
@@ -355,16 +382,23 @@ export class CapacityGate implements IGate {
       return { allowed: true };
     }
 
-    const strength = typeof section.data?.['strength'] === 'number' ? section.data['strength'] : 0;
+    const strength =
+      typeof section.data?.['strength'] === 'number'
+        ? section.data['strength']
+        : 0;
     if (strength <= 0) {
       return { allowed: true };
     }
 
     const siblingBatches = graph.nodes.filter(
-      (n) => n.type === 'batch' && n.parentId === parentId && n.id !== operation.targetId,
+      (n) =>
+        n.type === 'batch' &&
+        n.parentId === parentId &&
+        n.id !== operation.targetId,
     );
     const totalSiblingSize = siblingBatches.reduce(
-      (acc, curr) => acc + (typeof curr.data?.['size'] === 'number' ? curr.data['size'] : 0),
+      (acc, curr) =>
+        acc + (typeof curr.data?.['size'] === 'number' ? curr.data['size'] : 0),
       0,
     );
 
@@ -421,8 +455,11 @@ export class ConnectionEndpointGate implements IGate {
       return {
         allowed: false,
         reasonCode: 'ENDPOINT_INCOMPLETE',
-        message: `Source node "${source.data?.['name'] || source.id}" is incomplete (${source.status})`,
-        fixHint: { nodeId: source.id, field: source.missing?.[0]?.field || 'status' },
+        message: `Source node "${getNodeName(source)}" is incomplete (${source.status})`,
+        fixHint: {
+          nodeId: source.id,
+          field: source.missing?.[0]?.field || 'status',
+        },
       };
     }
 
@@ -430,8 +467,11 @@ export class ConnectionEndpointGate implements IGate {
       return {
         allowed: false,
         reasonCode: 'ENDPOINT_INCOMPLETE',
-        message: `Target node "${target.data?.['name'] || target.id}" is incomplete (${target.status})`,
-        fixHint: { nodeId: target.id, field: target.missing?.[0]?.field || 'status' },
+        message: `Target node "${getNodeName(target)}" is incomplete (${target.status})`,
+        fixHint: {
+          nodeId: target.id,
+          field: target.missing?.[0]?.field || 'status',
+        },
       };
     }
 
@@ -455,29 +495,45 @@ export class QualificationGate implements IGate {
       const source = graph.nodes.find((n) => n.id === operation.edge!.source);
       const target = graph.nodes.find((n) => n.id === operation.edge!.target);
 
-      if (source?.type === 'faculty' && ((target?.type as string) === 'subjectAssignment' || (target?.type as string) === 'Subject')) {
+      if (
+        source?.type === 'faculty' &&
+        ((target?.type as string) === 'subjectAssignment' ||
+          (target?.type as string) === 'Subject')
+      ) {
         facultyNode = source;
         subjectNode = target;
-      } else if (target?.type === 'faculty' && ((source?.type as string) === 'subjectAssignment' || (source?.type as string) === 'Subject')) {
+      } else if (
+        target?.type === 'faculty' &&
+        ((source?.type as string) === 'subjectAssignment' ||
+          (source?.type as string) === 'Subject')
+      ) {
         facultyNode = target;
         subjectNode = source;
       }
     }
 
     if (facultyNode && subjectNode) {
-      const subjectId = (subjectNode.data?.['subjectId'] as string) || (subjectNode.refId as string) || subjectNode.id;
-      const qualifiedSubjectIds = Array.isArray(facultyNode.data?.['subjectIds'])
+      const subjectId =
+        (subjectNode.data?.['subjectId'] as string) ||
+        (subjectNode.refId as string) ||
+        subjectNode.id;
+      const qualifiedSubjectIds = Array.isArray(
+        facultyNode.data?.['subjectIds'],
+      )
         ? (facultyNode.data['subjectIds'] as string[])
         : Array.isArray(facultyNode.data?.['qualifiedSubjectIds'])
           ? (facultyNode.data['qualifiedSubjectIds'] as string[])
           : [];
 
       // If faculty node has qualifications listed and subject is not in it
-      if (qualifiedSubjectIds.length > 0 && !qualifiedSubjectIds.includes(subjectId)) {
+      if (
+        qualifiedSubjectIds.length > 0 &&
+        !qualifiedSubjectIds.includes(subjectId)
+      ) {
         return {
           allowed: false,
           reasonCode: 'NOT_QUALIFIED',
-          message: `Faculty "${facultyNode.data?.['name'] || facultyNode.id}" is not qualified to teach subject "${subjectNode.data?.['name'] || subjectId}"`,
+          message: `Faculty "${getNodeName(facultyNode)}" is not qualified to teach subject "${getNodeName(subjectNode, subjectId)}"`,
           fixHint: { nodeId: facultyNode.id, field: 'subjectIds' },
         };
       }

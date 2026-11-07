@@ -11,7 +11,9 @@ export class ConstraintResolverService {
     node: BlueprintNodeDto,
     allNodes: BlueprintNodeDto[],
   ): Record<string, unknown> {
-    const nodesMap = new Map<string, BlueprintNodeDto>(allNodes.map((n) => [n.id, n]));
+    const nodesMap = new Map<string, BlueprintNodeDto>(
+      allNodes.map((n) => [n.id, n]),
+    );
     const ancestorChain: BlueprintNodeDto[] = [];
 
     let curr: BlueprintNodeDto | undefined = node;
@@ -26,8 +28,10 @@ export class ConstraintResolverService {
     const merged: Record<string, unknown> = {};
 
     for (const item of ancestorChain) {
-      const nodeConstraints = (item.constraints as Record<string, unknown> | undefined) ?? {};
-      const dataConstraints = (item.data?.['constraints'] as Record<string, unknown> | undefined) ?? {};
+      const nodeConstraints = item.constraints ?? {};
+      const dataConstraints =
+        (item.data?.['constraints'] as Record<string, unknown> | undefined) ??
+        {};
 
       Object.assign(merged, nodeConstraints, dataConstraints);
     }

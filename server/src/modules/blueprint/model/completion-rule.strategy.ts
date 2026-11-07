@@ -21,5 +21,8 @@ export interface CompletionResult {
 }
 
 export interface CompletionRuleStrategy {
-  compute(data: Record<string, unknown>, context?: CompletionContext): CompletionResult;
+  compute(
+    data: Record<string, unknown>,
+    context?: CompletionContext,
+  ): CompletionResult;
 }

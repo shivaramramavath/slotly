@@ -24,7 +24,10 @@ export class BlueprintTemplateRepository extends MongoBaseRepository<
   BlueprintTemplate,
   BlueprintTemplateDocument
 > {
-  constructor(@InjectModel(BlueprintTemplate.name) model: Model<BlueprintTemplateDocument>) {
+  constructor(
+    @InjectModel(BlueprintTemplate.name)
+    model: Model<BlueprintTemplateDocument>,
+  ) {
     super(model);
   }
 
@@ -32,7 +35,9 @@ export class BlueprintTemplateRepository extends MongoBaseRepository<
     return this.model.countDocuments().exec();
   }
 
-  async findAvailableTemplates(institutionId?: string): Promise<BlueprintTemplate[]> {
+  async findAvailableTemplates(
+    institutionId?: string,
+  ): Promise<BlueprintTemplate[]> {
     const query: Record<string, unknown> = {
       $or: [{ visibility: 'public' }],
     };
@@ -42,7 +47,11 @@ export class BlueprintTemplateRepository extends MongoBaseRepository<
         institutionId,
       });
     }
-    return this.model.find(query).sort({ category: 1, name: 1 }).lean<BlueprintTemplate[]>().exec();
+    return this.model
+      .find(query)
+      .sort({ category: 1, name: 1 })
+      .lean<BlueprintTemplate[]>()
+      .exec();
   }
 }
 
@@ -51,12 +60,22 @@ export class BlueprintHistoryRepository extends MongoBaseRepository<
   BlueprintHistory,
   BlueprintHistoryDocument
 > {
-  constructor(@InjectModel(BlueprintHistory.name) model: Model<BlueprintHistoryDocument>) {
+  constructor(
+    @InjectModel(BlueprintHistory.name) model: Model<BlueprintHistoryDocument>,
+  ) {
     super(model);
   }
 
-  async findByProject(projectId: string, limit = 50): Promise<BlueprintHistory[]> {
-    return this.model.find({ projectId }).sort({ revision: -1 }).limit(limit).lean<BlueprintHistory[]>().exec();
+  async findByProject(
+    projectId: string,
+    limit = 50,
+  ): Promise<BlueprintHistory[]> {
+    return this.model
+      .find({ projectId })
+      .sort({ revision: -1 })
+      .limit(limit)
+      .lean<BlueprintHistory[]>()
+      .exec();
   }
 }
 
@@ -65,12 +84,19 @@ export class BlueprintSnapshotRepository extends MongoBaseRepository<
   BlueprintSnapshot,
   BlueprintSnapshotDocument
 > {
-  constructor(@InjectModel(BlueprintSnapshot.name) model: Model<BlueprintSnapshotDocument>) {
+  constructor(
+    @InjectModel(BlueprintSnapshot.name)
+    model: Model<BlueprintSnapshotDocument>,
+  ) {
     super(model);
   }
 
   async findByProject(projectId: string): Promise<BlueprintSnapshot[]> {
-    return this.model.find({ projectId }).sort({ createdAt: -1 }).lean<BlueprintSnapshot[]>().exec();
+    return this.model
+      .find({ projectId })
+      .sort({ createdAt: -1 })
+      .lean<BlueprintSnapshot[]>()
+      .exec();
   }
 }
 
@@ -79,11 +105,20 @@ export class BlueprintCommentRepository extends MongoBaseRepository<
   BlueprintComment,
   BlueprintCommentDocument
 > {
-  constructor(@InjectModel(BlueprintComment.name) model: Model<BlueprintCommentDocument>) {
+  constructor(
+    @InjectModel(BlueprintComment.name) model: Model<BlueprintCommentDocument>,
+  ) {
     super(model);
   }
 
-  async findByNode(projectId: string, nodeId: string): Promise<BlueprintComment[]> {
-    return this.model.find({ projectId, nodeId }).sort({ createdAt: 1 }).lean<BlueprintComment[]>().exec();
+  async findByNode(
+    projectId: string,
+    nodeId: string,
+  ): Promise<BlueprintComment[]> {
+    return this.model
+      .find({ projectId, nodeId })
+      .sort({ createdAt: 1 })
+      .lean<BlueprintComment[]>()
+      .exec();
   }
 }

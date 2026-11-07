@@ -397,6 +397,12 @@ export const SocketEvents = {
   LOCK_NODE: 'node:lock',
   UNLOCK_NODE: 'node:unlock',
   UPDATE_CURSOR: 'cursor:update',
+  NODE_ADD: 'node:add',
+  NODE_UPDATE: 'node:update',
+  NODE_MOVE: 'node:move',
+  NODE_DELETE: 'node:delete',
+  EDGE_ADD: 'edge:add',
+  EDGE_DELETE: 'edge:delete',
 } as const;
 
 // ==========================================
@@ -1187,6 +1193,7 @@ export const GraphTemplateDtoSchema = z.object({
   visibility: z.enum(['public', 'institution', 'private']).default('public'),
   institutionId: z.string().optional(),
   createdById: z.string().optional(),
+  anchorNodeType: BlueprintNodeTypeSchema.optional(),
   createdAt: z.string().optional(),
 });
 export type GraphTemplateDto = z.infer<typeof GraphTemplateDtoSchema>;
@@ -1247,3 +1254,263 @@ export const CreateBlueprintCommentDtoSchema = z.object({
   text: z.string().min(1),
 });
 export type CreateBlueprintCommentDto = z.infer<typeof CreateBlueprintCommentDtoSchema>;
+
+// ==========================================
+// SOCKET CONTRACT (/blueprint)
+// ==========================================
+export const ProjectJoinPayloadSchema = z.object({
+  projectId: z.string(),
+});
+export type ProjectJoinPayload = z.infer<typeof ProjectJoinPayloadSchema>;
+
+export const ProjectLeavePayloadSchema = z.object({
+  projectId: z.string(),
+});
+export type ProjectLeavePayload = z.infer<typeof ProjectLeavePayloadSchema>;
+
+export const CursorUpdatePayloadSchema = z.object({
+  projectId: z.string(),
+  x: z.number(),
+  y: z.number(),
+});
+export type CursorUpdatePayload = z.infer<typeof CursorUpdatePayloadSchema>;
+
+export const NodeLockPayloadSchema = z.object({
+  projectId: z.string(),
+  nodeId: z.string(),
+});
+export type NodeLockPayload = z.infer<typeof NodeLockPayloadSchema>;
+
+export const NodeUnlockPayloadSchema = z.object({
+  projectId: z.string(),
+  nodeId: z.string(),
+});
+export type NodeUnlockPayload = z.infer<typeof NodeUnlockPayloadSchema>;
+
+export const PresenceUserSchema = z.object({
+  userId: z.string(),
+  name: z.string(),
+  color: z.string(),
+  activeNodeId: z.string().optional(),
+  cursor: z.object({ x: z.number(), y: z.number() }).optional(),
+});
+export type PresenceUser = z.infer<typeof PresenceUserSchema>;
+
+export const PresenceChangedPayloadSchema = z.object({
+  users: z.array(PresenceUserSchema),
+});
+export type PresenceChangedPayload = z.infer<typeof PresenceChangedPayloadSchema>;
+
+export const NodeStatusChangedPayloadSchema = z.object({
+  nodeId: z.string(),
+  status: NodeStatusSchema,
+  missing: z.array(MissingFieldSchema),
+  effectiveStatus: NodeStatusSchema,
+});
+export type NodeStatusChangedPayload = z.infer<typeof NodeStatusChangedPayloadSchema>;
+
+export const OpsAppliedPayloadSchema = z.object({
+  revision: z.number().int(),
+  applied: z.array(OperationResultAppliedSchema),
+  skipped: z.array(OperationResultSkippedSchema).optional(),
+});
+export type OpsAppliedPayload = z.infer<typeof OpsAppliedPayloadSchema>;
+
+export const NodeLockedPayloadSchema = z.object({
+  nodeId: z.string(),
+  userId: z.string(),
+  userName: z.string(),
+});
+export type NodeLockedPayload = z.infer<typeof NodeLockedPayloadSchema>;
+
+export const NodeUnlockedPayloadSchema = z.object({
+  nodeId: z.string(),
+});
+export type NodeUnlockedPayload = z.infer<typeof NodeUnlockedPayloadSchema>;
+
+export const RevisionConflictPayloadSchema = z.object({
+  currentRevision: z.number().int(),
+  rejectedRevision: z.number().int(),
+  message: z.string(),
+});
+export type RevisionConflictPayload = z.infer<typeof RevisionConflictPayloadSchema>;
+
+export const NodeMovePayloadSchema = z.object({
+  projectId: z.string(),
+  nodeId: z.string(),
+  position: NodePositionSchema,
+});
+export type NodeMovePayload = z.infer<typeof NodeMovePayloadSchema>;
+
+export const NodeUpdatePayloadSchema = z.object({
+  projectId: z.string(),
+  nodeId: z.string(),
+  data: z.record(z.unknown()),
+});
+export type NodeUpdatePayload = z.infer<typeof NodeUpdatePayloadSchema>;
+
+export const NodeAddPayloadSchema = z.object({
+  projectId: z.string(),
+  node: BlueprintNodeDtoSchema,
+  parentId: z.string().nullable().optional(),
+});
+export type NodeAddPayload = z.infer<typeof NodeAddPayloadSchema>;
+
+export const NodeDeletePayloadSchema = z.object({
+  projectId: z.string(),
+  nodeId: z.string(),
+});
+export type NodeDeletePayload = z.infer<typeof NodeDeletePayloadSchema>;
+
+export const EdgeAddPayloadSchema = z.object({
+  projectId: z.string(),
+  edge: BlueprintEdgeDtoSchema,
+});
+export type EdgeAddPayload = z.infer<typeof EdgeAddPayloadSchema>;
+
+export const EdgeDeletePayloadSchema = z.object({
+  projectId: z.string(),
+  edgeId: z.string(),
+});
+export type EdgeDeletePayload = z.infer<typeof EdgeDeletePayloadSchema>;
+
+// ==========================================
+// CONSTRAINT ENGINE & VALIDATION MODEL
+// ==========================================
+
+export const SlotTypeSchema = z.enum([
+  'theory',
+  'lab',
+  'tutorial',
+  'seminar',
+  'break',
+  'free',
+  'exam',
+  'event',
+  'empty',
+]);
+export type SlotType = z.infer<typeof SlotTypeSchema>;
+
+export const SlotDtoSchema = z.object({
+  id: z.string(),
+  sectionId: z.string(),
+  batchId: z.string().optional(),
+  day: z.number().int().min(0).max(6),
+  period: z.number().int().min(1),
+  type: SlotTypeSchema,
+  subjectId: z.string().optional(),
+  facultyId: z.string().optional(),
+  roomId: z.string().optional(),
+  span: z.number().int().min(1).default(1),
+  isLocked: z.boolean().default(false),
+});
+export type SlotDto = z.infer<typeof SlotDtoSchema>;
+
+export const ViolationSeveritySchema = z.enum(['error', 'warning', 'info']);
+export type ViolationSeverity = z.infer<typeof ViolationSeveritySchema>;
+
+export const ViolationSuggestionSchema = z.object({
+  type: z.enum(['period', 'room', 'faculty', 'swap']),
+  description: z.string(),
+  day: z.number().int().optional(),
+  period: z.number().int().optional(),
+  roomId: z.string().optional(),
+  facultyId: z.string().optional(),
+  score: z.number().optional(),
+});
+export type ViolationSuggestion = z.infer<typeof ViolationSuggestionSchema>;
+
+export const ViolationDtoSchema = z.object({
+  id: z.string(),
+  constraintId: z.string(),
+  severity: ViolationSeveritySchema,
+  type: z.enum(['hard', 'soft']),
+  message: z.string(),
+  facultyId: z.string().optional(),
+  roomId: z.string().optional(),
+  sectionId: z.string().optional(),
+  subjectId: z.string().optional(),
+  slotRefs: z.array(z.string()).default([]),
+  suggestions: z.array(ViolationSuggestionSchema).default([]),
+});
+export type ViolationDto = z.infer<typeof ViolationDtoSchema>;
+
+export const PreBuildCheckErrorSchema = z.object({
+  code: z.string(),
+  message: z.string(),
+  fixHint: z.object({
+    nodeId: z.string().optional(),
+    field: z.string().optional(),
+  }).optional(),
+  details: z.record(z.unknown()).optional(),
+});
+export type PreBuildCheckError = z.infer<typeof PreBuildCheckErrorSchema>;
+
+export const ValidationReportDtoSchema = z.object({
+  valid: z.boolean(),
+  score: z.number(),
+  hardViolationsCount: z.number(),
+  softViolationsCount: z.number(),
+  violations: z.array(ViolationDtoSchema),
+  preBuildErrors: z.array(PreBuildCheckErrorSchema),
+  validatedAt: z.string(),
+});
+export type ValidationReportDto = z.infer<typeof ValidationReportDtoSchema>;
+
+export const ValidateProjectDtoSchema = z.object({
+  slots: z.array(SlotDtoSchema).optional(),
+});
+export type ValidateProjectDto = z.infer<typeof ValidateProjectDtoSchema>;
+
+export const ValidateVersionDtoSchema = z.object({
+  slots: z.array(SlotDtoSchema).optional(),
+});
+export type ValidateVersionDto = z.infer<typeof ValidateVersionDtoSchema>;
+
+export const ConstraintScopeSchema = z.enum(['institution', 'department', 'program', 'section']);
+export type ConstraintScope = z.infer<typeof ConstraintScopeSchema>;
+
+export const HardConstraintsConfigSchema = z.object({
+  facultyNoDoubleBooking: z.boolean().default(true),
+  roomNoDoubleBooking: z.boolean().default(true),
+  sectionNoDoubleBooking: z.boolean().default(true),
+  facultyAvailability: z.boolean().default(true),
+  roomAvailability: z.boolean().default(true),
+  sectionAvailability: z.boolean().default(true),
+  maxHoursPerDay: z.number().int().min(1).max(12).default(4),
+  maxHoursPerWeek: z.number().int().min(1).max(50).default(18),
+  minHoursPerWeek: z.number().int().min(0).max(40).default(10),
+  maxClassesPerDay: z.number().int().min(1).max(10).default(5),
+  minBreaks: z.number().int().min(0).max(5).default(1),
+  roomCapacityFitsSection: z.boolean().default(true),
+  roomTypeMatchesSubject: z.boolean().default(true),
+  equipmentMatch: z.boolean().default(true),
+  labConsecutiveBlock: z.boolean().default(true),
+  electiveSimultaneity: z.boolean().default(true),
+  holidayExclusion: z.boolean().default(true),
+  weeklyHoursMet: z.boolean().default(true),
+  missingAllocation: z.boolean().default(true),
+  breakNotOverwritable: z.boolean().default(true),
+});
+export type HardConstraintsConfig = z.infer<typeof HardConstraintsConfigSchema>;
+
+export const SoftConstraintsConfigSchema = z.object({
+  facultyPreferredPeriods: z.number().int().min(0).max(10).default(5),
+  spreadSubjectsAcrossDays: z.number().int().min(0).max(10).default(8),
+  limitConsecutiveSameSubject: z.number().int().min(0).max(10).default(6),
+  balanceFacultyLoad: z.number().int().min(0).max(10).default(5),
+  labsInAfternoon: z.number().int().min(0).max(10).default(7),
+  minimizeRoomChanges: z.number().int().min(0).max(10).default(4),
+  departmentRules: z.number().int().min(0).max(10).default(5),
+});
+export type SoftConstraintsConfig = z.infer<typeof SoftConstraintsConfigSchema>;
+
+export const ConstraintGroupConfigSchema = z.object({
+  scope: ConstraintScopeSchema,
+  scopeId: z.string(),
+  hard: HardConstraintsConfigSchema.partial(),
+  soft: SoftConstraintsConfigSchema.partial(),
+  overrides: z.array(z.string()).default([]),
+});
+export type ConstraintGroupConfig = z.infer<typeof ConstraintGroupConfigSchema>;
+

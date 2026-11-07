@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Inject,
+  NotFoundException,
+} from '@nestjs/common';
 import type {
   CreateProjectDto,
   DuplicateProjectDto,
@@ -15,9 +20,14 @@ import { ProjectStateFactory } from '../lifecycle/project-state.factory';
 import { AuditService } from '../../../common/audit/audit.service';
 import type { Project } from '../schemas/project.schema';
 
-function getId(doc: Project | null | undefined): string {
+function getId(
+  doc:
+    { id?: string; _id?: { toString(): string } | string } | null | undefined,
+): string {
   if (!doc) return '';
-  return doc.id || (doc as any)._id?.toString() || '';
+  if (doc.id) return doc.id;
+  if (!doc._id) return '';
+  return typeof doc._id === 'string' ? doc._id : doc._id.toString();
 }
 
 @Injectable()
@@ -45,15 +55,21 @@ export class ProjectsService {
       strictness: doc.strictness,
       lastOpenedAt: doc.lastOpenedAt?.toISOString?.() || undefined,
       revision: doc.revision,
-      createdAt: (doc as any).createdAt?.toISOString?.() || new Date().toISOString(),
-      updatedAt: (doc as any).updatedAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: doc.createdAt?.toISOString() || new Date().toISOString(),
+      updatedAt: doc.updatedAt?.toISOString() || new Date().toISOString(),
     };
   }
 
-  async create(dto: CreateProjectDto, userId: string, userInstitutionId?: string): Promise<ProjectDto> {
+  async create(
+    dto: CreateProjectDto,
+    userId: string,
+    userInstitutionId?: string,
+  ): Promise<ProjectDto> {
     const institutionId = dto.institutionId || userInstitutionId;
     if (!institutionId) {
-      throw new ConflictException('Institution ID is required to create a project');
+      throw new ConflictException(
+        'Institution ID is required to create a project',
+      );
     }
 
     const created = await this.projectRepo.create({
@@ -78,7 +94,12 @@ export class ProjectsService {
 
     // Initialize Blueprint Graph based on source
     if (dto.source === 'template' && dto.templateId) {
-      await this.templateService.applyTemplate(projectId, dto.templateId, undefined, userId);
+      await this.templateService.applyTemplate(
+        projectId,
+        dto.templateId,
+        undefined,
+        userId,
+      );
     } else if (dto.source === 'institution') {
       try {
         const tree = await this.institutionsService.getStructure(institutionId);
@@ -105,7 +126,11 @@ export class ProjectsService {
     return this.toDto(created);
   }
 
-  private async initRootGraph(projectId: string, institutionId: string, name: string): Promise<void> {
+  private async initRootGraph(
+    projectId: string,
+    institutionId: string,
+    name: string,
+  ): Promise<void> {
     const instNodeId = `node_inst_${institutionId}`;
     await this.blueprintRepo.saveGraph(
       projectId,
@@ -122,7 +147,12 @@ export class ProjectsService {
               name,
               code: 'INST',
               workingDays: [1, 2, 3, 4, 5],
-              periodConfig: { startTime: '09:00', periodsPerDay: 7, periodDuration: 50, breaks: [] },
+              periodConfig: {
+                startTime: '09:00',
+                periodsPerDay: 7,
+                periodDuration: 50,
+                breaks: [],
+              },
             },
             locked: false,
             hidden: false,
@@ -144,7 +174,13 @@ export class ProjectsService {
     search?: string,
     page = 1,
     limit = 20,
-  ): Promise<{ items: ProjectDto[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{
+    items: ProjectDto[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     const skip = (page - 1) * limit;
     const filter = {
       institutionId: institutionId || undefined,
@@ -152,7 +188,11 @@ export class ProjectsService {
       status: status || undefined,
       search: search || undefined,
     };
-    const { items, total } = await this.projectRepo.findProjects(filter, skip, limit);
+    const { items, total } = await this.projectRepo.findProjects(
+      filter,
+      skip,
+      limit,
+    );
     return {
       items: items.map((p) => this.toDto(p)),
       total,
@@ -184,7 +224,10 @@ export class ProjectsService {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
 
-    if (typeof expectedRevision === 'number' && expectedRevision !== project.revision) {
+    if (
+      typeof expectedRevision === 'number' &&
+      expectedRevision !== project.revision
+    ) {
       throw new ConflictException({
         code: 'REVISION_CONFLICT',
         message: 'Project revision conflict',
@@ -195,13 +238,20 @@ export class ProjectsService {
 
     const state = ProjectStateFactory.create(project.status);
     if (!state.canEdit()) {
-      throw new ConflictException(`Project in status "${project.status}" cannot be edited`);
+      throw new ConflictException(
+        `Project in status "${project.status}" cannot be edited`,
+      );
     }
 
-    const updated = await this.projectRepo.update(projectId, {
-      ...dto,
+    const updatePayload: Partial<Project> = {
       revision: project.revision + 1,
-    } as any);
+    };
+    if (dto.name !== undefined) updatePayload.name = dto.name;
+    if (dto.term !== undefined) updatePayload.term = dto.term;
+    if (dto.settings !== undefined) updatePayload.settings = dto.settings;
+    if (dto.strictness !== undefined) updatePayload.strictness = dto.strictness;
+
+    const updated = await this.projectRepo.update(projectId, updatePayload);
 
     return this.toDto(updated!);
   }
@@ -215,14 +265,21 @@ export class ProjectsService {
     const result = await this.projectRepo.update(projectId, {
       isDeleted: true,
       deletedAt: new Date(),
-    } as any);
+    });
 
-    await this.auditService.log('PROJECT_DELETED', userId, { type: 'project', id: projectId });
+    await this.auditService.log('PROJECT_DELETED', userId, {
+      type: 'project',
+      id: projectId,
+    });
 
     return !!result;
   }
 
-  async duplicate(projectId: string, dto: DuplicateProjectDto, userId: string): Promise<ProjectDto> {
+  async duplicate(
+    projectId: string,
+    dto: DuplicateProjectDto,
+    userId: string,
+  ): Promise<ProjectDto> {
     const original = await this.projectRepo.findById(projectId);
     if (!original || original.isDeleted) {
       throw new NotFoundException(`Original project ${projectId} not found`);
@@ -272,14 +329,19 @@ export class ProjectsService {
 
     const state = ProjectStateFactory.create(project.status);
     if (!state.canArchive()) {
-      throw new ConflictException(`Project in status "${project.status}" cannot be archived`);
+      throw new ConflictException(
+        `Project in status "${project.status}" cannot be archived`,
+      );
     }
 
     const updated = await this.projectRepo.update(projectId, {
       status: 'archived',
-    } as any);
+    });
 
-    await this.auditService.log('PROJECT_ARCHIVED', userId, { type: 'project', id: projectId });
+    await this.auditService.log('PROJECT_ARCHIVED', userId, {
+      type: 'project',
+      id: projectId,
+    });
 
     return this.toDto(updated!);
   }

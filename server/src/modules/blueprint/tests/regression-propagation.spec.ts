@@ -23,7 +23,11 @@ describe('G3: Parent Regression & Blocked Status Propagation', () => {
           name: 'MIT',
           code: 'MIT',
           workingDays: [1, 2, 3, 4, 5],
-          periodConfig: { startTime: '09:00', periodsPerDay: 7, periodDuration: 50 },
+          periodConfig: {
+            startTime: '09:00',
+            periodsPerDay: 7,
+            periodDuration: 50,
+          },
         },
         locked: false,
         hidden: false,
@@ -76,7 +80,11 @@ describe('G3: Parent Regression & Blocked Status Propagation', () => {
         type: 'semester',
         parentId: 'ay_1',
         position: { x: 0, y: 600 },
-        data: { semesterNumber: 1, startDate: '2026-09-01', endDate: '2027-01-15' },
+        data: {
+          semesterNumber: 1,
+          startDate: '2026-09-01',
+          endDate: '2027-01-15',
+        },
         locked: false,
         hidden: false,
         status: 'complete',
@@ -108,7 +116,8 @@ describe('G3: Parent Regression & Blocked Status Propagation', () => {
     progNode.data = { name: 'Computer Science', durationYears: 0 };
 
     // 3. Recompute graph
-    const { updatedNodes: afterRegression } = completionService.recomputeGraph(nodes);
+    const { updatedNodes: afterRegression } =
+      completionService.recomputeGraph(nodes);
 
     const prog = afterRegression.find((n) => n.id === 'prog_1')!;
     const ay = afterRegression.find((n) => n.id === 'ay_1')!;
@@ -137,7 +146,8 @@ describe('G3: Parent Regression & Blocked Status Propagation', () => {
 
     // 4. Restore Program to complete
     progNode.data = { name: 'Computer Science', durationYears: 4 };
-    const { updatedNodes: afterRestore } = completionService.recomputeGraph(nodes);
+    const { updatedNodes: afterRestore } =
+      completionService.recomputeGraph(nodes);
 
     const restoredAy = afterRestore.find((n) => n.id === 'ay_1')!;
     const restoredSem = afterRestore.find((n) => n.id === 'sem_1')!;

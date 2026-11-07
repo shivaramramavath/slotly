@@ -4,7 +4,9 @@ import type { BlueprintImpactDto, BlueprintNodeDto } from '@slotly/contracts';
 @Injectable()
 export class ImpactAnalyzerService {
   analyze(nodeId: string, nodes: BlueprintNodeDto[]): BlueprintImpactDto {
-    const nodesMap = new Map<string, BlueprintNodeDto>(nodes.map((n) => [n.id, n]));
+    const nodesMap = new Map<string, BlueprintNodeDto>(
+      nodes.map((n) => [n.id, n]),
+    );
     const targetNode = nodesMap.get(nodeId);
 
     if (!targetNode) {

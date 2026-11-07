@@ -7,8 +7,15 @@ export type BlueprintCommentDocument = BlueprintComment & Document;
 export class BlueprintComment {
   _id?: string;
   id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Project', required: true, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Project',
+    required: true,
+    index: true,
+  })
   projectId!: string;
 
   @Prop({ required: true, index: true })
@@ -24,5 +31,6 @@ export class BlueprintComment {
   text!: string;
 }
 
-export const BlueprintCommentSchema = SchemaFactory.createForClass(BlueprintComment);
+export const BlueprintCommentSchema =
+  SchemaFactory.createForClass(BlueprintComment);
 BlueprintCommentSchema.index({ projectId: 1, nodeId: 1, createdAt: -1 });

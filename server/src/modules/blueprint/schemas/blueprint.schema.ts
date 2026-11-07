@@ -15,7 +15,7 @@ export class BlueprintNodeSchemaClass {
   @Prop({ required: true })
   id!: string;
 
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   type!: BlueprintNodeType;
 
   @Prop({ type: String, default: null })
@@ -94,6 +94,8 @@ export class BlueprintEdgeSchemaClass {
 export class Blueprint {
   _id?: string;
   id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 
   @Prop({
     type: MongooseSchema.Types.ObjectId,

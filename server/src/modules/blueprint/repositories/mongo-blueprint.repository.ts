@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { MongoBaseRepository } from '../../../common/database/mongo-base.repository';
 import { Blueprint, BlueprintDocument } from '../schemas/blueprint.schema';
 import type { IBlueprintRepository } from './blueprint.repository.interface';
-import type { BlueprintGraphDto } from '@slotly/contracts';
+import type { BlueprintGraphDto, NodePosition } from '@slotly/contracts';
 
 @Injectable()
 export class MongoBlueprintRepository
@@ -44,6 +44,28 @@ export class MongoBlueprintRepository
       .exec();
   }
 
+  async updateNode(
+    projectId: string,
+    nodeId: string,
+    update: {
+      position?: NodePosition | undefined;
+      data?: Record<string, unknown> | undefined;
+    },
+  ): Promise<boolean> {
+    const $set: Record<string, unknown> = { updatedAt: new Date() };
+    if (update.position) {
+      $set['nodes.$.position'] = update.position;
+    }
+    if (update.data) {
+      $set['nodes.$.data'] = update.data;
+    }
+
+    const res = await this.model
+      .updateOne({ projectId, 'nodes.id': nodeId }, { $set })
+      .exec();
+    return res.modifiedCount > 0;
+  }
+
   async resetGraph(projectId: string): Promise<Blueprint> {
     const doc = await this.model
       .findOneAndUpdate(
@@ -62,6 +84,6 @@ export class MongoBlueprintRepository
       .lean<Blueprint>()
       .exec();
 
-    return doc!;
+    return doc;
   }
 }

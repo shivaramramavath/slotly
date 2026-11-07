@@ -22,12 +22,14 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/bullmq": "^12.0.0",
+    "@nestjs/bullmq": "^11.0.5",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^12.1.0",
     "@nestjs/core": "^11.0.1",
-    "@nestjs/mongoose": "^12.0.0",
+    "@nestjs/mongoose": "^11.0.4",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-socket.io": "^11.2.8",
+    "@nestjs/websockets": "^11.2.8",
     "@slotly/contracts": "workspace:*",
     "argon2": "^0.45.2",
     "bullmq": "^6.7.0",
@@ -39,6 +41,7 @@
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "socket.io": "^4.8.4",
     "uuid": "^14.0.3",
     "xlsx": "^0.18.5",
     "zod": "^3.24.2"

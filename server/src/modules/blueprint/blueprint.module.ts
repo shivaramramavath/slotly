@@ -36,6 +36,8 @@ import { RecommendationsService } from './services/recommendations.service';
 import { GraphFromInstitutionBuilder } from './services/graph-from-institution.builder';
 import { TemplateService } from './services/template.service';
 import { BlueprintService } from './services/blueprint.service';
+import { BlueprintGateway } from './gateways/blueprint.gateway';
+import { BlueprintWriteProcessor } from './processors/blueprint-write.processor';
 import { BlueprintController } from './controllers/blueprint.controller';
 import { TemplateController } from './controllers/template.controller';
 import { ProjectsModule } from '../projects/projects.module';
@@ -74,6 +76,8 @@ import { UsersModule } from '../users/users.module';
     GraphFromInstitutionBuilder,
     TemplateService,
     BlueprintService,
+    BlueprintGateway,
+    BlueprintWriteProcessor,
   ],
   exports: [
     CachedBlueprintRepository,

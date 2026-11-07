@@ -8,9 +8,23 @@ import type {
 import { CompletionService } from './completion.service';
 
 export interface StructureBuildInput {
-  institution: InstitutionDto | { id: string; name: string; code: string; workingDays?: number[]; defaultPeriodConfig?: Record<string, unknown> };
+  institution:
+    | InstitutionDto
+    | {
+        id: string;
+        name: string;
+        code: string;
+        workingDays?: number[];
+        defaultPeriodConfig?: Record<string, unknown>;
+      };
   departments?: DepartmentNode[];
-  faculty?: Array<{ id: string; name: string; maxHoursPerDay?: number; maxHoursPerWeek?: number; availability?: boolean[][] }>;
+  faculty?: Array<{
+    id: string;
+    name: string;
+    maxHoursPerDay?: number;
+    maxHoursPerWeek?: number;
+    availability?: boolean[][];
+  }>;
   rooms?: Array<{ id: string; name: string; type: string; capacity: number }>;
 }
 
@@ -26,7 +40,11 @@ export class GraphFromInstitutionBuilder {
     const edges: BlueprintEdgeDto[] = [];
 
     let edgeCounter = 1;
-    const addEdge = (sourceId: string, targetId: string, type = 'hierarchy') => {
+    const addEdge = (
+      sourceId: string,
+      targetId: string,
+      type = 'hierarchy',
+    ) => {
       edges.push({
         id: `edge_${projectId}_${edgeCounter++}`,
         projectId,
@@ -209,7 +227,9 @@ export class GraphFromInstitutionBuilder {
         position: { x: 1200, y: idx * 120 },
         data: {
           name: f.name,
-          availability: f.availability || Array.from({ length: 7 }, () => Array(10).fill(true)),
+          availability:
+            f.availability ||
+            Array.from({ length: 7 }, () => Array<boolean>(10).fill(true)),
           maxHoursPerDay: f.maxHoursPerDay || 4,
           maxHoursPerWeek: f.maxHoursPerWeek || 16,
         },

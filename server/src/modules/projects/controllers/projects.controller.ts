@@ -11,7 +11,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '../../auth/guards/auth.guard';
+import { AuthGuard, type RequestUser } from '../../auth/guards/auth.guard';
 import { PermissionsGuard } from '../../../common/rbac/permissions.guard';
 import { RequirePermissions } from '../../../common/rbac/roles.decorator';
 import { ProjectsService } from '../services/projects.service';
@@ -29,14 +29,21 @@ export class ProjectsController {
 
   @Post()
   @RequirePermissions('PROJECT_CREATE')
-  async create(@Body() dto: CreateProjectDto, @Request() req: any): Promise<ProjectDto> {
-    return this.projectsService.create(dto, req.user.id, req.user.institutionId);
+  async create(
+    @Body() dto: CreateProjectDto,
+    @Request() req: { user: RequestUser },
+  ): Promise<ProjectDto> {
+    return this.projectsService.create(
+      dto,
+      req.user.id,
+      req.user.institutionId,
+    );
   }
 
   @Get()
   @RequirePermissions('PROJECT_READ')
   async list(
-    @Request() req: any,
+    @Request() req: { user: RequestUser },
     @Query('status') status?: string,
     @Query('search') search?: string,
     @Query('page') page?: string,
@@ -73,7 +80,10 @@ export class ProjectsController {
 
   @Delete(':projectId')
   @RequirePermissions('PROJECT_DELETE')
-  async delete(@Param('projectId') projectId: string, @Request() req: any): Promise<{ success: boolean }> {
+  async delete(
+    @Param('projectId') projectId: string,
+    @Request() req: { user: RequestUser },
+  ): Promise<{ success: boolean }> {
     const success = await this.projectsService.delete(projectId, req.user.id);
     return { success };
   }
@@ -83,14 +93,17 @@ export class ProjectsController {
   async duplicate(
     @Param('projectId') projectId: string,
     @Body() dto: DuplicateProjectDto,
-    @Request() req: any,
+    @Request() req: { user: RequestUser },
   ): Promise<ProjectDto> {
     return this.projectsService.duplicate(projectId, dto, req.user.id);
   }
 
   @Post(':projectId/archive')
   @RequirePermissions('PROJECT_ARCHIVE')
-  async archive(@Param('projectId') projectId: string, @Request() req: any): Promise<ProjectDto> {
+  async archive(
+    @Param('projectId') projectId: string,
+    @Request() req: { user: RequestUser },
+  ): Promise<ProjectDto> {
     return this.projectsService.archive(projectId, req.user.id);
   }
 }

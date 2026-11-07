@@ -20,17 +20,20 @@ export const projectsApi = {
     if (params?.limit) query.set('limit', String(params.limit));
 
     const qs = query.toString();
-    return apiClient.get<{ items: ProjectDto[]; total: number; page: number; limit: number; totalPages: number }>(
+    return apiClient<{ items: ProjectDto[]; total: number; page: number; limit: number; totalPages: number }>(
       `/projects${qs ? `?${qs}` : ''}`,
     );
   },
 
   async getProject(projectId: string): Promise<ProjectDto> {
-    return apiClient.get<ProjectDto>(`/projects/${projectId}`);
+    return apiClient<ProjectDto>(`/projects/${projectId}`);
   },
 
   async createProject(dto: CreateProjectDto): Promise<ProjectDto> {
-    return apiClient.post<ProjectDto>('/projects', dto);
+    return apiClient<ProjectDto>('/projects', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
   },
 
   async updateProject(
@@ -42,18 +45,30 @@ export const projectsApi = {
     if (typeof revision === 'number') {
       headers['If-Match'] = String(revision);
     }
-    return apiClient.patch<ProjectDto>(`/projects/${projectId}`, dto, { headers });
+    return apiClient<ProjectDto>(`/projects/${projectId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(dto),
+      headers,
+    });
   },
 
   async deleteProject(projectId: string): Promise<{ success: boolean }> {
-    return apiClient.delete<{ success: boolean }>(`/projects/${projectId}`);
+    return apiClient<{ success: boolean }>(`/projects/${projectId}`, {
+      method: 'DELETE',
+    });
   },
 
   async duplicateProject(projectId: string, dto: DuplicateProjectDto): Promise<ProjectDto> {
-    return apiClient.post<ProjectDto>(`/projects/${projectId}/duplicate`, dto);
+    return apiClient<ProjectDto>(`/projects/${projectId}/duplicate`, {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
   },
 
   async archiveProject(projectId: string): Promise<ProjectDto> {
-    return apiClient.post<ProjectDto>(`/projects/${projectId}/archive`, {});
+    return apiClient<ProjectDto>(`/projects/${projectId}/archive`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
   },
 };

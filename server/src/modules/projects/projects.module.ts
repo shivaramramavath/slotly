@@ -23,11 +23,7 @@ import { UsersModule } from '../users/users.module';
     forwardRef(() => UsersModule),
   ],
   controllers: [ProjectsController],
-  providers: [
-    MongoProjectRepository,
-    CachedProjectRepository,
-    ProjectsService,
-  ],
+  providers: [MongoProjectRepository, CachedProjectRepository, ProjectsService],
   exports: [CachedProjectRepository, ProjectsService],
 })
 export class ProjectsModule {}

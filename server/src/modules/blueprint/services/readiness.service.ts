@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import type { BlueprintMissingItem, BlueprintNodeDto, BlueprintReadinessDto } from '@slotly/contracts';
+import type {
+  BlueprintMissingItem,
+  BlueprintNodeDto,
+  BlueprintReadinessDto,
+} from '@slotly/contracts';
 
 @Injectable()
 export class ReadinessService {

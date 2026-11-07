@@ -13,11 +13,23 @@ export type ProjectDocument = Project & Document;
 export class Project {
   _id?: string;
   id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Institution',
+    required: true,
+    index: true,
+  })
   institutionId!: string;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true,
+  })
   ownerId!: string;
 
   @Prop({ required: true, trim: true })
@@ -36,7 +48,14 @@ export class Project {
 
   @Prop({
     type: String,
-    enum: ['draft', 'building', 'ready', 'pending_approval', 'published', 'archived'],
+    enum: [
+      'draft',
+      'building',
+      'ready',
+      'pending_approval',
+      'published',
+      'archived',
+    ],
     default: 'draft',
     index: true,
   })

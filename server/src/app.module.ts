@@ -20,6 +20,7 @@ import { InstitutionsModule } from './modules/institutions/institutions.module';
 import { LibraryModule } from './modules/library/library.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { BlueprintModule } from './modules/blueprint/blueprint.module';
+import { EngineModule } from './modules/engine/engine.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { BlueprintModule } from './modules/blueprint/blueprint.module';
     LibraryModule,
     ProjectsModule,
     BlueprintModule,
+    EngineModule,
   ],
   controllers: [AppController],
   providers: [

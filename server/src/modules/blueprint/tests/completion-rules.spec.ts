@@ -21,7 +21,11 @@ describe('Blueprint Completion Rules', () => {
         name: 'Oxford College',
         code: 'OXF',
         workingDays: [1, 2, 3, 4, 5],
-        periodConfig: { startTime: '09:00', periodsPerDay: 7, periodDuration: 50 },
+        periodConfig: {
+          startTime: '09:00',
+          periodsPerDay: 7,
+          periodDuration: 50,
+        },
       });
       expect(res.status).toBe('complete');
       expect(res.missing).toHaveLength(0);

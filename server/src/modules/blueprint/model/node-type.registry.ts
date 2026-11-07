@@ -26,7 +26,10 @@ export interface NodeTypeDefinition {
 
 @Injectable()
 export class NodeTypeRegistry {
-  private readonly definitions = new Map<BlueprintNodeType, NodeTypeDefinition>();
+  private readonly definitions = new Map<
+    BlueprintNodeType,
+    NodeTypeDefinition
+  >();
 
   constructor() {
     this.registerDefaults();
@@ -40,7 +43,12 @@ export class NodeTypeRegistry {
         name: '',
         code: '',
         workingDays: [1, 2, 3, 4, 5],
-        periodConfig: { startTime: '09:00', periodsPerDay: 7, periodDuration: 50, breaks: [] },
+        periodConfig: {
+          startTime: '09:00',
+          periodsPerDay: 7,
+          periodDuration: 50,
+          breaks: [],
+        },
       },
       completionRule: new InstitutionCompletionRule(),
       constraintScope: 'global',
@@ -130,7 +138,9 @@ export class NodeTypeRegistry {
       allowedParentTypes: [],
       defaultData: {
         name: '',
-        availability: Array.from({ length: 7 }, () => Array(10).fill(true)),
+        availability: Array.from({ length: 7 }, () =>
+          Array<boolean>(10).fill(true),
+        ),
         maxHoursPerDay: 4,
         maxHoursPerWeek: 16,
       },
@@ -157,10 +167,10 @@ export class NodeTypeRegistry {
     this.definitions.set(def.type, def);
   }
 
-  get(type: BlueprintNodeType | string): NodeTypeDefinition | undefined {
+  get(type: string): NodeTypeDefinition | undefined {
     // Handle both lowercase and capitalized if needed
     const normalized = this.normalizeType(type);
-    return this.definitions.get(normalized as BlueprintNodeType);
+    return this.definitions.get(normalized);
   }
 
   getAll(): NodeTypeDefinition[] {

@@ -5,7 +5,7 @@ import type { CacheService } from '../../../common/cache/cache.interface';
 import type { Blueprint } from '../schemas/blueprint.schema';
 import type { IBlueprintRepository } from './blueprint.repository.interface';
 import { MongoBlueprintRepository } from './mongo-blueprint.repository';
-import type { BlueprintGraphDto } from '@slotly/contracts';
+import type { BlueprintGraphDto, NodePosition } from '@slotly/contracts';
 
 @Injectable()
 export class CachedBlueprintRepository
@@ -24,7 +24,9 @@ export class CachedBlueprintRepository
 
   async findByProject(projectId: string): Promise<Blueprint | null> {
     const key = `slotly:blueprint:${projectId}`;
-    return this.cache.remember(key, 7200, () => this.blueprintRepo.findByProject(projectId));
+    return this.cache.remember(key, 7200, () =>
+      this.blueprintRepo.findByProject(projectId),
+    );
   }
 
   async saveGraph(
@@ -32,7 +34,11 @@ export class CachedBlueprintRepository
     graph: Partial<BlueprintGraphDto>,
     expectedRevision?: number,
   ): Promise<Blueprint | null> {
-    const updated = await this.blueprintRepo.saveGraph(projectId, graph, expectedRevision);
+    const updated = await this.blueprintRepo.saveGraph(
+      projectId,
+      graph,
+      expectedRevision,
+    );
     if (updated) {
       await this.cache.del(`slotly:blueprint:${projectId}`);
       await this.cache.del(`slotly:blueprint:${projectId}:readiness`);
@@ -48,5 +54,16 @@ export class CachedBlueprintRepository
     await this.cache.del(`slotly:blueprint:${projectId}:readiness`);
     await this.cache.invalidateTag(`project:${projectId}`);
     return doc;
+  }
+
+  async updateNode(
+    projectId: string,
+    nodeId: string,
+    update: {
+      position?: NodePosition | undefined;
+      data?: Record<string, unknown> | undefined;
+    },
+  ): Promise<boolean> {
+    return this.blueprintRepo.updateNode(projectId, nodeId, update);
   }
 }

@@ -107,7 +107,12 @@ export class PendingApprovalState implements IProjectState {
     return false;
   }
   transitionTo(target: ProjectLifecycleStatus): boolean {
-    return target === 'published' || target === 'ready' || target === 'draft' || target === 'archived';
+    return (
+      target === 'published' ||
+      target === 'ready' ||
+      target === 'draft' ||
+      target === 'archived'
+    );
   }
 }
 

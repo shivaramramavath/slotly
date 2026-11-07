@@ -17,19 +17,26 @@ export class CompletionService {
   compute(
     node: BlueprintNodeDto,
     allNodesMap: Map<string, BlueprintNodeDto>,
-  ): { status: NodeStatus; effectiveStatus: NodeStatus; missing: Array<{ field: string; message: string }> } {
+  ): {
+    status: NodeStatus;
+    effectiveStatus: NodeStatus;
+    missing: Array<{ field: string; message: string }>;
+  } {
     const def = this.nodeTypeRegistry.get(node.type);
     if (!def) {
       return {
         status: 'incomplete',
         effectiveStatus: 'incomplete',
-        missing: [{ field: 'type', message: `Unknown node type: ${node.type}` }],
+        missing: [
+          { field: 'type', message: `Unknown node type: ${node.type}` },
+        ],
       };
     }
 
     // Context preparation (parent, siblings)
     let parentNode: { type: string; data: Record<string, unknown> } | undefined;
-    const siblingNodes: Array<{ type: string; data: Record<string, unknown> }> = [];
+    const siblingNodes: Array<{ type: string; data: Record<string, unknown> }> =
+      [];
 
     if (node.parentId && allNodesMap.has(node.parentId)) {
       const p = allNodesMap.get(node.parentId)!;
@@ -77,10 +84,13 @@ export class CompletionService {
     return { status, effectiveStatus, missing };
   }
 
-  recomputeGraph(
-    nodes: BlueprintNodeDto[],
-  ): { updatedNodes: BlueprintNodeDto[]; changes: NodeStatusChangeEvent[] } {
-    const nodesMap = new Map<string, BlueprintNodeDto>(nodes.map((n) => [n.id, { ...n }]));
+  recomputeGraph(nodes: BlueprintNodeDto[]): {
+    updatedNodes: BlueprintNodeDto[];
+    changes: NodeStatusChangeEvent[];
+  } {
+    const nodesMap = new Map<string, BlueprintNodeDto>(
+      nodes.map((n) => [n.id, { ...n }]),
+    );
     const changes: NodeStatusChangeEvent[] = [];
 
     // Topological evaluation: roots first, then children
@@ -93,7 +103,8 @@ export class CompletionService {
     while (remaining.length > 0 && iterations < maxIterations) {
       iterations++;
       const nextBatch = remaining.filter(
-        (n) => !n.parentId || evaluated.has(n.parentId) || !nodesMap.has(n.parentId),
+        (n) =>
+          !n.parentId || evaluated.has(n.parentId) || !nodesMap.has(n.parentId),
       );
 
       if (nextBatch.length === 0) {
@@ -102,7 +113,10 @@ export class CompletionService {
       }
 
       for (const node of nextBatch) {
-        const { status, effectiveStatus, missing } = this.compute(node, nodesMap);
+        const { status, effectiveStatus, missing } = this.compute(
+          node,
+          nodesMap,
+        );
         const hasChanged =
           node.status !== status ||
           node.effectiveStatus !== effectiveStatus ||

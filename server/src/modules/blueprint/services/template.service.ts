@@ -11,6 +11,16 @@ import { OperationService } from './operation.service';
 import { CachedProjectRepository } from '../../projects/repositories/cached-project.repository';
 import * as crypto from 'crypto';
 
+function getId(
+  doc:
+    { id?: string; _id?: { toString(): string } | string } | null | undefined,
+): string {
+  if (!doc) return '';
+  if (doc.id) return doc.id;
+  if (!doc._id) return '';
+  return typeof doc._id === 'string' ? doc._id : doc._id.toString();
+}
+
 @Injectable()
 export class TemplateService implements OnModuleInit {
   constructor(
@@ -61,7 +71,11 @@ export class TemplateService implements OnModuleInit {
             type: 'semester',
             parentId: 'tpl_ay_g10',
             position: { x: 200, y: 600 },
-            data: { semesterNumber: 1, startDate: '2026-08-01', endDate: '2026-12-15' },
+            data: {
+              semesterNumber: 1,
+              startDate: '2026-08-01',
+              endDate: '2026-12-15',
+            },
           },
           {
             id: 'tpl_sec_10a',
@@ -72,10 +86,30 @@ export class TemplateService implements OnModuleInit {
           },
         ],
         edges: [
-          { id: 'tpl_e_1', source: 'tpl_dept_highschool', target: 'tpl_prog_grade10', type: 'hierarchy' },
-          { id: 'tpl_e_2', source: 'tpl_prog_grade10', target: 'tpl_ay_g10', type: 'hierarchy' },
-          { id: 'tpl_e_3', source: 'tpl_ay_g10', target: 'tpl_sem_term1', type: 'hierarchy' },
-          { id: 'tpl_e_4', source: 'tpl_sem_term1', target: 'tpl_sec_10a', type: 'hierarchy' },
+          {
+            id: 'tpl_e_1',
+            source: 'tpl_dept_highschool',
+            target: 'tpl_prog_grade10',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_2',
+            source: 'tpl_prog_grade10',
+            target: 'tpl_ay_g10',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_3',
+            source: 'tpl_ay_g10',
+            target: 'tpl_sem_term1',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_4',
+            source: 'tpl_sem_term1',
+            target: 'tpl_sec_10a',
+            type: 'hierarchy',
+          },
         ],
       },
     });
@@ -113,7 +147,11 @@ export class TemplateService implements OnModuleInit {
             type: 'semester',
             parentId: 'tpl_ay_yr1',
             position: { x: 300, y: 600 },
-            data: { semesterNumber: 1, startDate: '2026-09-01', endDate: '2027-01-20' },
+            data: {
+              semesterNumber: 1,
+              startDate: '2026-09-01',
+              endDate: '2027-01-20',
+            },
           },
           {
             id: 'tpl_sec_cse_a',
@@ -138,12 +176,42 @@ export class TemplateService implements OnModuleInit {
           },
         ],
         edges: [
-          { id: 'tpl_e_c1', source: 'tpl_dept_cs', target: 'tpl_prog_btech', type: 'hierarchy' },
-          { id: 'tpl_e_c2', source: 'tpl_prog_btech', target: 'tpl_ay_yr1', type: 'hierarchy' },
-          { id: 'tpl_e_c3', source: 'tpl_ay_yr1', target: 'tpl_sem_s1', type: 'hierarchy' },
-          { id: 'tpl_e_c4', source: 'tpl_sem_s1', target: 'tpl_sec_cse_a', type: 'hierarchy' },
-          { id: 'tpl_e_c5', source: 'tpl_sec_cse_a', target: 'tpl_batch_cse_a1', type: 'hierarchy' },
-          { id: 'tpl_e_c6', source: 'tpl_sec_cse_a', target: 'tpl_batch_cse_a2', type: 'hierarchy' },
+          {
+            id: 'tpl_e_c1',
+            source: 'tpl_dept_cs',
+            target: 'tpl_prog_btech',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_c2',
+            source: 'tpl_prog_btech',
+            target: 'tpl_ay_yr1',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_c3',
+            source: 'tpl_ay_yr1',
+            target: 'tpl_sem_s1',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_c4',
+            source: 'tpl_sem_s1',
+            target: 'tpl_sec_cse_a',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_c5',
+            source: 'tpl_sec_cse_a',
+            target: 'tpl_batch_cse_a1',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_c6',
+            source: 'tpl_sec_cse_a',
+            target: 'tpl_batch_cse_a2',
+            type: 'hierarchy',
+          },
         ],
       },
     });
@@ -181,7 +249,11 @@ export class TemplateService implements OnModuleInit {
             type: 'semester',
             parentId: 'tpl_ay_stem1',
             position: { x: 300, y: 600 },
-            data: { semesterNumber: 1, startDate: '2026-08-15', endDate: '2026-12-20' },
+            data: {
+              semesterNumber: 1,
+              startDate: '2026-08-15',
+              endDate: '2026-12-20',
+            },
           },
           {
             id: 'tpl_sec_lab1',
@@ -206,11 +278,36 @@ export class TemplateService implements OnModuleInit {
           },
         ],
         edges: [
-          { id: 'tpl_e_l1', source: 'tpl_dept_chem', target: 'tpl_prog_stem', type: 'hierarchy' },
-          { id: 'tpl_e_l2', source: 'tpl_prog_stem', target: 'tpl_ay_stem1', type: 'hierarchy' },
-          { id: 'tpl_e_l3', source: 'tpl_ay_stem1', target: 'tpl_sem_stem1', type: 'hierarchy' },
-          { id: 'tpl_e_l4', source: 'tpl_sem_stem1', target: 'tpl_sec_lab1', type: 'hierarchy' },
-          { id: 'tpl_e_l5', source: 'tpl_sec_lab1', target: 'tpl_sub_organic', type: 'hierarchy' },
+          {
+            id: 'tpl_e_l1',
+            source: 'tpl_dept_chem',
+            target: 'tpl_prog_stem',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_l2',
+            source: 'tpl_prog_stem',
+            target: 'tpl_ay_stem1',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_l3',
+            source: 'tpl_ay_stem1',
+            target: 'tpl_sem_stem1',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_l4',
+            source: 'tpl_sem_stem1',
+            target: 'tpl_sec_lab1',
+            type: 'hierarchy',
+          },
+          {
+            id: 'tpl_e_l5',
+            source: 'tpl_sec_lab1',
+            target: 'tpl_sub_organic',
+            type: 'hierarchy',
+          },
         ],
       },
     });
@@ -219,7 +316,7 @@ export class TemplateService implements OnModuleInit {
   async listTemplates(institutionId?: string): Promise<GraphTemplateDto[]> {
     const list = await this.templateRepo.findAvailableTemplates(institutionId);
     return list.map((t) => ({
-      id: t.id || (t as any)._id?.toString() || '',
+      id: getId(t),
       name: t.name,
       category: t.category,
       subtree: t.subtree,
@@ -227,7 +324,7 @@ export class TemplateService implements OnModuleInit {
       visibility: t.visibility,
       institutionId: t.institutionId || undefined,
       createdById: t.createdById || undefined,
-      createdAt: (t as any).createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: t.createdAt?.toISOString() || new Date().toISOString(),
     }));
   }
 
@@ -235,7 +332,7 @@ export class TemplateService implements OnModuleInit {
     const t = await this.templateRepo.findById(templateId);
     if (!t) return null;
     return {
-      id: t.id || (t as any)._id?.toString() || '',
+      id: getId(t),
       name: t.name,
       category: t.category,
       subtree: t.subtree,
@@ -243,7 +340,7 @@ export class TemplateService implements OnModuleInit {
       visibility: t.visibility,
       institutionId: t.institutionId || undefined,
       createdById: t.createdById || undefined,
-      createdAt: (t as any).createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: t.createdAt?.toISOString() || new Date().toISOString(),
     };
   }
 
@@ -262,11 +359,14 @@ export class TemplateService implements OnModuleInit {
       createdById: userId,
       anchorNodeType: dto.anchorNodeType || null,
     });
-    const createdId = created.id || (created as any)._id?.toString() || '';
+    const createdId = getId(created);
     return (await this.getTemplate(createdId))!;
   }
 
-  async duplicateTemplate(templateId: string, userId: string): Promise<GraphTemplateDto> {
+  async duplicateTemplate(
+    templateId: string,
+    userId: string,
+  ): Promise<GraphTemplateDto> {
     const original = await this.getTemplate(templateId);
     if (!original) {
       throw new Error(`Template ${templateId} not found`);
@@ -281,7 +381,7 @@ export class TemplateService implements OnModuleInit {
       institutionId: original.institutionId || null,
       createdById: userId,
     });
-    const copyId = copy.id || (copy as any)._id?.toString() || '';
+    const copyId = getId(copy);
 
     return (await this.getTemplate(copyId))!;
   }
@@ -390,12 +490,17 @@ export class TemplateService implements OnModuleInit {
     }
 
     // Execute through OperationService
-    const projId = project.id || (project as any)._id?.toString() || projectId;
+    const projId = getId(project) || projectId;
     const result = await this.operationService.applyBatch(
       ops,
       existingNodes,
       existingEdges,
-      { id: projId, status: project.status, isLocked: false, isDeleted: project.isDeleted },
+      {
+        id: projId,
+        status: project.status,
+        isLocked: false,
+        isDeleted: project.isDeleted,
+      },
       userId ? { id: userId, role: 'ADMIN' } : undefined,
     );
 

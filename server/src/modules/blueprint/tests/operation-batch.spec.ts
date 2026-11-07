@@ -69,14 +69,22 @@ describe('OperationService.applyBatch & Topological Sort', () => {
         opId: 'op_dept',
         type: 'add_node',
         targetId: 'dept_1',
-        node: { type: 'department', parentId: 'inst_1', data: { name: 'CS', code: 'CS' } },
+        node: {
+          type: 'department',
+          parentId: 'inst_1',
+          data: { name: 'CS', code: 'CS' },
+        },
         parentId: 'inst_1',
       },
       {
         opId: 'op_prog',
         type: 'add_node',
         targetId: 'prog_1',
-        node: { type: 'program', parentId: 'dept_1', data: { name: 'BTech', durationYears: 4 } },
+        node: {
+          type: 'program',
+          parentId: 'dept_1',
+          data: { name: 'BTech', durationYears: 4 },
+        },
         parentId: 'dept_1',
       },
     ];

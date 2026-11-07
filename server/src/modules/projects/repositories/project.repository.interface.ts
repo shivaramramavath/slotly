@@ -16,5 +16,8 @@ export interface IProjectRepository extends BaseRepository<Project> {
   ): Promise<{ items: Project[]; total: number }>;
   findByInstitution(institutionId: string): Promise<Project[]>;
   updateLastOpened(id: string): Promise<void>;
-  incrementRevision(id: string, expectedRevision?: number): Promise<Project | null>;
+  incrementRevision(
+    id: string,
+    expectedRevision?: number,
+  ): Promise<Project | null>;
 }

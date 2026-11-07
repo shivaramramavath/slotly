@@ -16,6 +16,8 @@ export interface RequestUser {
   id: string;
   role: UserRole;
   sessionId: string;
+  institutionId?: string;
+  email?: string;
 }
 
 @Injectable()

@@ -9,7 +9,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '../../auth/guards/auth.guard';
+import { AuthGuard, type RequestUser } from '../../auth/guards/auth.guard';
 import { PermissionsGuard } from '../../../common/rbac/permissions.guard';
 import { RequirePermissions } from '../../../common/rbac/roles.decorator';
 import { BlueprintService } from '../services/blueprint.service';
@@ -34,13 +34,17 @@ export class BlueprintController {
 
   @Get()
   @RequirePermissions('BLUEPRINT_READ')
-  async getGraph(@Param('projectId') projectId: string): Promise<BlueprintGraphDto> {
+  async getGraph(
+    @Param('projectId') projectId: string,
+  ): Promise<BlueprintGraphDto> {
     return this.blueprintService.getGraph(projectId);
   }
 
   @Get('readiness')
   @RequirePermissions('BLUEPRINT_READ')
-  async getReadiness(@Param('projectId') projectId: string): Promise<BlueprintReadinessDto> {
+  async getReadiness(
+    @Param('projectId') projectId: string,
+  ): Promise<BlueprintReadinessDto> {
     return this.blueprintService.getReadiness(projectId);
   }
 
@@ -59,7 +63,7 @@ export class BlueprintController {
     @Param('projectId') projectId: string,
     @Body() dto: ApplyOperationsDto,
     @Headers('if-match') ifMatch: string | undefined,
-    @Request() req: any,
+    @Request() req: { user: RequestUser },
   ): Promise<BatchOperationResult> {
     if (ifMatch && typeof dto.clientRevision !== 'number') {
       dto.clientRevision = parseInt(ifMatch, 10);
@@ -69,7 +73,9 @@ export class BlueprintController {
 
   @Get('history')
   @RequirePermissions('BLUEPRINT_READ')
-  async getHistory(@Param('projectId') projectId: string): Promise<BlueprintHistoryEntryDto[]> {
+  async getHistory(
+    @Param('projectId') projectId: string,
+  ): Promise<BlueprintHistoryEntryDto[]> {
     return this.blueprintService.getHistory(projectId);
   }
 
@@ -95,8 +101,8 @@ export class BlueprintController {
   @RequirePermissions('BLUEPRINT_EDIT')
   async import(
     @Param('projectId') projectId: string,
-    @Body() body: any,
-    @Request() req: any,
+    @Body() body: Record<string, unknown>,
+    @Request() req: { user: RequestUser },
   ): Promise<BatchOperationResult> {
     return this.blueprintService.importGraph(projectId, body, req.user.id);
   }
@@ -116,13 +122,13 @@ export class BlueprintController {
     @Param('projectId') projectId: string,
     @Param('nodeId') nodeId: string,
     @Body() dto: CreateBlueprintCommentDto,
-    @Request() req: any,
+    @Request() req: { user: RequestUser },
   ): Promise<BlueprintCommentDto> {
     return this.blueprintService.addComment(
       projectId,
       nodeId,
       req.user.id,
-      req.user.name || 'User',
+      req.user.email || 'User',
       dto.text,
     );
   }
@@ -138,7 +144,9 @@ export class BlueprintController {
 
   @Get('snapshots')
   @RequirePermissions('BLUEPRINT_READ')
-  async listSnapshots(@Param('projectId') projectId: string): Promise<BlueprintSnapshotDto[]> {
+  async listSnapshots(
+    @Param('projectId') projectId: string,
+  ): Promise<BlueprintSnapshotDto[]> {
     return this.blueprintService.listSnapshots(projectId);
   }
 

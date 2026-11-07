@@ -1,11 +1,17 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type {
   ApplyOperationsDto,
   BatchOperationResult,
   BlueprintCommentDto,
+  BlueprintEdgeDto,
   BlueprintGraphDto,
   BlueprintHistoryEntryDto,
   BlueprintImpactDto,
+  BlueprintNodeDto,
   BlueprintReadinessDto,
   BlueprintRecommendationDto,
   BlueprintSnapshotDto,
@@ -23,6 +29,16 @@ import {
   BlueprintSnapshotRepository,
 } from '../repositories/blueprint-auxiliary.repositories';
 import { EventBus } from '../../../common/events/event-bus.service';
+
+function getId(
+  doc:
+    { id?: string; _id?: { toString(): string } | string } | null | undefined,
+): string {
+  if (!doc) return '';
+  if (doc.id) return doc.id;
+  if (!doc._id) return '';
+  return typeof doc._id === 'string' ? doc._id : doc._id.toString();
+}
 
 @Injectable()
 export class BlueprintService {
@@ -52,14 +68,16 @@ export class BlueprintService {
     }
 
     // Ensure status is up to date
-    const { updatedNodes } = this.completionService.recomputeGraph(blueprint.nodes);
+    const { updatedNodes } = this.completionService.recomputeGraph(
+      blueprint.nodes,
+    );
 
     return {
       projectId,
       revision: blueprint.revision,
       nodes: updatedNodes,
       edges: blueprint.edges,
-      updatedAt: (blueprint as any).updatedAt?.toISOString?.() || new Date().toISOString(),
+      updatedAt: blueprint.updatedAt?.toISOString() || new Date().toISOString(),
     };
   }
 
@@ -79,7 +97,10 @@ export class BlueprintService {
     }
 
     // Optimistic concurrency check
-    if (typeof dto.clientRevision === 'number' && dto.clientRevision !== blueprint.revision) {
+    if (
+      typeof dto.clientRevision === 'number' &&
+      dto.clientRevision !== blueprint.revision
+    ) {
       throw new ConflictException({
         code: 'REVISION_CONFLICT',
         message: `Blueprint revision mismatch: server is at ${blueprint.revision}, client submitted ${dto.clientRevision}`,
@@ -94,12 +115,17 @@ export class BlueprintService {
       });
     }
 
-    const projId = project.id || (project as any)._id?.toString() || projectId;
+    const projId = getId(project) || projectId;
     const result = await this.operationService.applyBatch(
       dto.operations,
       blueprint.nodes,
       blueprint.edges,
-      { id: projId, status: project.status, isLocked: false, isDeleted: project.isDeleted },
+      {
+        id: projId,
+        status: project.status,
+        isLocked: false,
+        isDeleted: project.isDeleted,
+      },
       { id: userId, role: 'ADMIN' },
     );
 
@@ -148,7 +174,10 @@ export class BlueprintService {
     return this.readinessService.computeReadiness(graph.nodes);
   }
 
-  async getImpact(projectId: string, nodeId: string): Promise<BlueprintImpactDto> {
+  async getImpact(
+    projectId: string,
+    nodeId: string,
+  ): Promise<BlueprintImpactDto> {
     const graph = await this.getGraph(projectId);
     return this.impactAnalyzer.analyze(nodeId, graph.nodes);
   }
@@ -158,7 +187,11 @@ export class BlueprintService {
     targetNodeId?: string,
   ): Promise<BlueprintRecommendationDto[]> {
     const graph = await this.getGraph(projectId);
-    return this.recommendationsService.getRecommendations(graph.nodes, graph.edges, targetNodeId);
+    return this.recommendationsService.getRecommendations(
+      graph.nodes,
+      graph.edges,
+      targetNodeId,
+    );
   }
 
   async exportGraph(
@@ -190,13 +223,25 @@ export class BlueprintService {
     };
   }
 
-  async importGraph(projectId: string, importedData: any, userId: string): Promise<BatchOperationResult> {
-    const nodes = importedData?.blueprint?.nodes || importedData?.nodes || [];
-    const edges = importedData?.blueprint?.edges || importedData?.edges || [];
+  async importGraph(
+    projectId: string,
+    importedData: Record<string, unknown>,
+    userId: string,
+  ): Promise<BatchOperationResult> {
+    const payload = importedData as {
+      blueprint?: { nodes?: BlueprintNodeDto[]; edges?: BlueprintEdgeDto[] };
+      nodes?: BlueprintNodeDto[];
+      edges?: BlueprintEdgeDto[];
+    };
+    const rawNodes: BlueprintNodeDto[] =
+      payload.blueprint?.nodes ?? payload.nodes ?? [];
+    const rawEdges: BlueprintEdgeDto[] =
+      payload.blueprint?.edges ?? payload.edges ?? [];
 
     const ops: ApplyOperationsDto['operations'] = [];
 
-    for (const n of nodes) {
+    for (const n of rawNodes) {
+      if (!n.id) continue;
       ops.push({
         opId: `import_${n.id}`,
         type: 'add_node',
@@ -206,7 +251,8 @@ export class BlueprintService {
       });
     }
 
-    for (const e of edges) {
+    for (const e of rawEdges) {
+      if (!e.id) continue;
       ops.push({
         opId: `import_${e.id}`,
         type: 'add_edge',
@@ -221,17 +267,20 @@ export class BlueprintService {
   async getHistory(projectId: string): Promise<BlueprintHistoryEntryDto[]> {
     const list = await this.historyRepo.findByProject(projectId);
     return list.map((h) => ({
-      id: h.id || (h as any)._id?.toString() || '',
+      id: getId(h),
       projectId: h.projectId,
       revision: h.revision,
       operationType: h.operationType,
       description: h.description,
       userId: h.userId,
-      timestamp: (h as any).createdAt?.toISOString?.() || new Date().toISOString(),
+      timestamp: h.createdAt?.toISOString() || new Date().toISOString(),
     }));
   }
 
-  async createSnapshot(projectId: string, label: string): Promise<BlueprintSnapshotDto> {
+  async createSnapshot(
+    projectId: string,
+    label: string,
+  ): Promise<BlueprintSnapshotDto> {
     const graph = await this.getGraph(projectId);
     const snap = await this.snapshotRepo.create({
       projectId,
@@ -239,30 +288,32 @@ export class BlueprintService {
       label,
       graph,
     });
-    const snapId = snap.id || (snap as any)._id?.toString() || '';
     return {
-      id: snapId,
+      id: getId(snap),
       projectId: snap.projectId,
       revision: snap.revision,
       label: snap.label,
       graph: snap.graph,
-      createdAt: (snap as any).createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: snap.createdAt?.toISOString() || new Date().toISOString(),
     };
   }
 
   async listSnapshots(projectId: string): Promise<BlueprintSnapshotDto[]> {
     const list = await this.snapshotRepo.findByProject(projectId);
     return list.map((s) => ({
-      id: s.id || (s as any)._id?.toString() || '',
+      id: getId(s),
       projectId: s.projectId,
       revision: s.revision,
       label: s.label,
       graph: s.graph,
-      createdAt: (s as any).createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: s.createdAt?.toISOString() || new Date().toISOString(),
     }));
   }
 
-  async restoreSnapshot(projectId: string, snapshotId: string): Promise<BlueprintGraphDto> {
+  async restoreSnapshot(
+    projectId: string,
+    snapshotId: string,
+  ): Promise<BlueprintGraphDto> {
     const snap = await this.snapshotRepo.findById(snapshotId);
     if (!snap) {
       throw new NotFoundException(`Snapshot ${snapshotId} not found`);
@@ -287,7 +338,11 @@ export class BlueprintService {
   async compareSnapshot(
     projectId: string,
     snapshotId: string,
-  ): Promise<{ addedNodes: string[]; removedNodes: string[]; modifiedNodes: string[] }> {
+  ): Promise<{
+    addedNodes: string[];
+    removedNodes: string[];
+    modifiedNodes: string[];
+  }> {
     const snap = await this.snapshotRepo.findById(snapshotId);
     if (!snap) {
       throw new NotFoundException(`Snapshot ${snapshotId} not found`);
@@ -297,8 +352,12 @@ export class BlueprintService {
     const snapNodeIds = new Set(snap.graph.nodes.map((n) => n.id));
     const currNodeIds = new Set(currentGraph.nodes.map((n) => n.id));
 
-    const addedNodes = currentGraph.nodes.filter((n) => !snapNodeIds.has(n.id)).map((n) => n.id);
-    const removedNodes = snap.graph.nodes.filter((n) => !currNodeIds.has(n.id)).map((n) => n.id);
+    const addedNodes = currentGraph.nodes
+      .filter((n) => !snapNodeIds.has(n.id))
+      .map((n) => n.id);
+    const removedNodes = snap.graph.nodes
+      .filter((n) => !currNodeIds.has(n.id))
+      .map((n) => n.id);
     const modifiedNodes = currentGraph.nodes
       .filter((n) => snapNodeIds.has(n.id))
       .filter((n) => {
@@ -310,16 +369,19 @@ export class BlueprintService {
     return { addedNodes, removedNodes, modifiedNodes };
   }
 
-  async getComments(projectId: string, nodeId: string): Promise<BlueprintCommentDto[]> {
+  async getComments(
+    projectId: string,
+    nodeId: string,
+  ): Promise<BlueprintCommentDto[]> {
     const comments = await this.commentRepo.findByNode(projectId, nodeId);
     return comments.map((c) => ({
-      id: c.id || (c as any)._id?.toString() || '',
+      id: getId(c),
       projectId: c.projectId,
       nodeId: c.nodeId,
       userId: c.userId,
       userName: c.userName,
       text: c.text,
-      createdAt: (c as any).createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: c.createdAt?.toISOString() || new Date().toISOString(),
     }));
   }
 
@@ -338,13 +400,13 @@ export class BlueprintService {
       text,
     });
     return {
-      id: comment.id || (comment as any)._id?.toString() || '',
+      id: getId(comment),
       projectId: comment.projectId,
       nodeId: comment.nodeId,
       userId: comment.userId,
       userName: comment.userName,
       text: comment.text,
-      createdAt: (comment as any).createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: comment.createdAt?.toISOString() || new Date().toISOString(),
     };
   }
 }

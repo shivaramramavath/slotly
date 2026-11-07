@@ -8,8 +8,15 @@ export type BlueprintSnapshotDocument = BlueprintSnapshot & Document;
 export class BlueprintSnapshot {
   _id?: string;
   id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Project', required: true, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Project',
+    required: true,
+    index: true,
+  })
   projectId!: string;
 
   @Prop({ type: Number, required: true })
@@ -22,5 +29,6 @@ export class BlueprintSnapshot {
   graph!: BlueprintGraphDto;
 }
 
-export const BlueprintSnapshotSchema = SchemaFactory.createForClass(BlueprintSnapshot);
+export const BlueprintSnapshotSchema =
+  SchemaFactory.createForClass(BlueprintSnapshot);
 BlueprintSnapshotSchema.index({ projectId: 1, createdAt: -1 });

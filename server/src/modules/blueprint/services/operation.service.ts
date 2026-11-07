@@ -5,7 +5,6 @@ import type {
   BlueprintOp,
   OperationResultApplied,
   OperationResultSkipped,
-  ReasonCode,
 } from '@slotly/contracts';
 import { GateChain } from '../gates/gate-chain';
 import { CompletionService } from './completion.service';
@@ -34,7 +33,9 @@ export class OperationService {
    */
   topologicalSort(ops: BlueprintOp[]): BlueprintOp[] {
     const addNodes = ops.filter((o) => o.type === 'add_node');
-    const updateOrMoveNodes = ops.filter((o) => o.type === 'update_node' || o.type === 'move_node');
+    const updateOrMoveNodes = ops.filter(
+      (o) => o.type === 'update_node' || o.type === 'move_node',
+    );
     const addEdges = ops.filter((o) => o.type === 'add_edge');
     const deleteEdges = ops.filter((o) => o.type === 'delete_edge');
     const deleteNodes = ops.filter((o) => o.type === 'delete_node');
@@ -50,7 +51,9 @@ export class OperationService {
       const nextBatch = remaining.filter((op) => {
         const parentId = op.parentId ?? op.node?.parentId;
         // Ready if parent is already added in sortedAddNodes OR parent is not in this batch of addNodes
-        const isParentInBatch = addNodes.some((other) => other.targetId === parentId);
+        const isParentInBatch = addNodes.some(
+          (other) => other.targetId === parentId,
+        );
         return !parentId || !isParentInBatch || addedNodeIds.has(parentId);
       });
 
@@ -80,7 +83,12 @@ export class OperationService {
     ops: BlueprintOp[],
     currentNodes: BlueprintNodeDto[],
     currentEdges: BlueprintEdgeDto[],
-    project: { id: string; status: string; isLocked?: boolean; isDeleted?: boolean },
+    project: {
+      id: string;
+      status: string;
+      isLocked?: boolean;
+      isDeleted?: boolean;
+    },
     user?: { id: string; role: string; permissions?: string[] },
   ): Promise<ApplyBatchResult> {
     const sortedOps = this.topologicalSort(ops);
@@ -110,8 +118,14 @@ export class OperationService {
         continue;
       }
 
-      if ((edgeSource && failedNodeIds.has(edgeSource)) || (edgeTarget && failedNodeIds.has(edgeTarget))) {
-        const failedEndpoint = edgeSource && failedNodeIds.has(edgeSource) ? edgeSource : edgeTarget!;
+      if (
+        (edgeSource && failedNodeIds.has(edgeSource)) ||
+        (edgeTarget && failedNodeIds.has(edgeTarget))
+      ) {
+        const failedEndpoint =
+          edgeSource && failedNodeIds.has(edgeSource)
+            ? edgeSource
+            : edgeTarget!;
         skipped.push({
           opId: op.opId,
           type: op.type,
@@ -137,7 +151,7 @@ export class OperationService {
           opId: op.opId,
           type: op.type,
           targetId: op.targetId,
-          reasonCode: (gateResult.reasonCode ?? 'INVALID_OPERATION') as ReasonCode,
+          reasonCode: gateResult.reasonCode ?? 'INVALID_OPERATION',
           message: gateResult.message || 'Operation rejected by gate chain',
           fixHint: gateResult.fixHint,
         });
@@ -166,7 +180,11 @@ export class OperationService {
     };
   }
 
-  private applyOpToMemory(op: BlueprintOp, nodes: BlueprintNodeDto[], edges: BlueprintEdgeDto[]): void {
+  private applyOpToMemory(
+    op: BlueprintOp,
+    nodes: BlueprintNodeDto[],
+    edges: BlueprintEdgeDto[],
+  ): void {
     switch (op.type) {
       case 'add_node': {
         const node: BlueprintNodeDto = {
@@ -226,7 +244,10 @@ export class OperationService {
         }
         // Remove connected edges
         for (let i = edges.length - 1; i >= 0; i--) {
-          if (edges[i]!.source === op.targetId || edges[i]!.target === op.targetId) {
+          if (
+            edges[i]!.source === op.targetId ||
+            edges[i]!.target === op.targetId
+          ) {
             edges.splice(i, 1);
           }
         }

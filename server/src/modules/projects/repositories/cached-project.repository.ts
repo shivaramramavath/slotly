@@ -3,7 +3,10 @@ import { CachedRepository } from '../../../common/database/cached.repository';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import type { Project } from '../schemas/project.schema';
-import type { FindProjectsFilter, IProjectRepository } from './project.repository.interface';
+import type {
+  FindProjectsFilter,
+  IProjectRepository,
+} from './project.repository.interface';
 import { MongoProjectRepository } from './mongo-project.repository';
 
 @Injectable()
@@ -31,7 +34,9 @@ export class CachedProjectRepository
 
   async findByInstitution(institutionId: string): Promise<Project[]> {
     const key = `slotly:institution:${institutionId}:projects`;
-    return this.cache.remember(key, 300, () => this.projectRepo.findByInstitution(institutionId));
+    return this.cache.remember(key, 300, () =>
+      this.projectRepo.findByInstitution(institutionId),
+    );
   }
 
   async updateLastOpened(id: string): Promise<void> {
@@ -39,8 +44,14 @@ export class CachedProjectRepository
     await this.cache.del(`slotly:project:${id}`);
   }
 
-  async incrementRevision(id: string, expectedRevision?: number): Promise<Project | null> {
-    const updated = await this.projectRepo.incrementRevision(id, expectedRevision);
+  async incrementRevision(
+    id: string,
+    expectedRevision?: number,
+  ): Promise<Project | null> {
+    const updated = await this.projectRepo.incrementRevision(
+      id,
+      expectedRevision,
+    );
     if (updated) {
       await this.cache.del(`slotly:project:${id}`);
       await this.cache.invalidateTag(`project:${id}`);
@@ -51,15 +62,22 @@ export class CachedProjectRepository
   override async create(doc: Partial<Project>): Promise<Project> {
     const created = await super.create(doc);
     if (created.institutionId) {
-      await this.cache.del(`slotly:institution:${created.institutionId}:projects`);
+      await this.cache.del(
+        `slotly:institution:${created.institutionId}:projects`,
+      );
     }
     return created;
   }
 
-  override async update(id: string, doc: Partial<Project>): Promise<Project | null> {
+  override async update(
+    id: string,
+    doc: Partial<Project>,
+  ): Promise<Project | null> {
     const updated = await super.update(id, doc);
     if (updated?.institutionId) {
-      await this.cache.del(`slotly:institution:${updated.institutionId}:projects`);
+      await this.cache.del(
+        `slotly:institution:${updated.institutionId}:projects`,
+      );
       await this.cache.invalidateTag(`project:${id}`);
     }
     return updated;
