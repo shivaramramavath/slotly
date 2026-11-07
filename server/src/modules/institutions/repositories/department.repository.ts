@@ -57,7 +57,9 @@ export class MongoDepartmentRepository
   }
 
   async countActiveByInstitution(institutionId: string): Promise<number> {
-    return this.model.countDocuments({ institutionId, isDeleted: false }).exec();
+    return this.model
+      .countDocuments({ institutionId, isDeleted: false })
+      .exec();
   }
 }
 
@@ -94,7 +96,9 @@ export class CachedDepartmentRepository
     const entity = await this.departmentRepo.findById(id);
     const success = await this.departmentRepo.softDelete(id);
     if (success && entity?.institutionId) {
-      await this.cache.invalidateTag(`institution:${entity.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${entity.institutionId.toString()}`,
+      );
     }
     return success;
   }
@@ -106,7 +110,9 @@ export class CachedDepartmentRepository
   override async create(doc: Partial<Department>): Promise<Department> {
     const created = await super.create(doc);
     if (created?.institutionId) {
-      await this.cache.invalidateTag(`institution:${created.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${created.institutionId.toString()}`,
+      );
     }
     return created;
   }
@@ -117,7 +123,9 @@ export class CachedDepartmentRepository
   ): Promise<Department | null> {
     const updated = await super.update(id, update);
     if (updated?.institutionId) {
-      await this.cache.invalidateTag(`institution:${updated.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${updated.institutionId.toString()}`,
+      );
     }
     return updated;
   }

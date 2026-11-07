@@ -9,13 +9,23 @@ export class Section {
   id?: string | undefined;
   _id?: unknown;
 
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Institution',
+    required: true,
+    index: true,
+  })
   institutionId!: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Semester', required: true, index: true })
   semesterId!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'AcademicYear', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'AcademicYear',
+    required: true,
+    index: true,
+  })
   academicYearId!: Types.ObjectId;
 
   @Prop({ required: true, trim: true })

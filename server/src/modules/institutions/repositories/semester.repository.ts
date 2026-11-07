@@ -13,7 +13,10 @@ export const SEMESTER_REPOSITORY = Symbol('SEMESTER_REPOSITORY');
 export interface SemesterRepository extends BaseRepository<Semester> {
   findByAcademicYear(academicYearId: string): Promise<Semester[]>;
   findByInstitution(institutionId: string): Promise<Semester[]>;
-  findByNumber(academicYearId: string, number: number): Promise<Semester | null>;
+  findByNumber(
+    academicYearId: string,
+    number: number,
+  ): Promise<Semester | null>;
   softDelete(id: string): Promise<boolean>;
   countActiveByAcademicYear(academicYearId: string): Promise<number>;
   countActiveByInstitution(institutionId: string): Promise<number>;
@@ -63,11 +66,15 @@ export class MongoSemesterRepository
   }
 
   async countActiveByAcademicYear(academicYearId: string): Promise<number> {
-    return this.model.countDocuments({ academicYearId, isDeleted: false }).exec();
+    return this.model
+      .countDocuments({ academicYearId, isDeleted: false })
+      .exec();
   }
 
   async countActiveByInstitution(institutionId: string): Promise<number> {
-    return this.model.countDocuments({ institutionId, isDeleted: false }).exec();
+    return this.model
+      .countDocuments({ institutionId, isDeleted: false })
+      .exec();
   }
 }
 
@@ -108,7 +115,9 @@ export class CachedSemesterRepository
     const entity = await this.semesterRepo.findById(id);
     const success = await this.semesterRepo.softDelete(id);
     if (success && entity?.institutionId) {
-      await this.cache.invalidateTag(`institution:${entity.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${entity.institutionId.toString()}`,
+      );
     }
     return success;
   }
@@ -124,7 +133,9 @@ export class CachedSemesterRepository
   override async create(doc: Partial<Semester>): Promise<Semester> {
     const created = await super.create(doc);
     if (created?.institutionId) {
-      await this.cache.invalidateTag(`institution:${created.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${created.institutionId.toString()}`,
+      );
     }
     return created;
   }
@@ -135,7 +146,9 @@ export class CachedSemesterRepository
   ): Promise<Semester | null> {
     const updated = await super.update(id, update);
     if (updated?.institutionId) {
-      await this.cache.invalidateTag(`institution:${updated.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${updated.institutionId.toString()}`,
+      );
     }
     return updated;
   }

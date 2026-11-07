@@ -8,10 +8,20 @@ export class Program {
   id?: string | undefined;
   _id?: unknown;
 
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Institution',
+    required: true,
+    index: true,
+  })
   institutionId!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Department', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Department',
+    required: true,
+    index: true,
+  })
   departmentId!: Types.ObjectId;
 
   @Prop({ required: true, trim: true })

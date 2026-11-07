@@ -10,7 +10,11 @@ describe('DependencyCheckerService', () => {
 
   describe('assertParentActive (Creation Gate G1)', () => {
     it('should pass when parent exists and is active', () => {
-      const parent = { id: 'dept-1', name: 'Computer Science', isDeleted: false };
+      const parent = {
+        id: 'dept-1',
+        name: 'Computer Science',
+        isDeleted: false,
+      };
       expect(() =>
         service.assertParentActive(parent, 'Department', 'dept-1'),
       ).not.toThrow();
@@ -24,13 +28,19 @@ describe('DependencyCheckerService', () => {
       try {
         service.assertParentActive(null, 'Department', 'dept-999');
       } catch (err) {
-        const response = (err as BadRequestException).getResponse() as { code: string };
+        const response = (err as BadRequestException).getResponse() as {
+          code: string;
+        };
         expect(response.code).toBe('PARENT_MISSING');
       }
     });
 
     it('should throw PARENT_MISSING when parent is soft-deleted', () => {
-      const deletedParent = { id: 'dept-1', name: 'Computer Science', isDeleted: true };
+      const deletedParent = {
+        id: 'dept-1',
+        name: 'Computer Science',
+        isDeleted: true,
+      };
       expect(() =>
         service.assertParentActive(deletedParent, 'Department', 'dept-1'),
       ).toThrow(BadRequestException);
@@ -38,7 +48,9 @@ describe('DependencyCheckerService', () => {
       try {
         service.assertParentActive(deletedParent, 'Department', 'dept-1');
       } catch (err) {
-        const response = (err as BadRequestException).getResponse() as { code: string };
+        const response = (err as BadRequestException).getResponse() as {
+          code: string;
+        };
         expect(response.code).toBe('PARENT_MISSING');
       }
     });
@@ -90,7 +102,9 @@ describe('DependencyCheckerService', () => {
       try {
         service.assertBatchCapacities(batches, 60);
       } catch (err) {
-        const response = (err as BadRequestException).getResponse() as { code: string };
+        const response = (err as BadRequestException).getResponse() as {
+          code: string;
+        };
         expect(response.code).toBe('CAPACITY_EXCEEDED');
       }
     });

@@ -69,7 +69,9 @@ export class TreeBuilderService {
     // 3. Map Academic Years with nested semesters
     const academicYearNodes: AcademicYearNode[] = academicYears.map((ay) => {
       const ayId = this.toId(ay);
-      const childSemesters = semesterNodes.filter((s) => s.academicYearId === ayId);
+      const childSemesters = semesterNodes.filter(
+        (s) => s.academicYearId === ayId,
+      );
       return {
         type: 'AcademicYear',
         id: ayId,
@@ -84,7 +86,9 @@ export class TreeBuilderService {
     // 4. Map Programs with nested academic years
     const programNodes: ProgramNode[] = programs.map((prog) => {
       const progId = this.toId(prog);
-      const childYears = academicYearNodes.filter((y) => y.programId === progId);
+      const childYears = academicYearNodes.filter(
+        (y) => y.programId === progId,
+      );
       return {
         type: 'Program',
         id: progId,
@@ -100,7 +104,9 @@ export class TreeBuilderService {
     // 5. Map Departments with nested programs
     const departmentNodes: DepartmentNode[] = departments.map((dept) => {
       const deptId = this.toId(dept);
-      const childPrograms = programNodes.filter((p) => p.departmentId === deptId);
+      const childPrograms = programNodes.filter(
+        (p) => p.departmentId === deptId,
+      );
       return {
         type: 'Department',
         id: deptId,

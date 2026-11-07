@@ -27,33 +27,19 @@ import type {
   CreateHolidayDto,
   InstitutionStructureDto,
 } from '@slotly/contracts';
-import {
-  INSTITUTION_REPOSITORY,
-} from '../repositories/institution.repository';
+import { INSTITUTION_REPOSITORY } from '../repositories/institution.repository';
 import type { InstitutionRepository } from '../repositories/institution.repository';
-import {
-  DEPARTMENT_REPOSITORY,
-} from '../repositories/department.repository';
+import { DEPARTMENT_REPOSITORY } from '../repositories/department.repository';
 import type { DepartmentRepository } from '../repositories/department.repository';
-import {
-  PROGRAM_REPOSITORY,
-} from '../repositories/program.repository';
+import { PROGRAM_REPOSITORY } from '../repositories/program.repository';
 import type { ProgramRepository } from '../repositories/program.repository';
-import {
-  ACADEMIC_YEAR_REPOSITORY,
-} from '../repositories/academic-year.repository';
+import { ACADEMIC_YEAR_REPOSITORY } from '../repositories/academic-year.repository';
 import type { AcademicYearRepository } from '../repositories/academic-year.repository';
-import {
-  SEMESTER_REPOSITORY,
-} from '../repositories/semester.repository';
+import { SEMESTER_REPOSITORY } from '../repositories/semester.repository';
 import type { SemesterRepository } from '../repositories/semester.repository';
-import {
-  SECTION_REPOSITORY,
-} from '../repositories/section.repository';
+import { SECTION_REPOSITORY } from '../repositories/section.repository';
 import type { SectionRepository } from '../repositories/section.repository';
-import {
-  HOLIDAY_REPOSITORY,
-} from '../repositories/holiday.repository';
+import { HOLIDAY_REPOSITORY } from '../repositories/holiday.repository';
 import type { HolidayRepository } from '../repositories/holiday.repository';
 import { DependencyCheckerService } from './dependency-checker.service';
 import { TreeBuilderService } from './tree-builder.service';
@@ -181,7 +167,12 @@ export class DefaultInstitutionsService implements InstitutionsService {
     return (entity.id || entity._id)?.toString() || '';
   }
 
-  private async notifyAcademicChanged(institutionId: string, actorId: string, action: string, details?: Record<string, unknown>) {
+  private async notifyAcademicChanged(
+    institutionId: string,
+    actorId: string,
+    action: string,
+    details?: Record<string, unknown>,
+  ) {
     await this.cache.invalidateTag(`institution:${institutionId}`);
     await this.eventBus.publish('academic.changed', {
       institutionId,
@@ -208,7 +199,8 @@ export class DefaultInstitutionsService implements InstitutionsService {
   // ==========================================
   async getInstitution(id: string): Promise<InstitutionDto> {
     const inst = await this.institutionRepo.findById(id);
-    if (!inst || inst.isDeleted) throw new NotFoundException('Institution not found.');
+    if (!inst || inst.isDeleted)
+      throw new NotFoundException('Institution not found.');
     return {
       id: this.toId(inst),
       name: inst.name,
@@ -226,7 +218,8 @@ export class DefaultInstitutionsService implements InstitutionsService {
     actorId: string,
   ): Promise<InstitutionDto> {
     const inst = await this.institutionRepo.findById(id);
-    if (!inst || inst.isDeleted) throw new NotFoundException('Institution not found.');
+    if (!inst || inst.isDeleted)
+      throw new NotFoundException('Institution not found.');
 
     await this.institutionRepo.update(id, {
       name: dto.name ?? inst.name,
@@ -235,7 +228,9 @@ export class DefaultInstitutionsService implements InstitutionsService {
       defaultPeriodConfig: dto.defaultPeriodConfig ?? inst.defaultPeriodConfig,
     });
 
-    await this.notifyAcademicChanged(id, actorId, 'INSTITUTION_UPDATED', { id });
+    await this.notifyAcademicChanged(id, actorId, 'INSTITUTION_UPDATED', {
+      id,
+    });
     return this.getInstitution(id);
   }
 
@@ -246,7 +241,8 @@ export class DefaultInstitutionsService implements InstitutionsService {
       86400,
       async () => {
         const inst = await this.institutionRepo.findById(institutionId);
-        if (!inst || inst.isDeleted) throw new NotFoundException('Institution not found.');
+        if (!inst || inst.isDeleted)
+          throw new NotFoundException('Institution not found.');
 
         const [depts, progs, years, sems, secs, hols] = await Promise.all([
           this.departmentRepo.findByInstitution(institutionId),
@@ -257,7 +253,15 @@ export class DefaultInstitutionsService implements InstitutionsService {
           this.holidayRepo.findByInstitution(institutionId),
         ]);
 
-        return this.treeBuilder.build(inst, depts, progs, years, sems, secs, hols);
+        return this.treeBuilder.build(
+          inst,
+          depts,
+          progs,
+          years,
+          sems,
+          secs,
+          hols,
+        );
       },
       [`institution:${institutionId}`],
     );
@@ -283,9 +287,16 @@ export class DefaultInstitutionsService implements InstitutionsService {
     actorId: string,
   ): Promise<DepartmentDto> {
     const inst = await this.institutionRepo.findById(institutionId);
-    this.dependencyChecker.assertParentActive(inst, 'Institution', institutionId);
+    this.dependencyChecker.assertParentActive(
+      inst,
+      'Institution',
+      institutionId,
+    );
 
-    const existing = await this.departmentRepo.findByCode(institutionId, dto.code);
+    const existing = await this.departmentRepo.findByCode(
+      institutionId,
+      dto.code,
+    );
     if (existing) {
       throw new BadRequestException({
         code: 'DUPLICATE_NAME',
@@ -297,13 +308,20 @@ export class DefaultInstitutionsService implements InstitutionsService {
       institutionId: new Types.ObjectId(institutionId),
       name: dto.name.trim(),
       code: dto.code.toUpperCase().trim(),
-      headFacultyId: dto.headFacultyId ? new Types.ObjectId(dto.headFacultyId) : undefined,
+      headFacultyId: dto.headFacultyId
+        ? new Types.ObjectId(dto.headFacultyId)
+        : undefined,
       isDeleted: false,
     });
 
-    await this.notifyAcademicChanged(institutionId, actorId, 'DEPARTMENT_CREATED', {
-      departmentId: this.toId(created),
-    });
+    await this.notifyAcademicChanged(
+      institutionId,
+      actorId,
+      'DEPARTMENT_CREATED',
+      {
+        departmentId: this.toId(created),
+      },
+    );
 
     return {
       id: this.toId(created),
@@ -320,7 +338,8 @@ export class DefaultInstitutionsService implements InstitutionsService {
     actorId: string,
   ): Promise<DepartmentDto> {
     const dept = await this.departmentRepo.findById(id);
-    if (!dept || dept.isDeleted) throw new NotFoundException('Department not found.');
+    if (!dept || dept.isDeleted)
+      throw new NotFoundException('Department not found.');
 
     const instId = dept.institutionId.toString();
 
@@ -337,10 +356,14 @@ export class DefaultInstitutionsService implements InstitutionsService {
     const updated = await this.departmentRepo.update(id, {
       name: dto.name ? dto.name.trim() : dept.name,
       code: dto.code ? dto.code.toUpperCase().trim() : dept.code,
-      headFacultyId: dto.headFacultyId ? new Types.ObjectId(dto.headFacultyId) : dept.headFacultyId,
+      headFacultyId: dto.headFacultyId
+        ? new Types.ObjectId(dto.headFacultyId)
+        : dept.headFacultyId,
     });
 
-    await this.notifyAcademicChanged(instId, actorId, 'DEPARTMENT_UPDATED', { id });
+    await this.notifyAcademicChanged(instId, actorId, 'DEPARTMENT_UPDATED', {
+      id,
+    });
     return {
       id,
       institutionId: instId,
@@ -350,16 +373,30 @@ export class DefaultInstitutionsService implements InstitutionsService {
     };
   }
 
-  async deleteDepartment(id: string, actorId: string): Promise<{ message: string }> {
+  async deleteDepartment(
+    id: string,
+    actorId: string,
+  ): Promise<{ message: string }> {
     const dept = await this.departmentRepo.findById(id);
-    if (!dept || dept.isDeleted) throw new NotFoundException('Department not found.');
+    if (!dept || dept.isDeleted)
+      throw new NotFoundException('Department not found.');
 
     // Dependency check: Cannot delete department if active programs exist
-    const activeProgramsCount = await this.programRepo.countActiveByDepartment(id);
-    this.dependencyChecker.assertNoActiveChildren(activeProgramsCount, 'Program', dept.name);
+    const activeProgramsCount =
+      await this.programRepo.countActiveByDepartment(id);
+    this.dependencyChecker.assertNoActiveChildren(
+      activeProgramsCount,
+      'Program',
+      dept.name,
+    );
 
     await this.departmentRepo.softDelete(id);
-    await this.notifyAcademicChanged(dept.institutionId.toString(), actorId, 'DEPARTMENT_DELETED', { id });
+    await this.notifyAcademicChanged(
+      dept.institutionId.toString(),
+      actorId,
+      'DEPARTMENT_DELETED',
+      { id },
+    );
     return { message: `Department '${dept.name}' deleted successfully.` };
   }
 
@@ -385,9 +422,16 @@ export class DefaultInstitutionsService implements InstitutionsService {
   ): Promise<ProgramDto> {
     // Referential check: parent department must exist and not be deleted
     const parentDept = await this.departmentRepo.findById(dto.departmentId);
-    this.dependencyChecker.assertParentActive(parentDept, 'Department', dto.departmentId);
+    this.dependencyChecker.assertParentActive(
+      parentDept,
+      'Department',
+      dto.departmentId,
+    );
 
-    const existing = await this.programRepo.findByCode(dto.departmentId, dto.code);
+    const existing = await this.programRepo.findByCode(
+      dto.departmentId,
+      dto.code,
+    );
     if (existing) {
       throw new BadRequestException({
         code: 'DUPLICATE_NAME',
@@ -404,9 +448,14 @@ export class DefaultInstitutionsService implements InstitutionsService {
       isDeleted: false,
     });
 
-    await this.notifyAcademicChanged(institutionId, actorId, 'PROGRAM_CREATED', {
-      programId: this.toId(created),
-    });
+    await this.notifyAcademicChanged(
+      institutionId,
+      actorId,
+      'PROGRAM_CREATED',
+      {
+        programId: this.toId(created),
+      },
+    );
 
     return {
       id: this.toId(created),
@@ -424,10 +473,14 @@ export class DefaultInstitutionsService implements InstitutionsService {
     actorId: string,
   ): Promise<ProgramDto> {
     const prog = await this.programRepo.findById(id);
-    if (!prog || prog.isDeleted) throw new NotFoundException('Program not found.');
+    if (!prog || prog.isDeleted)
+      throw new NotFoundException('Program not found.');
 
     if (dto.code && dto.code.toUpperCase().trim() !== prog.code) {
-      const existing = await this.programRepo.findByCode(prog.departmentId.toString(), dto.code);
+      const existing = await this.programRepo.findByCode(
+        prog.departmentId.toString(),
+        dto.code,
+      );
       if (existing && this.toId(existing) !== id) {
         throw new BadRequestException({
           code: 'DUPLICATE_NAME',
@@ -443,7 +496,9 @@ export class DefaultInstitutionsService implements InstitutionsService {
     });
 
     const instId = prog.institutionId.toString();
-    await this.notifyAcademicChanged(instId, actorId, 'PROGRAM_UPDATED', { id });
+    await this.notifyAcademicChanged(instId, actorId, 'PROGRAM_UPDATED', {
+      id,
+    });
     return {
       id,
       institutionId: instId,
@@ -454,16 +509,29 @@ export class DefaultInstitutionsService implements InstitutionsService {
     };
   }
 
-  async deleteProgram(id: string, actorId: string): Promise<{ message: string }> {
+  async deleteProgram(
+    id: string,
+    actorId: string,
+  ): Promise<{ message: string }> {
     const prog = await this.programRepo.findById(id);
-    if (!prog || prog.isDeleted) throw new NotFoundException('Program not found.');
+    if (!prog || prog.isDeleted)
+      throw new NotFoundException('Program not found.');
 
     // Dependency check: Cannot delete program if active academic years exist
     const activeYearsCount = await this.yearRepo.countActiveByProgram(id);
-    this.dependencyChecker.assertNoActiveChildren(activeYearsCount, 'AcademicYear', prog.name);
+    this.dependencyChecker.assertNoActiveChildren(
+      activeYearsCount,
+      'AcademicYear',
+      prog.name,
+    );
 
     await this.programRepo.softDelete(id);
-    await this.notifyAcademicChanged(prog.institutionId.toString(), actorId, 'PROGRAM_DELETED', { id });
+    await this.notifyAcademicChanged(
+      prog.institutionId.toString(),
+      actorId,
+      'PROGRAM_DELETED',
+      { id },
+    );
     return { message: `Program '${prog.name}' deleted successfully.` };
   }
 
@@ -487,9 +555,16 @@ export class DefaultInstitutionsService implements InstitutionsService {
     actorId: string,
   ): Promise<AcademicYearDto> {
     const parentProg = await this.programRepo.findById(dto.programId);
-    this.dependencyChecker.assertParentActive(parentProg, 'Program', dto.programId);
+    this.dependencyChecker.assertParentActive(
+      parentProg,
+      'Program',
+      dto.programId,
+    );
 
-    const existing = await this.yearRepo.findByYearNumber(dto.programId, dto.yearNumber);
+    const existing = await this.yearRepo.findByYearNumber(
+      dto.programId,
+      dto.yearNumber,
+    );
     if (existing) {
       throw new BadRequestException({
         code: 'DUPLICATE_NAME',
@@ -505,9 +580,14 @@ export class DefaultInstitutionsService implements InstitutionsService {
       isDeleted: false,
     });
 
-    await this.notifyAcademicChanged(institutionId, actorId, 'ACADEMIC_YEAR_CREATED', {
-      academicYearId: this.toId(created),
-    });
+    await this.notifyAcademicChanged(
+      institutionId,
+      actorId,
+      'ACADEMIC_YEAR_CREATED',
+      {
+        academicYearId: this.toId(created),
+      },
+    );
 
     return {
       id: this.toId(created),
@@ -524,7 +604,8 @@ export class DefaultInstitutionsService implements InstitutionsService {
     actorId: string,
   ): Promise<AcademicYearDto> {
     const year = await this.yearRepo.findById(id);
-    if (!year || year.isDeleted) throw new NotFoundException('Academic Year not found.');
+    if (!year || year.isDeleted)
+      throw new NotFoundException('Academic Year not found.');
 
     const updated = await this.yearRepo.update(id, {
       yearNumber: dto.yearNumber ?? year.yearNumber,
@@ -532,7 +613,9 @@ export class DefaultInstitutionsService implements InstitutionsService {
     });
 
     const instId = year.institutionId.toString();
-    await this.notifyAcademicChanged(instId, actorId, 'ACADEMIC_YEAR_UPDATED', { id });
+    await this.notifyAcademicChanged(instId, actorId, 'ACADEMIC_YEAR_UPDATED', {
+      id,
+    });
     return {
       id,
       institutionId: instId,
@@ -542,16 +625,30 @@ export class DefaultInstitutionsService implements InstitutionsService {
     };
   }
 
-  async deleteAcademicYear(id: string, actorId: string): Promise<{ message: string }> {
+  async deleteAcademicYear(
+    id: string,
+    actorId: string,
+  ): Promise<{ message: string }> {
     const year = await this.yearRepo.findById(id);
-    if (!year || year.isDeleted) throw new NotFoundException('Academic Year not found.');
+    if (!year || year.isDeleted)
+      throw new NotFoundException('Academic Year not found.');
 
     // Dependency check: Cannot delete academic year if active semesters exist
-    const activeSemestersCount = await this.semesterRepo.countActiveByAcademicYear(id);
-    this.dependencyChecker.assertNoActiveChildren(activeSemestersCount, 'Semester', year.label);
+    const activeSemestersCount =
+      await this.semesterRepo.countActiveByAcademicYear(id);
+    this.dependencyChecker.assertNoActiveChildren(
+      activeSemestersCount,
+      'Semester',
+      year.label,
+    );
 
     await this.yearRepo.softDelete(id);
-    await this.notifyAcademicChanged(year.institutionId.toString(), actorId, 'ACADEMIC_YEAR_DELETED', { id });
+    await this.notifyAcademicChanged(
+      year.institutionId.toString(),
+      actorId,
+      'ACADEMIC_YEAR_DELETED',
+      { id },
+    );
     return { message: `Academic Year '${year.label}' deleted successfully.` };
   }
 
@@ -580,9 +677,16 @@ export class DefaultInstitutionsService implements InstitutionsService {
     actorId: string,
   ): Promise<SemesterDto> {
     const parentYear = await this.yearRepo.findById(dto.academicYearId);
-    this.dependencyChecker.assertParentActive(parentYear, 'AcademicYear', dto.academicYearId);
+    this.dependencyChecker.assertParentActive(
+      parentYear,
+      'AcademicYear',
+      dto.academicYearId,
+    );
 
-    const existing = await this.semesterRepo.findByNumber(dto.academicYearId, dto.number);
+    const existing = await this.semesterRepo.findByNumber(
+      dto.academicYearId,
+      dto.number,
+    );
     if (existing) {
       throw new BadRequestException({
         code: 'DUPLICATE_NAME',
@@ -603,9 +707,14 @@ export class DefaultInstitutionsService implements InstitutionsService {
       isDeleted: false,
     });
 
-    await this.notifyAcademicChanged(institutionId, actorId, 'SEMESTER_CREATED', {
-      semesterId: this.toId(created),
-    });
+    await this.notifyAcademicChanged(
+      institutionId,
+      actorId,
+      'SEMESTER_CREATED',
+      {
+        semesterId: this.toId(created),
+      },
+    );
 
     return {
       id: this.toId(created),
@@ -627,7 +736,8 @@ export class DefaultInstitutionsService implements InstitutionsService {
     actorId: string,
   ): Promise<SemesterDto> {
     const sem = await this.semesterRepo.findById(id);
-    if (!sem || sem.isDeleted) throw new NotFoundException('Semester not found.');
+    if (!sem || sem.isDeleted)
+      throw new NotFoundException('Semester not found.');
 
     const updated = await this.semesterRepo.update(id, {
       name: dto.name ? dto.name.trim() : sem.name,
@@ -639,7 +749,9 @@ export class DefaultInstitutionsService implements InstitutionsService {
     });
 
     const instId = sem.institutionId.toString();
-    await this.notifyAcademicChanged(instId, actorId, 'SEMESTER_UPDATED', { id });
+    await this.notifyAcademicChanged(instId, actorId, 'SEMESTER_UPDATED', {
+      id,
+    });
     return {
       id,
       institutionId: instId,
@@ -654,16 +766,30 @@ export class DefaultInstitutionsService implements InstitutionsService {
     };
   }
 
-  async deleteSemester(id: string, actorId: string): Promise<{ message: string }> {
+  async deleteSemester(
+    id: string,
+    actorId: string,
+  ): Promise<{ message: string }> {
     const sem = await this.semesterRepo.findById(id);
-    if (!sem || sem.isDeleted) throw new NotFoundException('Semester not found.');
+    if (!sem || sem.isDeleted)
+      throw new NotFoundException('Semester not found.');
 
     // Dependency check: Cannot delete semester if active sections exist
-    const activeSectionsCount = await this.sectionRepo.countActiveBySemester(id);
-    this.dependencyChecker.assertNoActiveChildren(activeSectionsCount, 'Section', sem.name);
+    const activeSectionsCount =
+      await this.sectionRepo.countActiveBySemester(id);
+    this.dependencyChecker.assertNoActiveChildren(
+      activeSectionsCount,
+      'Section',
+      sem.name,
+    );
 
     await this.semesterRepo.softDelete(id);
-    await this.notifyAcademicChanged(sem.institutionId.toString(), actorId, 'SEMESTER_DELETED', { id });
+    await this.notifyAcademicChanged(
+      sem.institutionId.toString(),
+      actorId,
+      'SEMESTER_DELETED',
+      { id },
+    );
     return { message: `Semester '${sem.name}' deleted successfully.` };
   }
 
@@ -689,9 +815,16 @@ export class DefaultInstitutionsService implements InstitutionsService {
     actorId: string,
   ): Promise<SectionDto> {
     const parentSem = await this.semesterRepo.findById(dto.semesterId);
-    this.dependencyChecker.assertParentActive(parentSem, 'Semester', dto.semesterId);
+    this.dependencyChecker.assertParentActive(
+      parentSem,
+      'Semester',
+      dto.semesterId,
+    );
 
-    const existing = await this.sectionRepo.findByName(dto.semesterId, dto.name);
+    const existing = await this.sectionRepo.findByName(
+      dto.semesterId,
+      dto.name,
+    );
     if (existing) {
       throw new BadRequestException({
         code: 'DUPLICATE_NAME',
@@ -713,9 +846,14 @@ export class DefaultInstitutionsService implements InstitutionsService {
       isDeleted: false,
     });
 
-    await this.notifyAcademicChanged(institutionId, actorId, 'SECTION_CREATED', {
-      sectionId: this.toId(created),
-    });
+    await this.notifyAcademicChanged(
+      institutionId,
+      actorId,
+      'SECTION_CREATED',
+      {
+        sectionId: this.toId(created),
+      },
+    );
 
     return {
       id: this.toId(created),
@@ -734,7 +872,8 @@ export class DefaultInstitutionsService implements InstitutionsService {
     actorId: string,
   ): Promise<SectionDto> {
     const sec = await this.sectionRepo.findById(id);
-    if (!sec || sec.isDeleted) throw new NotFoundException('Section not found.');
+    if (!sec || sec.isDeleted)
+      throw new NotFoundException('Section not found.');
 
     const newStrength = dto.strength ?? sec.strength;
     const newBatches = dto.batches ?? sec.batches;
@@ -750,7 +889,9 @@ export class DefaultInstitutionsService implements InstitutionsService {
     });
 
     const instId = sec.institutionId.toString();
-    await this.notifyAcademicChanged(instId, actorId, 'SECTION_UPDATED', { id });
+    await this.notifyAcademicChanged(instId, actorId, 'SECTION_UPDATED', {
+      id,
+    });
     return {
       id,
       institutionId: instId,
@@ -762,12 +903,21 @@ export class DefaultInstitutionsService implements InstitutionsService {
     };
   }
 
-  async deleteSection(id: string, actorId: string): Promise<{ message: string }> {
+  async deleteSection(
+    id: string,
+    actorId: string,
+  ): Promise<{ message: string }> {
     const sec = await this.sectionRepo.findById(id);
-    if (!sec || sec.isDeleted) throw new NotFoundException('Section not found.');
+    if (!sec || sec.isDeleted)
+      throw new NotFoundException('Section not found.');
 
     await this.sectionRepo.softDelete(id);
-    await this.notifyAcademicChanged(sec.institutionId.toString(), actorId, 'SECTION_DELETED', { id });
+    await this.notifyAcademicChanged(
+      sec.institutionId.toString(),
+      actorId,
+      'SECTION_DELETED',
+      { id },
+    );
     return { message: `Section '${sec.name}' deleted successfully.` };
   }
 
@@ -800,9 +950,14 @@ export class DefaultInstitutionsService implements InstitutionsService {
       isDeleted: false,
     });
 
-    await this.notifyAcademicChanged(institutionId, actorId, 'HOLIDAY_CREATED', {
-      holidayId: this.toId(created),
-    });
+    await this.notifyAcademicChanged(
+      institutionId,
+      actorId,
+      'HOLIDAY_CREATED',
+      {
+        holidayId: this.toId(created),
+      },
+    );
 
     return {
       id: this.toId(created),
@@ -814,12 +969,21 @@ export class DefaultInstitutionsService implements InstitutionsService {
     };
   }
 
-  async deleteHoliday(id: string, actorId: string): Promise<{ message: string }> {
+  async deleteHoliday(
+    id: string,
+    actorId: string,
+  ): Promise<{ message: string }> {
     const hol = await this.holidayRepo.findById(id);
-    if (!hol || hol.isDeleted) throw new NotFoundException('Holiday not found.');
+    if (!hol || hol.isDeleted)
+      throw new NotFoundException('Holiday not found.');
 
     await this.holidayRepo.softDelete(id);
-    await this.notifyAcademicChanged(hol.institutionId.toString(), actorId, 'HOLIDAY_DELETED', { id });
+    await this.notifyAcademicChanged(
+      hol.institutionId.toString(),
+      actorId,
+      'HOLIDAY_DELETED',
+      { id },
+    );
     return { message: `Holiday '${hol.name}' deleted successfully.` };
   }
 }

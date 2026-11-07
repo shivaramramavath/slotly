@@ -17,6 +17,9 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { InstitutionsModule } from './modules/institutions/institutions.module';
+import { LibraryModule } from './modules/library/library.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { BlueprintModule } from './modules/blueprint/blueprint.module';
 
 @Module({
   imports: [
@@ -39,6 +42,9 @@ import { InstitutionsModule } from './modules/institutions/institutions.module';
     UsersModule,
     AuthModule,
     InstitutionsModule,
+    LibraryModule,
+    ProjectsModule,
+    BlueprintModule,
   ],
   controllers: [AppController],
   providers: [

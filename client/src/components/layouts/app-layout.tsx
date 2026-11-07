@@ -60,6 +60,16 @@ export function AppLayout({ children, activePath = '/dashboard' }: AppLayoutProp
               Institution
             </Link>
             <Link
+              href="/library"
+              className={`px-3 py-1.5 rounded transition-colors ${
+                activePath === '/library'
+                  ? 'bg-[#181818] text-[#FAFAFA] font-medium'
+                  : 'text-[#8A8A8A] hover:text-[#FAFAFA]'
+              }`}
+            >
+              Library
+            </Link>
+            <Link
               href="/blueprint-templates"
               className={`px-3 py-1.5 rounded transition-colors ${
                 activePath === '/blueprint-templates'

@@ -8,7 +8,12 @@ export class Department {
   id?: string | undefined;
   _id?: unknown;
 
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Institution',
+    required: true,
+    index: true,
+  })
   institutionId!: Types.ObjectId;
 
   @Prop({ required: true, trim: true })

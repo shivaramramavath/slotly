@@ -8,13 +8,23 @@ export class Semester {
   id?: string | undefined;
   _id?: unknown;
 
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Institution',
+    required: true,
+    index: true,
+  })
   institutionId!: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Program', required: true, index: true })
   programId!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'AcademicYear', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'AcademicYear',
+    required: true,
+    index: true,
+  })
   academicYearId!: Types.ObjectId;
 
   @Prop({ required: true, trim: true })

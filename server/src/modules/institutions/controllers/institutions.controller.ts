@@ -49,9 +49,7 @@ import type {
   SectionDto,
   HolidayDto,
 } from '@slotly/contracts';
-import {
-  INSTITUTIONS_SERVICE,
-} from '../services/institutions.service';
+import { INSTITUTIONS_SERVICE } from '../services/institutions.service';
 import type { InstitutionsService } from '../services/institutions.service';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import type { RequestUser } from '../../auth/guards/auth.guard';
@@ -68,7 +66,9 @@ export class InstitutionsController {
   ) {}
 
   private resolveInstitutionId(
-    req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     queryInstId?: string,
   ): string {
     const id = queryInstId || req.user.institutionId;
@@ -86,7 +86,10 @@ export class InstitutionsController {
   @Get('structure')
   @RequirePermissions('INSTITUTION_READ')
   async getStructure(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Query('institutionId') queryInstId?: string,
   ): Promise<InstitutionStructureDto> {
     const instId = this.resolveInstitutionId(req, queryInstId);
@@ -99,7 +102,10 @@ export class InstitutionsController {
   @Get()
   @RequirePermissions('INSTITUTION_READ')
   async getInstitution(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Query('institutionId') queryInstId?: string,
   ): Promise<InstitutionDto> {
     const instId = this.resolveInstitutionId(req, queryInstId);
@@ -109,7 +115,10 @@ export class InstitutionsController {
   @Put()
   @RequirePermissions('INSTITUTION_MANAGE')
   async updateInstitution(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Body(new ZodValidationPipe(UpdateInstitutionDtoSchema))
     dto: UpdateInstitutionDto,
     @Query('institutionId') queryInstId?: string,
@@ -124,7 +133,10 @@ export class InstitutionsController {
   @Get('departments')
   @RequirePermissions('DEPARTMENT_READ')
   async listDepartments(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Query('institutionId') queryInstId?: string,
   ): Promise<DepartmentDto[]> {
     const instId = this.resolveInstitutionId(req, queryInstId);
@@ -134,12 +146,16 @@ export class InstitutionsController {
   @Post('departments')
   @RequirePermissions('DEPARTMENT_MANAGE')
   async createDepartment(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Body(new ZodValidationPipe(CreateDepartmentDtoSchema))
     dto: CreateDepartmentDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<DepartmentDto> {
-    const instId = dto.institutionId || this.resolveInstitutionId(req, queryInstId);
+    const instId =
+      dto.institutionId || this.resolveInstitutionId(req, queryInstId);
     return this.institutionsService.createDepartment(instId, dto, req.user.id);
   }
 
@@ -169,7 +185,10 @@ export class InstitutionsController {
   @Get('programs')
   @RequirePermissions('STRUCTURE_READ')
   async listPrograms(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Query('institutionId') queryInstId?: string,
   ): Promise<ProgramDto[]> {
     const instId = this.resolveInstitutionId(req, queryInstId);
@@ -179,12 +198,16 @@ export class InstitutionsController {
   @Post('programs')
   @RequirePermissions('STRUCTURE_MANAGE')
   async createProgram(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Body(new ZodValidationPipe(CreateProgramDtoSchema))
     dto: CreateProgramDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<ProgramDto> {
-    const instId = dto.institutionId || this.resolveInstitutionId(req, queryInstId);
+    const instId =
+      dto.institutionId || this.resolveInstitutionId(req, queryInstId);
     return this.institutionsService.createProgram(instId, dto, req.user.id);
   }
 
@@ -214,7 +237,10 @@ export class InstitutionsController {
   @Get('academic-years')
   @RequirePermissions('STRUCTURE_READ')
   async listAcademicYears(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Query('institutionId') queryInstId?: string,
   ): Promise<AcademicYearDto[]> {
     const instId = this.resolveInstitutionId(req, queryInstId);
@@ -224,13 +250,21 @@ export class InstitutionsController {
   @Post('academic-years')
   @RequirePermissions('STRUCTURE_MANAGE')
   async createAcademicYear(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Body(new ZodValidationPipe(CreateAcademicYearDtoSchema))
     dto: CreateAcademicYearDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<AcademicYearDto> {
-    const instId = dto.institutionId || this.resolveInstitutionId(req, queryInstId);
-    return this.institutionsService.createAcademicYear(instId, dto, req.user.id);
+    const instId =
+      dto.institutionId || this.resolveInstitutionId(req, queryInstId);
+    return this.institutionsService.createAcademicYear(
+      instId,
+      dto,
+      req.user.id,
+    );
   }
 
   @Put('academic-years/:id')
@@ -259,7 +293,10 @@ export class InstitutionsController {
   @Get('semesters')
   @RequirePermissions('STRUCTURE_READ')
   async listSemesters(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Query('institutionId') queryInstId?: string,
   ): Promise<SemesterDto[]> {
     const instId = this.resolveInstitutionId(req, queryInstId);
@@ -269,12 +306,16 @@ export class InstitutionsController {
   @Post('semesters')
   @RequirePermissions('STRUCTURE_MANAGE')
   async createSemester(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Body(new ZodValidationPipe(CreateSemesterDtoSchema))
     dto: CreateSemesterDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<SemesterDto> {
-    const instId = dto.institutionId || this.resolveInstitutionId(req, queryInstId);
+    const instId =
+      dto.institutionId || this.resolveInstitutionId(req, queryInstId);
     return this.institutionsService.createSemester(instId, dto, req.user.id);
   }
 
@@ -304,7 +345,10 @@ export class InstitutionsController {
   @Get('sections')
   @RequirePermissions('STRUCTURE_READ')
   async listSections(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Query('institutionId') queryInstId?: string,
   ): Promise<SectionDto[]> {
     const instId = this.resolveInstitutionId(req, queryInstId);
@@ -314,12 +358,16 @@ export class InstitutionsController {
   @Post('sections')
   @RequirePermissions('STRUCTURE_MANAGE')
   async createSection(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Body(new ZodValidationPipe(CreateSectionDtoSchema))
     dto: CreateSectionDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<SectionDto> {
-    const instId = dto.institutionId || this.resolveInstitutionId(req, queryInstId);
+    const instId =
+      dto.institutionId || this.resolveInstitutionId(req, queryInstId);
     return this.institutionsService.createSection(instId, dto, req.user.id);
   }
 
@@ -349,7 +397,10 @@ export class InstitutionsController {
   @Get('holidays')
   @RequirePermissions('INSTITUTION_READ')
   async listHolidays(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Query('institutionId') queryInstId?: string,
   ): Promise<HolidayDto[]> {
     const instId = this.resolveInstitutionId(req, queryInstId);
@@ -359,12 +410,16 @@ export class InstitutionsController {
   @Post('holidays')
   @RequirePermissions('INSTITUTION_MANAGE')
   async createHoliday(
-    @Req() req: Request & { user: RequestUser & { institutionId?: string | undefined } },
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
     @Body(new ZodValidationPipe(CreateHolidayDtoSchema))
     dto: CreateHolidayDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<HolidayDto> {
-    const instId = dto.institutionId || this.resolveInstitutionId(req, queryInstId);
+    const instId =
+      dto.institutionId || this.resolveInstitutionId(req, queryInstId);
     return this.institutionsService.createHoliday(instId, dto, req.user.id);
   }
 

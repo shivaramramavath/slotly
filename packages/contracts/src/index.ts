@@ -68,11 +68,14 @@ export const PermissionSchema = z.enum([
   'FACULTY_MANAGE',
   'ROOM_READ',
   'ROOM_MANAGE',
+  'SUBJECT_READ',
+  'SUBJECT_MANAGE',
   // Projects
   'PROJECT_CREATE',
   'PROJECT_READ',
   'PROJECT_MANAGE',
   'PROJECT_DELETE',
+  'PROJECT_ARCHIVE',
   // Blueprint
   'BLUEPRINT_READ',
   'BLUEPRINT_EDIT',
@@ -103,10 +106,13 @@ export const RolePermissions: Record<UserRole, Permission[]> = {
     'FACULTY_MANAGE',
     'ROOM_READ',
     'ROOM_MANAGE',
+    'SUBJECT_READ',
+    'SUBJECT_MANAGE',
     'PROJECT_CREATE',
     'PROJECT_READ',
     'PROJECT_MANAGE',
     'PROJECT_DELETE',
+    'PROJECT_ARCHIVE',
     'BLUEPRINT_READ',
     'BLUEPRINT_EDIT',
     'BLUEPRINT_BUILD',
@@ -124,10 +130,15 @@ export const RolePermissions: Record<UserRole, Permission[]> = {
     'DEPARTMENT_READ',
     'STRUCTURE_READ',
     'FACULTY_READ',
+    'FACULTY_MANAGE',
     'ROOM_READ',
+    'ROOM_MANAGE',
+    'SUBJECT_READ',
+    'SUBJECT_MANAGE',
     'PROJECT_CREATE',
     'PROJECT_READ',
     'PROJECT_MANAGE',
+    'PROJECT_ARCHIVE',
     'BLUEPRINT_READ',
     'BLUEPRINT_EDIT',
     'BLUEPRINT_BUILD',
@@ -136,8 +147,8 @@ export const RolePermissions: Record<UserRole, Permission[]> = {
     'TIMETABLE_EDIT',
     'TIMETABLE_EXPORT',
   ],
-  FACULTY: ['INSTITUTION_READ', 'FACULTY_READ', 'TIMETABLE_READ', 'TIMETABLE_EXPORT'],
-  STUDENT: ['INSTITUTION_READ', 'TIMETABLE_READ', 'TIMETABLE_EXPORT'],
+  FACULTY: ['INSTITUTION_READ', 'FACULTY_READ', 'ROOM_READ', 'SUBJECT_READ', 'TIMETABLE_READ', 'TIMETABLE_EXPORT'],
+  STUDENT: ['INSTITUTION_READ', 'ROOM_READ', 'SUBJECT_READ', 'TIMETABLE_READ', 'TIMETABLE_EXPORT'],
 };
 
 // ==========================================
@@ -278,6 +289,8 @@ export const ReasonCodeSchema = z.enum([
   'NOT_QUALIFIED',
   'PROJECT_LOCKED',
   'PERMISSION_DENIED',
+  'SINGLE_PARENT_VIOLATION',
+  'INVALID_OPERATION',
 ]);
 export type ReasonCode = z.infer<typeof ReasonCodeSchema>;
 
@@ -300,6 +313,21 @@ export type GateFailure = z.infer<typeof GateFailureSchema>;
 export const NodeStatusSchema = z.enum(['empty', 'incomplete', 'complete', 'blocked']);
 export type NodeStatus = z.infer<typeof NodeStatusSchema>;
 
+export const BlueprintNodeTypeSchema = z.enum([
+  'institution',
+  'department',
+  'program',
+  'academicYear',
+  'semester',
+  'section',
+  'batch',
+  'subjectAssignment',
+  'electiveGroup',
+  'faculty',
+  'room',
+]);
+export type BlueprintNodeType = z.infer<typeof BlueprintNodeTypeSchema>;
+
 export const NodeTypeSchema = z.enum([
   'Institution',
   'Department',
@@ -312,6 +340,17 @@ export const NodeTypeSchema = z.enum([
   'ElectiveGroup',
   'Faculty',
   'Room',
+  'institution',
+  'department',
+  'program',
+  'academicYear',
+  'semester',
+  'section',
+  'batch',
+  'subjectAssignment',
+  'electiveGroup',
+  'faculty',
+  'room',
 ]);
 export type NodeType = z.infer<typeof NodeTypeSchema>;
 
@@ -632,3 +671,579 @@ export interface InstitutionStructureDto {
     totalStudents: number;
   };
 }
+
+// ==========================================
+// LIBRARY: FACULTY, SUBJECTS, ROOMS, ELECTIVE GROUPS
+// ==========================================
+
+export const SlotCoordinateSchema = z.object({
+  day: z.number().int().min(0).max(6),
+  period: z.number().int().min(0),
+});
+export type SlotCoordinate = z.infer<typeof SlotCoordinateSchema>;
+
+// Faculty
+export const FacultyDtoSchema = z.object({
+  id: z.string(),
+  institutionId: z.string(),
+  departmentId: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  code: z.string(),
+  designation: z.string(),
+  availability: z.array(z.array(z.boolean())), // 7 days x N periods
+  preferredPeriods: z.array(SlotCoordinateSchema).default([]),
+  unavailableSlots: z.array(SlotCoordinateSchema).default([]),
+  minHoursPerWeek: z.number().min(0).default(0),
+  maxHoursPerDay: z.number().min(1).default(6),
+  maxHoursPerWeek: z.number().min(1).default(20),
+  subjectIds: z.array(z.string()).default([]), // Qualified subjects
+  archived: z.boolean().default(false),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+export type FacultyDto = z.infer<typeof FacultyDtoSchema>;
+
+export const CreateFacultyDtoSchema = z.object({
+  institutionId: z.string().optional(),
+  departmentId: z.string().min(1),
+  name: z.string().min(1),
+  email: z.string().email(),
+  code: z.string().min(1),
+  designation: z.string().default('Assistant Professor'),
+  availability: z.array(z.array(z.boolean())).optional(),
+  preferredPeriods: z.array(SlotCoordinateSchema).optional(),
+  unavailableSlots: z.array(SlotCoordinateSchema).optional(),
+  minHoursPerWeek: z.number().min(0).default(0),
+  maxHoursPerDay: z.number().min(1).default(6),
+  maxHoursPerWeek: z.number().min(1).default(20),
+  subjectIds: z.array(z.string()).default([]),
+  archived: z.boolean().default(false),
+});
+export type CreateFacultyDto = z.infer<typeof CreateFacultyDtoSchema>;
+
+export const UpdateFacultyDtoSchema = CreateFacultyDtoSchema.partial();
+export type UpdateFacultyDto = z.infer<typeof UpdateFacultyDtoSchema>;
+
+export const FacultyWorkloadDtoSchema = z.object({
+  facultyId: z.string(),
+  facultyName: z.string(),
+  assignedHours: z.number(),
+  minHoursPerWeek: z.number(),
+  maxHoursPerWeek: z.number(),
+  maxHoursPerDay: z.number(),
+  status: z.enum(['under', 'optimal', 'near', 'over']),
+  percentage: z.number(),
+});
+export type FacultyWorkloadDto = z.infer<typeof FacultyWorkloadDtoSchema>;
+
+// Subject
+export const SubjectTypeSchema = z.enum(['theory', 'lab', 'tutorial', 'seminar']);
+export type SubjectType = z.infer<typeof SubjectTypeSchema>;
+
+export const RoomTypeSchema = z.enum(['lecture', 'lab', 'seminar']);
+export type RoomType = z.infer<typeof RoomTypeSchema>;
+
+export const SubjectRequirementsSchema = z.object({
+  roomType: RoomTypeSchema.default('lecture'),
+  minCapacity: z.number().int().min(1).default(30),
+  equipment: z.array(z.string()).default([]),
+});
+export type SubjectRequirements = z.infer<typeof SubjectRequirementsSchema>;
+
+export const SubjectDtoSchema = z.object({
+  id: z.string(),
+  institutionId: z.string(),
+  departmentId: z.string(),
+  programIds: z.array(z.string()).default([]),
+  code: z.string(),
+  name: z.string(),
+  credits: z.number().min(0).default(3),
+  type: SubjectTypeSchema.default('theory'),
+  weeklyHours: z.number().min(1).default(3),
+  labHours: z.number().min(0).default(0),
+  consecutivePeriods: z.number().int().min(1).default(1),
+  preferredDays: z.array(z.number().int().min(0).max(6)).default([]),
+  requirements: SubjectRequirementsSchema,
+  enrollment: z.number().int().min(0).default(0),
+  dependsOn: z.array(z.string()).default([]),
+  isElective: z.boolean().default(false),
+  electiveGroupId: z.string().nullable().optional(),
+  facultyIds: z.array(z.string()).default([]),
+  archived: z.boolean().default(false),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+export type SubjectDto = z.infer<typeof SubjectDtoSchema>;
+
+export const CreateSubjectDtoSchema = z.object({
+  institutionId: z.string().optional(),
+  departmentId: z.string().min(1),
+  programIds: z.array(z.string()).default([]),
+  code: z.string().min(1),
+  name: z.string().min(1),
+  credits: z.number().min(0).default(3),
+  type: SubjectTypeSchema.default('theory'),
+  weeklyHours: z.number().min(1).default(3),
+  labHours: z.number().min(0).default(0),
+  consecutivePeriods: z.number().int().min(1).default(1),
+  preferredDays: z.array(z.number().int().min(0).max(6)).default([]),
+  requirements: SubjectRequirementsSchema.default({ roomType: 'lecture', minCapacity: 30, equipment: [] }),
+  enrollment: z.number().int().min(0).default(0),
+  dependsOn: z.array(z.string()).default([]),
+  isElective: z.boolean().default(false),
+  electiveGroupId: z.string().nullable().optional(),
+  facultyIds: z.array(z.string()).default([]),
+  archived: z.boolean().default(false),
+});
+export type CreateSubjectDto = z.infer<typeof CreateSubjectDtoSchema>;
+
+export const UpdateSubjectDtoSchema = CreateSubjectDtoSchema.partial();
+export type UpdateSubjectDto = z.infer<typeof UpdateSubjectDtoSchema>;
+
+// Elective Group
+export const ElectiveGroupDtoSchema = z.object({
+  id: z.string(),
+  institutionId: z.string(),
+  departmentId: z.string().nullable().optional(),
+  name: z.string(),
+  subjectIds: z.array(z.string()).default([]),
+  mustBeSimultaneous: z.boolean().default(true),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+export type ElectiveGroupDto = z.infer<typeof ElectiveGroupDtoSchema>;
+
+export const CreateElectiveGroupDtoSchema = z.object({
+  institutionId: z.string().optional(),
+  departmentId: z.string().nullable().optional(),
+  name: z.string().min(1),
+  subjectIds: z.array(z.string()).default([]),
+  mustBeSimultaneous: z.boolean().default(true),
+});
+export type CreateElectiveGroupDto = z.infer<typeof CreateElectiveGroupDtoSchema>;
+
+export const UpdateElectiveGroupDtoSchema = CreateElectiveGroupDtoSchema.partial();
+export type UpdateElectiveGroupDto = z.infer<typeof UpdateElectiveGroupDtoSchema>;
+
+// Room
+export const RoomDtoSchema = z.object({
+  id: z.string(),
+  institutionId: z.string(),
+  departmentId: z.string().nullable().optional(),
+  name: z.string(),
+  code: z.string(),
+  type: RoomTypeSchema.default('lecture'),
+  capacity: z.number().int().min(1),
+  building: z.string(),
+  equipment: z.array(z.string()).default([]),
+  shared: z.boolean().default(true),
+  availability: z.array(z.array(z.boolean())), // 7 days x N periods
+  labFor: z.array(z.string()).default([]), // subject types or subject IDs
+  archived: z.boolean().default(false),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+export type RoomDto = z.infer<typeof RoomDtoSchema>;
+
+export const CreateRoomDtoSchema = z.object({
+  institutionId: z.string().optional(),
+  departmentId: z.string().nullable().optional(),
+  name: z.string().min(1),
+  code: z.string().min(1),
+  type: RoomTypeSchema.default('lecture'),
+  capacity: z.number().int().min(1).default(40),
+  building: z.string().min(1),
+  equipment: z.array(z.string()).default([]),
+  shared: z.boolean().default(true),
+  availability: z.array(z.array(z.boolean())).optional(),
+  labFor: z.array(z.string()).default([]),
+  archived: z.boolean().default(false),
+});
+export type CreateRoomDto = z.infer<typeof CreateRoomDtoSchema>;
+
+export const UpdateRoomDtoSchema = CreateRoomDtoSchema.partial();
+export type UpdateRoomDto = z.infer<typeof UpdateRoomDtoSchema>;
+
+// Matchers & Strategies
+export const RoomMatchRequestSchema = z.object({
+  subjectId: z.string().optional(),
+  requiredType: RoomTypeSchema.optional(),
+  minCapacity: z.number().optional(),
+  requiredEquipment: z.array(z.string()).optional(),
+  day: z.number().int().min(0).max(6).optional(),
+  period: z.number().int().min(0).optional(),
+});
+export type RoomMatchRequest = z.infer<typeof RoomMatchRequestSchema>;
+
+export const RoomMatchResultSchema = z.object({
+  roomId: z.string(),
+  roomName: z.string(),
+  roomCode: z.string(),
+  matched: z.boolean(),
+  capacityFit: z.boolean(),
+  typeFit: z.boolean(),
+  equipmentFit: z.boolean(),
+  availabilityFit: z.boolean(),
+  missingEquipment: z.array(z.string()),
+  score: z.number(),
+});
+export type RoomMatchResult = z.infer<typeof RoomMatchResultSchema>;
+
+export const FacultyQualificationRequestSchema = z.object({
+  subjectId: z.string(),
+  day: z.number().int().min(0).max(6).optional(),
+  period: z.number().int().min(0).optional(),
+  currentDailyHours: z.number().optional(),
+  currentWeeklyHours: z.number().optional(),
+});
+export type FacultyQualificationRequest = z.infer<typeof FacultyQualificationRequestSchema>;
+
+export const FacultyQualificationResultSchema = z.object({
+  facultyId: z.string(),
+  facultyName: z.string(),
+  facultyCode: z.string(),
+  qualified: z.boolean(),
+  hasSubjectQualification: z.boolean(),
+  availabilityFit: z.boolean(),
+  workloadWithinLimits: z.boolean(),
+  isPreferredSlot: z.boolean(),
+  reasons: z.array(z.string()),
+  score: z.number(),
+});
+export type FacultyQualificationResult = z.infer<typeof FacultyQualificationResultSchema>;
+
+// Import & Export
+export const ImportEntitySchema = z.enum(['faculty', 'subjects', 'rooms']);
+export type ImportEntity = z.infer<typeof ImportEntitySchema>;
+
+export const ImportRowErrorSchema = z.object({
+  row: z.number(),
+  field: z.string(),
+  message: z.string(),
+  rawValue: z.unknown().optional(),
+});
+export type ImportRowError = z.infer<typeof ImportRowErrorSchema>;
+
+export const ImportValidationReportSchema = z.object({
+  entity: ImportEntitySchema,
+  totalRows: z.number(),
+  validRows: z.number(),
+  invalidRows: z.number(),
+  errors: z.array(ImportRowErrorSchema),
+  preview: z.array(z.record(z.unknown())),
+});
+export type ImportValidationReport = z.infer<typeof ImportValidationReportSchema>;
+
+export const ImportJobStatusSchema = z.object({
+  jobId: z.string(),
+  entity: ImportEntitySchema,
+  status: z.enum(['pending', 'processing', 'completed', 'failed']),
+  progress: z.number(),
+  totalRows: z.number(),
+  importedCount: z.number(),
+  errors: z.array(ImportRowErrorSchema),
+});
+export type ImportJobStatus = z.infer<typeof ImportJobStatusSchema>;
+
+// ==========================================
+// PROJECTS & SETTINGS
+// ==========================================
+export const TermKindSchema = z.enum(['odd', 'even', 'custom']);
+export type TermKind = z.infer<typeof TermKindSchema>;
+
+export const ProjectTermSchema = z.object({
+  kind: TermKindSchema,
+  startDate: z.string(),
+  endDate: z.string(),
+  academicYearLabel: z.string().optional(),
+});
+export type ProjectTerm = z.infer<typeof ProjectTermSchema>;
+
+export const PerDayOverrideSchema = z.object({
+  periods: z.number().int().min(1).max(14).optional(),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
+});
+export type PerDayOverride = z.infer<typeof PerDayOverrideSchema>;
+
+export const ProjectSettingsSchema = z.object({
+  days: z.array(z.number().int().min(0).max(6)).default([1, 2, 3, 4, 5]),
+  periodsPerDay: z.number().int().min(1).max(14).default(7),
+  periodDuration: z.number().int().min(30).max(180).default(50),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).default('09:00'),
+  breaks: z.array(PeriodBreakSchema).default([]),
+  perDayOverrides: z.record(z.string(), PerDayOverrideSchema).optional().default({}),
+});
+export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
+
+export const ProjectStrictnessSchema = z.enum(['strict', 'flexible', 'relaxed']).default('strict');
+export type ProjectStrictness = z.infer<typeof ProjectStrictnessSchema>;
+
+export const ProjectDtoSchema = z.object({
+  id: z.string(),
+  institutionId: z.string(),
+  ownerId: z.string(),
+  name: z.string().min(2),
+  term: ProjectTermSchema,
+  status: ProjectLifecycleStatusSchema.default('draft'),
+  settings: ProjectSettingsSchema,
+  strictness: ProjectStrictnessSchema,
+  lastOpenedAt: z.string().optional(),
+  revision: z.number().int().default(1),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+export type ProjectDto = z.infer<typeof ProjectDtoSchema>;
+
+export const CreateProjectDtoSchema = z.object({
+  name: z.string().min(2),
+  institutionId: z.string().optional(),
+  term: ProjectTermSchema,
+  settings: ProjectSettingsSchema.optional(),
+  strictness: ProjectStrictnessSchema.optional(),
+  source: z.enum(['empty', 'template', 'institution']).default('empty'),
+  templateId: z.string().optional(),
+});
+export type CreateProjectDto = z.infer<typeof CreateProjectDtoSchema>;
+
+export const UpdateProjectDtoSchema = CreateProjectDtoSchema.partial();
+export type UpdateProjectDto = z.infer<typeof UpdateProjectDtoSchema>;
+
+export const DuplicateProjectDtoSchema = z.object({
+  name: z.string().min(2),
+});
+export type DuplicateProjectDto = z.infer<typeof DuplicateProjectDtoSchema>;
+
+// ==========================================
+// BLUEPRINT GRAPH MODEL
+// ==========================================
+export const NodePositionSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+});
+export type NodePosition = z.infer<typeof NodePositionSchema>;
+
+export const BlueprintNodeDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  type: BlueprintNodeTypeSchema,
+  refId: z.string().optional(),
+  parentId: z.string().nullable().optional(),
+  position: NodePositionSchema,
+  data: z.record(z.unknown()).default({}),
+  locked: z.boolean().default(false),
+  hidden: z.boolean().default(false),
+  groupId: z.string().optional(),
+  createdBy: z.string().optional(),
+  status: NodeStatusSchema.default('incomplete'),
+  missing: z.array(MissingFieldSchema).default([]),
+  effectiveStatus: NodeStatusSchema.default('incomplete'),
+  constraints: z.record(z.unknown()).optional(),
+});
+export type BlueprintNodeDto = z.infer<typeof BlueprintNodeDtoSchema>;
+
+export const BlueprintEdgeDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  source: z.string(),
+  target: z.string(),
+  type: z.string().default('default'),
+});
+export type BlueprintEdgeDto = z.infer<typeof BlueprintEdgeDtoSchema>;
+
+export const BlueprintGraphDtoSchema = z.object({
+  projectId: z.string(),
+  revision: z.number().int(),
+  nodes: z.array(BlueprintNodeDtoSchema),
+  edges: z.array(BlueprintEdgeDtoSchema),
+  updatedAt: z.string().optional(),
+});
+export type BlueprintGraphDto = z.infer<typeof BlueprintGraphDtoSchema>;
+
+// ==========================================
+// BLUEPRINT OPERATIONS & GATES
+// ==========================================
+export const BlueprintOpTypeSchema = z.enum([
+  'add_node',
+  'update_node',
+  'delete_node',
+  'add_edge',
+  'delete_edge',
+  'move_node',
+]);
+export type BlueprintOpType = z.infer<typeof BlueprintOpTypeSchema>;
+
+export const BlueprintOpSchema = z.object({
+  opId: z.string(),
+  type: BlueprintOpTypeSchema,
+  targetId: z.string(),
+  node: BlueprintNodeDtoSchema.partial().optional(),
+  edge: BlueprintEdgeDtoSchema.partial().optional(),
+  position: NodePositionSchema.optional(),
+  data: z.record(z.unknown()).optional(),
+  parentId: z.string().nullable().optional(),
+});
+export type BlueprintOp = z.infer<typeof BlueprintOpSchema>;
+
+export const ApplyOperationsDtoSchema = z.object({
+  clientRevision: z.number().int().optional(),
+  operations: z.array(BlueprintOpSchema),
+});
+export type ApplyOperationsDto = z.infer<typeof ApplyOperationsDtoSchema>;
+
+export const OperationResultAppliedSchema = z.object({
+  opId: z.string(),
+  type: BlueprintOpTypeSchema,
+  targetId: z.string(),
+});
+export type OperationResultApplied = z.infer<typeof OperationResultAppliedSchema>;
+
+export const OperationResultSkippedSchema = z.object({
+  opId: z.string(),
+  type: BlueprintOpTypeSchema,
+  targetId: z.string(),
+  reasonCode: ReasonCodeSchema,
+  message: z.string(),
+  fixHint: FixHintSchema.optional(),
+});
+export type OperationResultSkipped = z.infer<typeof OperationResultSkippedSchema>;
+
+export const BatchOperationResultSchema = z.object({
+  revision: z.number().int(),
+  applied: z.array(OperationResultAppliedSchema),
+  skipped: z.array(OperationResultSkippedSchema),
+  graph: BlueprintGraphDtoSchema.optional(),
+});
+export type BatchOperationResult = z.infer<typeof BatchOperationResultSchema>;
+
+// ==========================================
+// READINESS, IMPACT, RECOMMENDATIONS
+// ==========================================
+export const BlueprintMissingItemSchema = z.object({
+  nodeId: z.string(),
+  nodeType: z.string(),
+  nodeName: z.string(),
+  field: z.string(),
+  message: z.string(),
+  fixHint: FixHintSchema,
+});
+export type BlueprintMissingItem = z.infer<typeof BlueprintMissingItemSchema>;
+
+export const BlueprintReadinessDtoSchema = z.object({
+  totalNodes: z.number().int(),
+  completedCount: z.number().int(),
+  incompleteCount: z.number().int(),
+  blockedCount: z.number().int(),
+  percentComplete: z.number(),
+  missingItems: z.array(BlueprintMissingItemSchema),
+  healthScore: z.number(),
+  isReadyForBuild: z.boolean(),
+});
+export type BlueprintReadinessDto = z.infer<typeof BlueprintReadinessDtoSchema>;
+
+export const BlueprintImpactDtoSchema = z.object({
+  nodeId: z.string(),
+  descendantsCount: z.number().int(),
+  descendantNodeIds: z.array(z.string()),
+  subjectAssignmentsCount: z.number().int(),
+  affectedBuildsCount: z.number().int(),
+});
+export type BlueprintImpactDto = z.infer<typeof BlueprintImpactDtoSchema>;
+
+export const BlueprintRecommendationTypeSchema = z.enum([
+  'faculty',
+  'room',
+  'missing_connection',
+  'unused_resource',
+]);
+export type BlueprintRecommendationType = z.infer<typeof BlueprintRecommendationTypeSchema>;
+
+export const BlueprintRecommendationDtoSchema = z.object({
+  type: BlueprintRecommendationTypeSchema,
+  title: z.string(),
+  description: z.string(),
+  nodeId: z.string().optional(),
+  targetId: z.string().optional(),
+  reason: z.string(),
+  score: z.number().optional(),
+});
+export type BlueprintRecommendationDto = z.infer<typeof BlueprintRecommendationDtoSchema>;
+
+// ==========================================
+// TEMPLATES, SNAPSHOTS, HISTORY & COMMENTS
+// ==========================================
+export const GraphTemplateSubtreeSchema = z.object({
+  nodes: z.array(BlueprintNodeDtoSchema.partial()),
+  edges: z.array(BlueprintEdgeDtoSchema.partial()),
+});
+export type GraphTemplateSubtree = z.infer<typeof GraphTemplateSubtreeSchema>;
+
+export const GraphTemplateDtoSchema = z.object({
+  id: z.string(),
+  name: z.string().min(2),
+  category: z.string().min(2),
+  subtree: GraphTemplateSubtreeSchema,
+  version: z.number().int().default(1),
+  visibility: z.enum(['public', 'institution', 'private']).default('public'),
+  institutionId: z.string().optional(),
+  createdById: z.string().optional(),
+  createdAt: z.string().optional(),
+});
+export type GraphTemplateDto = z.infer<typeof GraphTemplateDtoSchema>;
+
+export const CreateGraphTemplateDtoSchema = z.object({
+  name: z.string().min(2),
+  category: z.string().min(2),
+  subtree: GraphTemplateSubtreeSchema,
+  version: z.number().int().optional().default(1),
+  visibility: z.enum(['public', 'institution', 'private']).optional().default('institution'),
+  anchorNodeType: BlueprintNodeTypeSchema.optional(),
+});
+export type CreateGraphTemplateDto = z.infer<typeof CreateGraphTemplateDtoSchema>;
+
+export const ApplyTemplateDtoSchema = z.object({
+  anchorNodeId: z.string().optional(),
+});
+export type ApplyTemplateDto = z.infer<typeof ApplyTemplateDtoSchema>;
+
+export const BlueprintHistoryEntryDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  revision: z.number().int(),
+  operationType: z.string(),
+  description: z.string(),
+  userId: z.string(),
+  timestamp: z.string(),
+});
+export type BlueprintHistoryEntryDto = z.infer<typeof BlueprintHistoryEntryDtoSchema>;
+
+export const BlueprintSnapshotDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  revision: z.number().int(),
+  label: z.string(),
+  graph: BlueprintGraphDtoSchema,
+  createdAt: z.string(),
+});
+export type BlueprintSnapshotDto = z.infer<typeof BlueprintSnapshotDtoSchema>;
+
+export const CreateBlueprintSnapshotDtoSchema = z.object({
+  label: z.string().min(1),
+});
+export type CreateBlueprintSnapshotDto = z.infer<typeof CreateBlueprintSnapshotDtoSchema>;
+
+export const BlueprintCommentDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  nodeId: z.string(),
+  userId: z.string(),
+  userName: z.string(),
+  text: z.string(),
+  createdAt: z.string(),
+});
+export type BlueprintCommentDto = z.infer<typeof BlueprintCommentDtoSchema>;
+
+export const CreateBlueprintCommentDtoSchema = z.object({
+  text: z.string().min(1),
+});
+export type CreateBlueprintCommentDto = z.infer<typeof CreateBlueprintCommentDtoSchema>;

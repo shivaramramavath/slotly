@@ -71,7 +71,9 @@ export class MongoProgramRepository
   }
 
   async countActiveByInstitution(institutionId: string): Promise<number> {
-    return this.model.countDocuments({ institutionId, isDeleted: false }).exec();
+    return this.model
+      .countDocuments({ institutionId, isDeleted: false })
+      .exec();
   }
 }
 
@@ -112,7 +114,9 @@ export class CachedProgramRepository
     const entity = await this.programRepo.findById(id);
     const success = await this.programRepo.softDelete(id);
     if (success && entity?.institutionId) {
-      await this.cache.invalidateTag(`institution:${entity.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${entity.institutionId.toString()}`,
+      );
     }
     return success;
   }
@@ -128,7 +132,9 @@ export class CachedProgramRepository
   override async create(doc: Partial<Program>): Promise<Program> {
     const created = await super.create(doc);
     if (created?.institutionId) {
-      await this.cache.invalidateTag(`institution:${created.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${created.institutionId.toString()}`,
+      );
     }
     return created;
   }
@@ -139,7 +145,9 @@ export class CachedProgramRepository
   ): Promise<Program | null> {
     const updated = await super.update(id, update);
     if (updated?.institutionId) {
-      await this.cache.invalidateTag(`institution:${updated.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${updated.institutionId.toString()}`,
+      );
     }
     return updated;
   }

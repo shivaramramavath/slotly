@@ -6,7 +6,10 @@ import type { BaseRepository } from '../../../common/database/base.repository';
 import { CachedRepository } from '../../../common/database/cached.repository';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
-import { Institution, InstitutionDocument } from '../schemas/institution.schema';
+import {
+  Institution,
+  InstitutionDocument,
+} from '../schemas/institution.schema';
 
 export const INSTITUTION_REPOSITORY = Symbol('INSTITUTION_REPOSITORY');
 
@@ -20,7 +23,9 @@ export class MongoInstitutionRepository
   extends MongoBaseRepository<Institution, InstitutionDocument>
   implements InstitutionRepository
 {
-  constructor(@InjectModel(Institution.name) model: Model<InstitutionDocument>) {
+  constructor(
+    @InjectModel(Institution.name) model: Model<InstitutionDocument>,
+  ) {
     super(model);
   }
 

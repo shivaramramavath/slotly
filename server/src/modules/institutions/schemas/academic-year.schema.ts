@@ -8,7 +8,12 @@ export class AcademicYear {
   id?: string | undefined;
   _id?: unknown;
 
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Institution',
+    required: true,
+    index: true,
+  })
   institutionId!: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Program', required: true, index: true })

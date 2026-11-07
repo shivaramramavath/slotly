@@ -3,7 +3,10 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Institution, InstitutionSchema } from './schemas/institution.schema';
 import { Department, DepartmentSchema } from './schemas/department.schema';
 import { Program, ProgramSchema } from './schemas/program.schema';
-import { AcademicYear, AcademicYearSchema } from './schemas/academic-year.schema';
+import {
+  AcademicYear,
+  AcademicYearSchema,
+} from './schemas/academic-year.schema';
 import { Semester, SemesterSchema } from './schemas/semester.schema';
 import { Section, SectionSchema } from './schemas/section.schema';
 import { Holiday, HolidaySchema } from './schemas/holiday.schema';

@@ -66,7 +66,9 @@ export class CachedHolidayRepository
     const entity = await this.holidayRepo.findById(id);
     const success = await this.holidayRepo.softDelete(id);
     if (success && entity?.institutionId) {
-      await this.cache.invalidateTag(`institution:${entity.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${entity.institutionId.toString()}`,
+      );
     }
     return success;
   }
@@ -74,7 +76,9 @@ export class CachedHolidayRepository
   override async create(doc: Partial<Holiday>): Promise<Holiday> {
     const created = await super.create(doc);
     if (created?.institutionId) {
-      await this.cache.invalidateTag(`institution:${created.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${created.institutionId.toString()}`,
+      );
     }
     return created;
   }
@@ -85,7 +89,9 @@ export class CachedHolidayRepository
   ): Promise<Holiday | null> {
     const updated = await super.update(id, update);
     if (updated?.institutionId) {
-      await this.cache.invalidateTag(`institution:${updated.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${updated.institutionId.toString()}`,
+      );
     }
     return updated;
   }

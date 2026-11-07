@@ -163,9 +163,133 @@
 - **Generic Responses on Auth Failures:** Forgot password, login, and registration use generic responses to prevent user enumeration attacks.
 
 ### What Was Skipped
-- Institution and Blueprint creation (scheduled for Phase 3: Institution & Blueprint Graph Foundation).
+- Institution and Blueprint creation (scheduled for Phase 3: Institution and Academic Management).
+
+---
+
+## Phase 3: Institution & Academic Management
+
+### What Was Built
+1. **Contracts Package (`@slotly/contracts`):**
+   - Added Zod schemas and TypeScript types for academic entities:
+     - `PeriodBreakSchema`, `PeriodConfigSchema`, `InstitutionDtoSchema`, `CreateInstitutionDtoSchema`, `UpdateInstitutionDtoSchema`.
+     - `DepartmentDtoSchema`, `CreateDepartmentDtoSchema`, `UpdateDepartmentDtoSchema`.
+     - `ProgramDtoSchema`, `CreateProgramDtoSchema`, `UpdateProgramDtoSchema`.
+     - `AcademicYearDtoSchema`, `CreateAcademicYearDtoSchema`, `UpdateAcademicYearDtoSchema`.
+     - `SemesterDtoSchema`, `CreateSemesterDtoSchema`, `UpdateSemesterDtoSchema`.
+     - `BatchDtoSchema`, `SectionDtoSchema`, `CreateSectionDtoSchema`, `UpdateSectionDtoSchema`.
+     - `HolidayDtoSchema`, `CreateHolidayDtoSchema`, `UpdateHolidayDtoSchema`.
+     - `InstitutionStructureDto`: Full hierarchical structure tree contract with aggregated node counters.
+   - Built and bundled to CJS, ESM, and DTS maps via `tsup`.
+
+2. **Server Architecture (`server/src/modules/institutions/`):**
+   - **Schemas & Persistence:** Mongoose schemas for `Institution`, `Department`, `Program`, `AcademicYear`, `Semester`, `Section`, and `Holiday` with soft delete support (`isDeleted`, `deletedAt`).
+   - **Repository Layer:** Abstract repository interfaces (`IInstitutionRepository`, `IDepartmentRepository`, etc.) implemented with `Mongo*Repository` and decorated with `Cached*Repository`. Read-through caching with Redis keys (`slotly:institution:{id}`) and automatic tag-based invalidations (`institution:{id}`).
+   - **Pure Logic Services:**
+     - `DependencyCheckerService`: Implements Blueprint referential integrity gates (asserting active parent existence before child creation, blocking soft delete when active dependent children exist, and verifying batch capacities do not exceed section strength).
+     - `TreeBuilderService`: Assembles the complete hierarchical academic tree and computes aggregate structure metrics (`totalDepartments`, `totalPrograms`, `totalAcademicYears`, `totalSemesters`, `totalSections`, `totalStudents`).
+   - **Orchestration & Controller:**
+     - `DefaultInstitutionsService`: Full CRUD orchestrator with Redis tree caching (`slotly:institution:{id}:tree`), `academic.changed` domain event publishing via `EventBus`, and asynchronous audit logging via BullMQ.
+     - `InstitutionsController`: Exposes endpoints matching `docs/ROUTES.md` (`GET /institution/structure`, `/institution`, `/departments`, `/programs`, `/academic-years`, `/semesters`, `/sections`, `/holidays`) guarded by `@RequirePermissions` with role-based policies (ADMIN full access, DESIGNER scoped department creation, FACULTY and STUDENT read access).
+   - **Unit Tests:**
+     - `dependency-checker.spec.ts`: Validates parent-child referential gates, prevents orphan nodes, prevents deleting nodes with active children, and verifies batch sum capacity bounds.
+     - `tree-builder.spec.ts`: Validates hierarchical tree structure construction and metric counters across empty and multi-tiered setups.
+     - Full test suite: 34 tests across 11 test suites passing cleanly.
+
+3. **Client Architecture (`client/src/features/institution/` & `/institutions`):**
+   - **API Client:** `institutionApi` covering all academic CRUD operations and tree queries.
+   - **Zustand Store:** `useInstitutionStore` managing cached tree structures, selected node state, active tab, and dialog controls.
+   - **UI Views & Tabs (`/institutions`):**
+     - **Overview:** Structure summary metric cards, quick-action shortcuts, and recent institution activity.
+     - **Hierarchy Tree View (`StructureTree`):** Interactive vertical tree visualization with expand/collapse, inline add-child actions (gated with clear warnings when parent nodes are missing), edit dialogs, and deletion guards.
+     - **Individual Management Tabs:** Dedicated data tables and modal dialogs for Departments, Programs, Academic Years, Semesters, Sections & Batches.
+     - **Calendar & Holidays (`HolidayCalendar`):** Holiday schedule manager with event categorization badges, date ranges, and deletion confirmation dialogs.
+     - **Working Days & Period Schedule (`WorkingDaysConfig`):** Day-of-week selection toggles (Mon-Sun), default period timings (start time, period duration, periods per day), and break schedules.
+   - **Strict Theme Compliance:** Strict black and white tokens with semantic accents (`#FACC15` primary, `#22C55E` success, `#EF4444` danger, `#3B82F6` links) under 5% of screen surface. React 19 render-phase prop synchronization.
+
+### Decisions Made
+- **Referential Integrity Gates:** Applied strict parent existence verification (`G1` creation gate) and dependent children verification (`G4` delete gate) to enforce blueprint invariants at the academic root level.
+- **Cache Tags & Invalidation:** Tagged all cached entity records and hierarchical trees with `institution:${institutionId}` so that mutations to any child element trigger immediate tag invalidation, ensuring consistency across reads.
+- **Pure Domain Separation:** Isolated `DependencyCheckerService` and `TreeBuilderService` from database and framework dependencies, enabling zero-mock unit testing and reuse.
+- **Render-Phase State Synchronization:** Replaced `useEffect` prop-synchronization patterns in modal dialogs with React 19 render-phase state adjustment to satisfy strict ESLint rules and eliminate re-render cascades.
+
+### What Was Skipped
+- Blueprint node drag-and-drop canvas and solver execution (scheduled for subsequent phases).
+
+---
+
+## Phase 4: Library (Faculty, Subjects, Elective Groups, Rooms, Import/Export)
+
+### What Was Built
+1. **Contracts Package (`@slotly/contracts`):**
+   - Added permissions: `'SUBJECT_READ'`, `'SUBJECT_MANAGE'` and updated `RolePermissions` registry.
+   - Added Zod schemas and TypeScript types:
+     - `SlotCoordinateSchema`: Matrix coordinate representation for weekly availability grids `[day][period]`.
+     - `FacultyDtoSchema`, `CreateFacultyDtoSchema`, `UpdateFacultyDtoSchema`, `FacultyWorkloadDtoSchema`.
+     - `SubjectTypeSchema` (`theory`, `lab`, `tutorial`, `seminar`), `RoomTypeSchema` (`lecture`, `lab`, `seminar`).
+     - `SubjectRequirementsSchema` (`roomType`, `minCapacity`, `equipment`).
+     - `SubjectDtoSchema`, `CreateSubjectDtoSchema`, `UpdateSubjectDtoSchema`.
+     - `ElectiveGroupDtoSchema`, `CreateElectiveGroupDtoSchema`, `UpdateElectiveGroupDtoSchema`.
+     - `RoomDtoSchema`, `CreateRoomDtoSchema`, `UpdateRoomDtoSchema`.
+     - `RoomMatchRequestSchema`, `RoomMatchResultSchema`, `FacultyQualificationRequestSchema`, `FacultyQualificationResultSchema`.
+     - `ImportEntitySchema`, `ImportRowErrorSchema`, `ImportValidationReportSchema`, `ImportJobStatusSchema`.
+   - Bundled to CJS, ESM, and DTS with `tsup`.
+
+2. **Server Architecture (`server/src/modules/library/`):**
+   - **Schemas & Persistence:** Mongoose schemas for `Faculty`, `Subject`, `ElectiveGroup`, and `Room` with 7x10 availability matrices, qualification linkages, and equipment arrays.
+   - **Repository Pattern & Decorators:** Repositories (`FacultyRepository`, `SubjectRepository`, `ElectiveGroupRepository`, `RoomRepository`) decorated with `CachedRepository` using Redis keys (`slotly:faculty:{id}`, `slotly:subject:{id}`, etc.) and tag-based invalidation (`library:{institutionId}`).
+   - **Strategy Pattern:**
+     - `RoomMatcher` (`StandardRoomMatcher`): Computes room suitability score (0-100) based on room type, seating capacity fit, and required equipment. Reusable by Blueprint gates and Solver Engine.
+     - `FacultyQualifier` (`StandardFacultyQualifier`): Validates faculty subject qualifications, designation seniority, and time slot availability.
+     - `FileParser` (`CsvFileParserStrategy`, `ExcelFileParserStrategy`): Parses CSV and Excel files into typed row records with column validation and row-level error reporting.
+   - **Workload & Import Services:**
+     - `FacultyWorkloadService`: Calculates assigned vs max weekly hours, identifies over-allocated faculty, and calculates utilization ratios.
+     - `LibraryImportService`: Validates and ingests faculty, subjects, and rooms with row-level validation reports and database persistence.
+   - **Controller & Endpoints (`LibraryController`):**
+     - Full CRUD for Faculty, Subjects, Rooms, and Elective Groups.
+     - `/library/faculty/:id/workload`: Workload metrics calculation.
+     - `/library/rooms/match`: Capacity, type, and equipment room matching.
+     - `/library/faculty/match`: Subject qualification matching.
+     - `/library/export/:entity`: CSV and Excel exports.
+     - `/library/import/:entity`: File parsing, dry-run validation, and execution.
+     - Events: Publishes `library.changed` domain event and queues audit log records.
+   - **Unit Tests (17 tests across 4 test suites):**
+     - `room-matcher.spec.ts`: Tests room capacity fitting, equipment matching, and room type validation.
+     - `faculty-qualifier.spec.ts`: Tests subject qualification matching, unavailable slot conflict detection, and workload limits.
+     - `faculty-workload.spec.ts`: Tests workload calculation, over-allocation flags, and utilization ratio formulas.
+     - `file-parser.spec.ts`: Tests CSV and Excel parsing, required column validation, and row error reporting.
+     - Monorepo unit test total: 51 tests across 15 suites passing cleanly.
+
+3. **Client Architecture (`client/src/features/library/` & `/library`):**
+   - **API Client:** `libraryApi` covering all CRUD, workload, matching, import, and export endpoints.
+   - **Interactive Components:**
+     - `AvailabilityGrid`: 7 days x 8 periods interactive grid editor for faculty and room availability, with quick toggles (all available, all unavailable, weekdays only) and monospace coordinate tooltips. Reusable in Blueprint nodes.
+     - `WorkloadBar`: Monospace workload meter indicating assigned vs max weekly hours with strict semantic accent thresholds (`#22C55E` normal, `#FACC15` near limit >80%, `#EF4444` overloaded >100%).
+     - `FacultyDialog`: Modal dialog for creating and editing faculty, weekly availability, subject qualifications, and workload bounds.
+     - `SubjectDialog`: Modal dialog for subjects, credits, hours, elective group assignments, and room/equipment requirements.
+     - `RoomDialog`: Modal dialog for rooms, capacity, building, room type, equipment tags, and availability grid.
+     - `ElectiveGroupDialog`: Modal dialog for managing elective groups and simultaneous scheduling constraints.
+     - `ImportWizardDialog`: Multi-step upload modal featuring file upload, dry-run validation report preview, row error inspection table, import progress bar, and completion summary.
+   - **Main Library Page (`/library`):**
+     - Tabbed navigation: Faculty, Subjects, Rooms.
+     - Global filter toolbar: search by keyword, filter by department, toggle between active and archived resources.
+     - Action buttons: Add resource, Manage Elective Groups, Import (CSV/Excel wizard), Export (CSV / Excel).
+     - TanStack React Query integration with optimistic state updates and query invalidations.
+   - **Theme & Design Tokens:**
+     - Strict Black and White palette with CSS tokens (`#000`, `#0A0A0A`, `#111`, `#232323`, `#FAFAFA`, `#8A8A8A`).
+     - Accents strictly below 5% (`#FACC15` primary/warning, `#22C55E` success/active, `#EF4444` destructive/overload).
+     - React 19 render-phase prop synchronization in all modals.
+
+### Decisions Made
+- **Strategy Pattern for Room Matching & Faculty Qualification:** Decoupled matching algorithms (`StandardRoomMatcher`, `StandardFacultyQualifier`) into swappable strategies to allow the Blueprint verification gates and the Phase 7 Constraint Solver engine to reuse identical matching logic.
+- **Dual-Engine File Parsing (CSV & Excel):** Standardized CSV and XLSX file parsing through a unified `FileParser` interface, returning identical typed record structures and error diagnostics.
+- **Tag-Based Cache Invalidation:** Resources are tagged by institution (`library:${institutionId}`). Any addition, update, or archive invalidates the entire library cache for that institution, ensuring zero stale reads in repeat queries.
+- **Render-Phase State Synchronization:** Followed React 19 rules in all library modal dialogs, synchronizing form state during render phase rather than using cascading `useEffect` hooks.
+
+### What Was Skipped
+- Blueprint canvas node placement and solver scheduling (scheduled for Phase 5: Blueprint Graph & Creation Gates and Phase 7: Constraint Solver).
 
 ---
 
 ## Next Steps
-- **Phase 3:** Institution & Blueprint Graph Foundation (Institution CRUD, completion rules, DAG structure, node creation gates, completion gating).
+- **Phase 5:** Blueprint Graph & Creation Gates (React Flow vertical hierarchy canvas, completion-gated child node creation, validation rules, drag-and-drop connections).

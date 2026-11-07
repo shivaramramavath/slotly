@@ -6,14 +6,20 @@ import type { BaseRepository } from '../../../common/database/base.repository';
 import { CachedRepository } from '../../../common/database/cached.repository';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
-import { AcademicYear, AcademicYearDocument } from '../schemas/academic-year.schema';
+import {
+  AcademicYear,
+  AcademicYearDocument,
+} from '../schemas/academic-year.schema';
 
 export const ACADEMIC_YEAR_REPOSITORY = Symbol('ACADEMIC_YEAR_REPOSITORY');
 
 export interface AcademicYearRepository extends BaseRepository<AcademicYear> {
   findByProgram(programId: string): Promise<AcademicYear[]>;
   findByInstitution(institutionId: string): Promise<AcademicYear[]>;
-  findByYearNumber(programId: string, yearNumber: number): Promise<AcademicYear | null>;
+  findByYearNumber(
+    programId: string,
+    yearNumber: number,
+  ): Promise<AcademicYear | null>;
   softDelete(id: string): Promise<boolean>;
   countActiveByProgram(programId: string): Promise<number>;
   countActiveByInstitution(institutionId: string): Promise<number>;
@@ -24,7 +30,9 @@ export class MongoAcademicYearRepository
   extends MongoBaseRepository<AcademicYear, AcademicYearDocument>
   implements AcademicYearRepository
 {
-  constructor(@InjectModel(AcademicYear.name) model: Model<AcademicYearDocument>) {
+  constructor(
+    @InjectModel(AcademicYear.name) model: Model<AcademicYearDocument>,
+  ) {
     super(model);
   }
 
@@ -67,7 +75,9 @@ export class MongoAcademicYearRepository
   }
 
   async countActiveByInstitution(institutionId: string): Promise<number> {
-    return this.model.countDocuments({ institutionId, isDeleted: false }).exec();
+    return this.model
+      .countDocuments({ institutionId, isDeleted: false })
+      .exec();
   }
 }
 
@@ -108,7 +118,9 @@ export class CachedAcademicYearRepository
     const entity = await this.yearRepo.findById(id);
     const success = await this.yearRepo.softDelete(id);
     if (success && entity?.institutionId) {
-      await this.cache.invalidateTag(`institution:${entity.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${entity.institutionId.toString()}`,
+      );
     }
     return success;
   }
@@ -124,7 +136,9 @@ export class CachedAcademicYearRepository
   override async create(doc: Partial<AcademicYear>): Promise<AcademicYear> {
     const created = await super.create(doc);
     if (created?.institutionId) {
-      await this.cache.invalidateTag(`institution:${created.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${created.institutionId.toString()}`,
+      );
     }
     return created;
   }
@@ -135,7 +149,9 @@ export class CachedAcademicYearRepository
   ): Promise<AcademicYear | null> {
     const updated = await super.update(id, update);
     if (updated?.institutionId) {
-      await this.cache.invalidateTag(`institution:${updated.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${updated.institutionId.toString()}`,
+      );
     }
     return updated;
   }

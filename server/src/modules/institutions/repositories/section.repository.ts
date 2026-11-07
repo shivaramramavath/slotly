@@ -44,10 +44,7 @@ export class MongoSectionRepository
       .exec();
   }
 
-  async findByName(
-    semesterId: string,
-    name: string,
-  ): Promise<Section | null> {
+  async findByName(semesterId: string, name: string): Promise<Section | null> {
     const doc = await this.model
       .findOne({ semesterId, name: name.trim(), isDeleted: false })
       .lean<Section>()
@@ -67,7 +64,9 @@ export class MongoSectionRepository
   }
 
   async countActiveByInstitution(institutionId: string): Promise<number> {
-    return this.model.countDocuments({ institutionId, isDeleted: false }).exec();
+    return this.model
+      .countDocuments({ institutionId, isDeleted: false })
+      .exec();
   }
 }
 
@@ -97,10 +96,7 @@ export class CachedSectionRepository
     );
   }
 
-  async findByName(
-    semesterId: string,
-    name: string,
-  ): Promise<Section | null> {
+  async findByName(semesterId: string, name: string): Promise<Section | null> {
     return this.sectionRepo.findByName(semesterId, name);
   }
 
@@ -108,7 +104,9 @@ export class CachedSectionRepository
     const entity = await this.sectionRepo.findById(id);
     const success = await this.sectionRepo.softDelete(id);
     if (success && entity?.institutionId) {
-      await this.cache.invalidateTag(`institution:${entity.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${entity.institutionId.toString()}`,
+      );
     }
     return success;
   }
@@ -124,7 +122,9 @@ export class CachedSectionRepository
   override async create(doc: Partial<Section>): Promise<Section> {
     const created = await super.create(doc);
     if (created?.institutionId) {
-      await this.cache.invalidateTag(`institution:${created.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${created.institutionId.toString()}`,
+      );
     }
     return created;
   }
@@ -135,7 +135,9 @@ export class CachedSectionRepository
   ): Promise<Section | null> {
     const updated = await super.update(id, update);
     if (updated?.institutionId) {
-      await this.cache.invalidateTag(`institution:${updated.institutionId.toString()}`);
+      await this.cache.invalidateTag(
+        `institution:${updated.institutionId.toString()}`,
+      );
     }
     return updated;
   }
