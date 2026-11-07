@@ -11,6 +11,7 @@ export interface ToastItem {
   title: string;
   description?: string | undefined;
   variant?: ToastVariant | undefined;
+  action?: { label: string; onClick: () => void } | undefined;
 }
 
 interface ToastStore {
@@ -35,8 +36,8 @@ export const useToastStore = create<ToastStore>((set) => ({
 export const toast = {
   success: (title: string, description?: string) =>
     useToastStore.getState().addToast({ title, description, variant: 'success' }),
-  error: (title: string, description?: string) =>
-    useToastStore.getState().addToast({ title, description, variant: 'error' }),
+  error: (title: string, description?: string, action?: { label: string; onClick: () => void }) =>
+    useToastStore.getState().addToast({ title, description, variant: 'error', action }),
   info: (title: string, description?: string) =>
     useToastStore.getState().addToast({ title, description, variant: 'info' }),
   warning: (title: string, description?: string) =>
@@ -66,7 +67,12 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 max-w-sm w-full">
+    <div
+      role="region"
+      aria-live="polite"
+      aria-label="Notifications"
+      className="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 max-w-sm w-full"
+    >
       {toasts.map((t) => {
         const icons = {
           success: <CheckCircle2 className="h-4 w-4 text-[#22C55E] shrink-0" />,
@@ -85,6 +91,7 @@ export function ToastContainer() {
         return (
           <div
             key={t.id}
+            role="status"
             className={cn(
               'flex items-start justify-between rounded-lg border bg-[#111111] p-3 shadow-lg text-[#FAFAFA]',
               borders[t.variant || 'info'],
@@ -95,6 +102,18 @@ export function ToastContainer() {
               <div className="space-y-0.5">
                 <p className="text-xs font-semibold">{t.title}</p>
                 {t.description && <p className="text-xs text-[#8A8A8A]">{t.description}</p>}
+                {t.action && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      t.action?.onClick();
+                      removeToast(t.id);
+                    }}
+                    className="mt-1.5 inline-block text-[11px] font-mono font-medium underline text-[#FAFAFA] hover:text-[#FACC15] cursor-pointer"
+                  >
+                    {t.action.label}
+                  </button>
+                )}
               </div>
             </div>
             <button
