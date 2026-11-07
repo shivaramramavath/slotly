@@ -45,4 +45,7 @@ export class Program {
 
 /** Zod schema validating program. */
 export const ProgramSchema = SchemaFactory.createForClass(Program);
-ProgramSchema.index({ departmentId: 1, code: 1, isDeleted: 1 });
+ProgramSchema.index(
+  { departmentId: 1, code: 1, isDeleted: 1 },
+  { unique: true },
+);

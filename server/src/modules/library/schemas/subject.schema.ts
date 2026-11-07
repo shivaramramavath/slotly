@@ -82,7 +82,10 @@ export class Subject {
 
 /** Zod schema validating subject. */
 export const SubjectSchema = SchemaFactory.createForClass(Subject);
-SubjectSchema.index({ institutionId: 1, code: 1 }, { unique: true });
+SubjectSchema.index(
+  { institutionId: 1, code: 1, isDeleted: 1 },
+  { unique: true },
+);
 SubjectSchema.index({ institutionId: 1, departmentId: 1 });
 SubjectSchema.index({ institutionId: 1, type: 1 });
 SubjectSchema.index({ institutionId: 1, archived: 1, isDeleted: 1 });

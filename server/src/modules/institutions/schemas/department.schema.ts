@@ -37,4 +37,7 @@ export class Department {
 
 /** Zod schema validating department. */
 export const DepartmentSchema = SchemaFactory.createForClass(Department);
-DepartmentSchema.index({ institutionId: 1, code: 1, isDeleted: 1 });
+DepartmentSchema.index(
+  { institutionId: 1, code: 1, isDeleted: 1 },
+  { unique: true },
+);

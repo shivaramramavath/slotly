@@ -114,4 +114,5 @@ export class Project {
 export const ProjectSchema = SchemaFactory.createForClass(Project);
 
 ProjectSchema.index({ institutionId: 1, status: 1 });
+ProjectSchema.index({ ownerId: 1 });
 ProjectSchema.index({ ownerId: 1, createdAt: -1 });

@@ -49,4 +49,4 @@ export class Section {
 
 /** Zod schema validating section. */
 export const SectionSchema = SchemaFactory.createForClass(Section);
-SectionSchema.index({ semesterId: 1, name: 1, isDeleted: 1 });
+SectionSchema.index({ semesterId: 1, name: 1, isDeleted: 1 }, { unique: true });

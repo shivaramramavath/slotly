@@ -57,4 +57,7 @@ export class Semester {
 
 /** Zod schema validating semester. */
 export const SemesterSchema = SchemaFactory.createForClass(Semester);
-SemesterSchema.index({ academicYearId: 1, number: 1, isDeleted: 1 });
+SemesterSchema.index(
+  { academicYearId: 1, number: 1, isDeleted: 1 },
+  { unique: true },
+);

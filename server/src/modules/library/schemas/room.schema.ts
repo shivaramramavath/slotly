@@ -65,7 +65,7 @@ export class Room {
 
 /** Zod schema validating room. */
 export const RoomSchema = SchemaFactory.createForClass(Room);
-RoomSchema.index({ institutionId: 1, code: 1 }, { unique: true });
+RoomSchema.index({ institutionId: 1, code: 1, isDeleted: 1 }, { unique: true });
 RoomSchema.index({ institutionId: 1, type: 1 });
 RoomSchema.index({ institutionId: 1, departmentId: 1 });
 RoomSchema.index({ institutionId: 1, archived: 1, isDeleted: 1 });

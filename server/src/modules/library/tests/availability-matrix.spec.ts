@@ -32,7 +32,9 @@ describe('Availability Matrix Normalization (AUD-003)', () => {
   });
 
   it('should truncate larger legacy matrices (e.g. 7x10) to configured dimensions', () => {
-    const legacy = Array.from({ length: 7 }, () => Array(10).fill(true));
+    const legacy = Array.from({ length: 7 }, (): boolean[] =>
+      Array<boolean>(10).fill(true),
+    );
     legacy[0]![0] = false;
 
     const normalized = normalizeAvailabilityMatrix(legacy, 5, 7);

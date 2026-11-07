@@ -67,6 +67,9 @@ export class Faculty {
 
 /** Zod schema validating faculty. */
 export const FacultySchema = SchemaFactory.createForClass(Faculty);
-FacultySchema.index({ institutionId: 1, code: 1 }, { unique: true });
+FacultySchema.index(
+  { institutionId: 1, code: 1, isDeleted: 1 },
+  { unique: true },
+);
 FacultySchema.index({ institutionId: 1, departmentId: 1 });
 FacultySchema.index({ institutionId: 1, archived: 1, isDeleted: 1 });

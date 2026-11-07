@@ -37,4 +37,7 @@ export class AcademicYear {
 
 /** Zod schema validating academic year. */
 export const AcademicYearSchema = SchemaFactory.createForClass(AcademicYear);
-AcademicYearSchema.index({ programId: 1, yearNumber: 1, isDeleted: 1 });
+AcademicYearSchema.index(
+  { programId: 1, yearNumber: 1, isDeleted: 1 },
+  { unique: true },
+);

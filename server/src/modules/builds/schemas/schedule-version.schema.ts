@@ -35,13 +35,13 @@ export class ScheduleVersion {
   @Prop({ required: true, default: 100 })
   score!: number;
 
-  @Prop({ required: true, default: 'auto' })
+  @Prop({ type: String, required: true, default: 'auto' })
   kind!: ScheduleVersionKind;
 
   @Prop({ required: true, default: 1 })
   revision!: number;
 
-  @Prop({ required: true, default: 'ready', index: true })
+  @Prop({ type: String, required: true, default: 'ready', index: true })
   status!: ScheduleVersionStatus;
 
   @Prop({ type: Date })
