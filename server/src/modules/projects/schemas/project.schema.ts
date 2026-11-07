@@ -1,3 +1,4 @@
+// Data schema and persistence model for project.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 import type {
@@ -7,8 +8,10 @@ import type {
   ProjectTerm,
 } from '@slotly/contracts';
 
+/** Type alias for project document. */
 export type ProjectDocument = Project & Document;
 
+/** Class implementing project. */
 @Schema({ timestamps: true, collection: 'projects' })
 export class Project {
   _id?: string;
@@ -107,6 +110,7 @@ export class Project {
   deletedAt?: Date | null;
 }
 
+/** Zod schema validating project. */
 export const ProjectSchema = SchemaFactory.createForClass(Project);
 
 ProjectSchema.index({ institutionId: 1, status: 1 });

@@ -38,7 +38,13 @@ const GROUPS: GroupConfig[] = [
     id: 'server-common',
     title: 'Server Common & Infrastructure',
     filename: 'server-common.md',
-    filter: (p) => p.startsWith('server/src/common/'),
+    filter: (p) =>
+      p.startsWith('server/src/common/') ||
+      p.startsWith('server/src/modules/projects/') ||
+      p.startsWith('server/src/modules/users/') ||
+      p.startsWith('server/src/config/') ||
+      p.startsWith('server/src/app.') ||
+      p === 'server/src/main.ts',
   },
   {
     id: 'server-auth',

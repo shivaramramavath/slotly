@@ -1,5 +1,22 @@
 # Server Common & Infrastructure Code Map
 
+### `server/src/app.controller.ts`
+*HTTP controller handling app.controller endpoints.*
+
+- **Controller** `AppController` (base: `/`) - Controller handling app controller HTTP endpoints.
+  - `GET /` -> `getHello()`
+  - `GET /health` -> `getHealth()`
+
+### `server/src/app.module.ts`
+*Core implementation for app.module in Projects/slotly/server/src.*
+
+- **Class** `AppModule` implements `NestModule` - Class implementing app module.
+
+### `server/src/app.service.ts`
+*Domain service orchestrating app.service business logic.*
+
+- **Injectable** `AppService` - Injectable service providing app service logic.
+
 ### `server/src/common/audit/audit-log.schema.ts`
 *Data schema and persistence model for audit-log.schema.*
 
@@ -198,4 +215,118 @@
 
 - **Injectable** `RolesGuard` implements `CanActivate` (deps: Reflector) - Injectable service providing roles guard logic.
 - **Interface** `AuthenticatedUser` - Interface defining structure for authenticated user.
+
+### `server/src/config/env.config.ts`
+*Core implementation for env.config in server/src/config.*
+
+- **Type** `EnvConfig` - TypeScript type inferred from env config Zod schema.
+- **Function** `validateEnv(config: Record<string, unknown>)`: `{ PORT: number; NODE_ENV: "development" | "production" | "test"; CLIENT_URL: string; MONGODB_URI: string; REDIS_HOST: string; REDIS_PORT: number; REDIS_PASSWORD: string; JWT_ACCESS_SECRET: string; JWT_REFRESH_SECRET: string; JWT_ACCESS_EXPIRATION: string; JWT_REFRESH_EXPIRATION: string; GROQ_API_KEY: string; BREVO_API_KEY: string; EMAIL_FROM: string; EMAIL_FROM_NAME: string; SMTP_HOST: string; SMTP_PORT: number; SMTP_USER: string; SMTP_PASS: string; }` - Function performing validate env.
+- **Zod Schema** `EnvSchema` -> `Env` - Zod schema validating env.
+
+### `server/src/main.ts`
+*Core implementation for main in Projects/slotly/server/src.*
+
+*(No public exports)*
+
+### `server/src/modules/projects/controllers/projects.controller.ts`
+*HTTP controller handling projects.controller endpoints.*
+
+- **Controller** `ProjectsController` (base: `/projects`) - Controller handling projects controller HTTP endpoints.
+  - `POST /projects` -> `create()` [perm: 'PROJECT_CREATE']
+  - `GET /projects` -> `list()` [perm: 'PROJECT_READ']
+  - `GET /projects/:projectId` -> `getById()` [perm: 'PROJECT_READ']
+  - `PATCH /projects/:projectId` -> `update()` [perm: 'PROJECT_MANAGE']
+  - `DELETE /projects/:projectId` -> `delete()` [perm: 'PROJECT_DELETE']
+  - `POST /projects/:projectId/duplicate` -> `duplicate()` [perm: 'PROJECT_CREATE']
+  - `POST /projects/:projectId/archive` -> `archive()` [perm: 'PROJECT_ARCHIVE']
+
+### `server/src/modules/projects/lifecycle/project-state.factory.ts`
+*Core implementation for project-state.factory in server/src/modules/projects/lifecycle.*
+
+- **Class** `DraftState` implements `IProjectState` - Class implementing draft state.
+- **Class** `BuildingState` implements `IProjectState` - Class implementing building state.
+- **Class** `ReadyState` implements `IProjectState` - Class implementing ready state.
+- **Class** `PendingApprovalState` implements `IProjectState` - Class implementing pending approval state.
+- **Class** `PublishedState` implements `IProjectState` - Class implementing published state.
+- **Class** `ArchivedState` implements `IProjectState` - Class implementing archived state.
+- **Class** `ProjectStateFactory` - Class implementing project state factory.
+
+### `server/src/modules/projects/lifecycle/project-state.interface.ts`
+*Core implementation for project-state.interface in server/src/modules/projects/lifecycle.*
+
+- **Interface** `IProjectState` - Interface defining structure for project state.
+
+### `server/src/modules/projects/projects.module.ts`
+*Core implementation for projects.module in server/src/modules/projects.*
+
+- **Class** `ProjectsModule` - Class implementing projects module.
+
+### `server/src/modules/projects/repositories/cached-project.repository.ts`
+*Database repository managing cached-project.repository persistence.*
+
+- **Injectable** `CachedProjectRepository` implements `IProjectRepository` (deps: MongoProjectRepository, @Inject(CACHE_SERVICE)) - Injectable service providing cached project repository logic.
+
+### `server/src/modules/projects/repositories/mongo-project.repository.ts`
+*Database repository managing mongo-project.repository persistence.*
+
+- **Injectable** `MongoProjectRepository` implements `IProjectRepository` (deps: ObjectId; }> & { __v: number; }>) - Injectable service providing mongo project repository logic.
+
+### `server/src/modules/projects/repositories/project.repository.interface.ts`
+*Database repository managing project.repository.interface persistence.*
+
+- **Interface** `FindProjectsFilter` - Interface defining structure for find projects filter.
+- **Interface** `IProjectRepository` extends `BaseRepository<Project>` - Interface defining structure for project repository.
+
+### `server/src/modules/projects/schemas/project.schema.ts`
+*Data schema and persistence model for project.schema.*
+
+- **Mongoose Schema** `Project` (collection: `projects` (indexes: institutionId, ownerId, status)) - Class implementing project.
+- **Type** `ProjectDocument` - Type alias for project document.
+- **Zod Schema** `ProjectSchema` -> `Project` - Zod schema validating project.
+
+### `server/src/modules/projects/services/projects.service.ts`
+*Domain service orchestrating projects.service business logic.*
+
+- **Injectable** `ProjectsService` (deps: CachedProjectRepository, CachedBlueprintRepository, TemplateService, GraphFromInstitutionBuilder, @Inject(INSTITUTIONS_SERVICE), AuditService) - Injectable service providing projects service logic.
+
+### `server/src/modules/users/repositories/cached-user.repository.ts`
+*Database repository managing cached-user.repository persistence.*
+
+- **Injectable** `CachedUserRepository` implements `UserRepository` (deps: UserRepository, @Inject(CACHE_SERVICE)) - Injectable service providing cached user repository logic.
+
+### `server/src/modules/users/repositories/user.repository.ts`
+*Database repository managing user.repository persistence.*
+
+- **Injectable** `MongoUserRepository` implements `UserRepository` (deps: ObjectId; }> & { __v: number; }>) - Injectable service providing mongo user repository logic.
+- **Interface** `UserRepository` extends `BaseRepository<User>` - Interface defining structure for user repository.
+- **Const** `USER_REPOSITORY`: `typeof import("E:/Shiva Ram/Projects/slotly/ser...` - Constant representing user repository.
+
+### `server/src/modules/users/schemas/user.schema.ts`
+*Data schema and persistence model for user.schema.*
+
+- **Mongoose Schema** `User` (collection: `users` (indexes: email, role, institutionId, departmentId, status)) - Class implementing user.
+- **Interface** `DeviceRecord` - Interface defining structure for device record.
+- **Type** `UserDocument` - Type alias for user document.
+- **Zod Schema** `UserSchema` -> `User` - Zod schema validating user.
+
+### `server/src/modules/users/users.controller.ts`
+*HTTP controller handling users.controller endpoints.*
+
+- **Controller** `UsersSecurityController` (base: `/users/me/security`) - Controller handling users security controller HTTP endpoints.
+  - `GET /users/me/security` -> `getOverview()`
+  - `GET /users/me/security/activity` -> `getActivity()`
+  - `GET /users/me/security/devices` -> `getDevices()`
+  - `DELETE /users/me/security/devices/:deviceId` -> `removeDevice()`
+
+### `server/src/modules/users/users.module.ts`
+*Core implementation for users.module in server/src/modules/users.*
+
+- **Class** `UsersModule` - Class implementing users module.
+
+### `server/src/modules/users/users.service.ts`
+*Domain service orchestrating users.service business logic.*
+
+- **Injectable** `DefaultUsersService` implements `UsersService` (deps: @Inject(USER_REPOSITORY), @Inject(SESSIONS_SERVICE), ObjectId; }> & { __v: number; }>) - Injectable service providing default users service logic.
+- **Interface** `UsersService` - Interface defining structure for users service.
+- **Const** `USERS_SERVICE`: `typeof import("E:/Shiva Ram/Projects/slotly/ser...` - Constant representing users service.
 

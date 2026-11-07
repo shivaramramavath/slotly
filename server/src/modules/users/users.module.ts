@@ -1,3 +1,4 @@
+// Core implementation for users.module in server/src/modules/users.
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schemas/user.schema';
@@ -13,6 +14,7 @@ import type { CacheService } from '../../common/cache/cache.interface';
 import { AuditLog, AuditLogSchema } from '../../common/audit/audit-log.schema';
 import { AuthModule } from '../auth/auth.module';
 
+/** Class implementing users module. */
 @Module({
   imports: [
     MongooseModule.forFeature([

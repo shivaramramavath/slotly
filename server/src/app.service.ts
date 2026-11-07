@@ -1,6 +1,8 @@
+// Domain service orchestrating app.service business logic.
 import { Injectable } from '@nestjs/common';
 import { HealthResponse } from '@slotly/contracts';
 
+/** Injectable service providing app service logic. */
 @Injectable()
 export class AppService {
   getHello(): string {

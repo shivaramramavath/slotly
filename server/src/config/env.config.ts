@@ -1,5 +1,7 @@
+// Core implementation for env.config in server/src/config.
 import { z } from 'zod';
 
+/** Zod schema validating env. */
 export const EnvSchema = z.object({
   PORT: z.coerce.number().default(4000),
   NODE_ENV: z
@@ -34,8 +36,10 @@ export const EnvSchema = z.object({
   SMTP_PASS: z.string().optional().default(''),
 });
 
+/** TypeScript type inferred from env config Zod schema. */
 export type EnvConfig = z.infer<typeof EnvSchema>;
 
+/** Function performing validate env. */
 export function validateEnv(config: Record<string, unknown>): EnvConfig {
   const parsed = EnvSchema.safeParse(config);
   if (!parsed.success) {

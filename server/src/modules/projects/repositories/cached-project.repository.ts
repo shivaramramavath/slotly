@@ -1,3 +1,4 @@
+// Database repository managing cached-project.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { CachedRepository } from '../../../common/database/cached.repository';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
@@ -9,6 +10,7 @@ import type {
 } from './project.repository.interface';
 import { MongoProjectRepository } from './mongo-project.repository';
 
+/** Injectable service providing cached project repository logic. */
 @Injectable()
 export class CachedProjectRepository
   extends CachedRepository<Project>

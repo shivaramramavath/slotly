@@ -1,3 +1,4 @@
+// HTTP controller handling projects.controller endpoints.
 import {
   Body,
   Controller,
@@ -22,6 +23,7 @@ import type {
   UpdateProjectDto,
 } from '@slotly/contracts';
 
+/** Controller handling projects controller HTTP endpoints. */
 @Controller('projects')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class ProjectsController {

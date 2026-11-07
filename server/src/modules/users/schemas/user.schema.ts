@@ -1,9 +1,12 @@
+// Data schema and persistence model for user.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import type { UserRole } from '@slotly/contracts';
 
+/** Type alias for user document. */
 export type UserDocument = User & Document;
 
+/** Interface defining structure for device record. */
 export interface DeviceRecord {
   deviceId: string;
   name: string;
@@ -14,6 +17,7 @@ export interface DeviceRecord {
   isTrusted: boolean;
 }
 
+/** Class implementing user. */
 @Schema({ timestamps: true, collection: 'users' })
 export class User {
   id?: string | undefined;
@@ -78,5 +82,6 @@ export class User {
   mfaRequired!: boolean; // Forced by institution admin
 }
 
+/** Zod schema validating user. */
 export const UserSchema = SchemaFactory.createForClass(User);
 UserSchema.index({ institutionId: 1, role: 1 });

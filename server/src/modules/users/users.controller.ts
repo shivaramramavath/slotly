@@ -1,3 +1,4 @@
+// HTTP controller handling users.controller endpoints.
 import {
   Controller,
   Get,
@@ -13,6 +14,7 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import type { RequestUser } from '../auth/guards/auth.guard';
 import type { Request } from 'express';
 
+/** Controller handling users security controller HTTP endpoints. */
 @Controller('users/me/security')
 @UseGuards(AuthGuard)
 export class UsersSecurityController {

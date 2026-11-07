@@ -1,3 +1,4 @@
+// Core implementation for main in Projects/slotly/server/src.
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';

@@ -1,3 +1,4 @@
+// Domain service orchestrating projects.service business logic.
 import {
   ConflictException,
   Injectable,
@@ -30,6 +31,7 @@ function getId(
   return typeof doc._id === 'string' ? doc._id : doc._id.toString();
 }
 
+/** Injectable service providing projects service logic. */
 @Injectable()
 export class ProjectsService {
   constructor(

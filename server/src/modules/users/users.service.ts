@@ -1,3 +1,4 @@
+// Domain service orchestrating users.service business logic.
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { USER_REPOSITORY } from './repositories/user.repository';
 import type { UserRepository } from './repositories/user.repository';
@@ -11,8 +12,10 @@ import {
 } from '../../common/audit/audit-log.schema';
 import type { DeviceDto, SecurityActivityDto } from '@slotly/contracts';
 
+/** Constant representing users service. */
 export const USERS_SERVICE = Symbol('USERS_SERVICE');
 
+/** Interface defining structure for users service. */
 export interface UsersService {
   getSecurityOverview(userId: string): Promise<{
     email: string;
@@ -26,6 +29,7 @@ export interface UsersService {
   removeDevice(userId: string, deviceId: string): Promise<{ message: string }>;
 }
 
+/** Injectable service providing default users service logic. */
 @Injectable()
 export class DefaultUsersService implements UsersService {
   constructor(

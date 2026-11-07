@@ -1,3 +1,4 @@
+// Core implementation for app.module in Projects/slotly/server/src.
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -24,6 +25,7 @@ import { BlueprintModule } from './modules/blueprint/blueprint.module';
 import { EngineModule } from './modules/engine/engine.module';
 import { BuildsModule } from './modules/builds/builds.module';
 
+/** Class implementing app module. */
 @Module({
   imports: [
     ConfigModule.forRoot({
