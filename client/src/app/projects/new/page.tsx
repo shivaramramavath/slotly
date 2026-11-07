@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { projectsApi } from '@/features/projects/services/projects.api';
 import { blueprintApi } from '@/features/projects/services/blueprint.api';
+import { useAuthStore } from '@/features/auth/store/auth.store';
 import type { CreateProjectDto, PeriodBreak, TermKind } from '@slotly/contracts';
 
 const DAYS_OF_WEEK = [
@@ -89,9 +90,12 @@ export default function NewProjectWizardPage() {
     setBreaks((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const user = useAuthStore((s) => s.user);
+
   const handleFinish = () => {
     const dto: CreateProjectDto = {
       name,
+      institutionId: user?.institutionId || undefined,
       term: {
         kind: termKind,
         startDate,

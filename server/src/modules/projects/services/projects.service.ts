@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   Inject,
+  Optional,
   NotFoundException,
 } from '@nestjs/common';
 import type {
@@ -17,6 +18,8 @@ import { TemplateService } from '../../blueprint/services/template.service';
 import { GraphFromInstitutionBuilder } from '../../blueprint/services/graph-from-institution.builder';
 import { INSTITUTIONS_SERVICE } from '../../institutions/services/institutions.service';
 import type { InstitutionsService } from '../../institutions/services/institutions.service';
+import { INSTITUTION_REPOSITORY } from '../../institutions/repositories/institution.repository';
+import type { InstitutionRepository } from '../../institutions/repositories/institution.repository';
 import { ProjectStateFactory } from '../lifecycle/project-state.factory';
 import { AuditService } from '../../../common/audit/audit.service';
 import type { Project } from '../schemas/project.schema';
@@ -42,6 +45,9 @@ export class ProjectsService {
     @Inject(INSTITUTIONS_SERVICE)
     private readonly institutionsService: InstitutionsService,
     private readonly auditService: AuditService,
+    @Optional()
+    @Inject(INSTITUTION_REPOSITORY)
+    private readonly institutionRepo?: InstitutionRepository,
   ) {}
 
   private toDto(doc: Project): ProjectDto {
@@ -67,7 +73,18 @@ export class ProjectsService {
     userId: string,
     userInstitutionId?: string,
   ): Promise<ProjectDto> {
-    const institutionId = dto.institutionId || userInstitutionId;
+    let institutionId = dto.institutionId || userInstitutionId;
+    if (!institutionId && this.institutionRepo) {
+      const firstInst = await this.institutionRepo.findOne({
+        isDeleted: false,
+      });
+      if (firstInst) {
+        institutionId = (
+          firstInst.id ||
+          (firstInst as unknown as { _id?: { toString(): string } })._id
+        )?.toString();
+      }
+    }
     if (!institutionId) {
       throw new ConflictException(
         'Institution ID is required to create a project',

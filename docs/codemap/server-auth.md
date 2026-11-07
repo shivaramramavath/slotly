@@ -85,7 +85,7 @@
 ### `server/src/modules/auth/guards/auth.guard.ts`
 *Route guard controlling access for auth.guard.*
 
-- **Injectable** `AuthGuard` implements `CanActivate` (deps: Reflector, @Inject(SESSIONS_SERVICE), @Inject(USER_REPOSITORY)) - Injectable service providing auth guard logic.
+- **Injectable** `AuthGuard` implements `CanActivate` (deps: Reflector, @Inject(SESSIONS_SERVICE), @Inject(USER_REPOSITORY), @Inject(INSTITUTION_REPOSITORY)) - Injectable service providing auth guard logic.
 - **Interface** `RequestUser` - Interface defining structure for request user.
 
 ### `server/src/modules/auth/guards/public.decorator.ts`

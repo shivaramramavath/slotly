@@ -147,9 +147,26 @@ export class DefaultAuthService implements AuthService {
         const id = this.getEntityId(newInst);
         if (id) institutionId = new Types.ObjectId(id);
       } else {
-        const firstInst = await this.institutionRepo.findOne({
+        let firstInst = await this.institutionRepo.findOne({
           isDeleted: false,
         });
+        if (!firstInst) {
+          firstInst = await this.institutionRepo.create({
+            name: `${dto.name.trim()}'s Institution`,
+            code: 'MAIN',
+            workingDays: [1, 2, 3, 4, 5],
+            defaultPeriodConfig: {
+              startTime: '09:00',
+              periodDuration: 50,
+              periodsPerDay: 7,
+              breaks: [
+                { name: 'Lunch Break', afterPeriod: 4, durationMinutes: 50 },
+              ],
+            },
+            isComplete: true,
+            isDeleted: false,
+          });
+        }
         if (firstInst) {
           const id = this.getEntityId(firstInst);
           if (id) institutionId = new Types.ObjectId(id);
@@ -259,9 +276,26 @@ export class DefaultAuthService implements AuthService {
     const userDto = this.toUserDto(user);
 
     if (!user.institutionId && this.institutionRepo) {
-      const firstInst = await this.institutionRepo.findOne({
+      let firstInst = await this.institutionRepo.findOne({
         isDeleted: false,
       });
+      if (!firstInst) {
+        firstInst = await this.institutionRepo.create({
+          name: 'Main Campus',
+          code: 'MAIN',
+          workingDays: [1, 2, 3, 4, 5],
+          defaultPeriodConfig: {
+            startTime: '09:00',
+            periodDuration: 50,
+            periodsPerDay: 7,
+            breaks: [
+              { name: 'Lunch Break', afterPeriod: 4, durationMinutes: 50 },
+            ],
+          },
+          isComplete: true,
+          isDeleted: false,
+        });
+      }
       if (firstInst) {
         const id = this.getEntityId(firstInst);
         if (id) {
@@ -380,6 +414,41 @@ export class DefaultAuthService implements AuthService {
     const user = await this.userRepo.findById(rotated.session.userId);
     if (!user) {
       throw new UnauthorizedException('User no longer exists.');
+    }
+
+    if (!user.institutionId && this.institutionRepo) {
+      let firstInst = await this.institutionRepo.findOne({
+        isDeleted: false,
+      });
+      if (!firstInst) {
+        firstInst = await this.institutionRepo.create({
+          name: 'Main Campus',
+          code: 'MAIN',
+          workingDays: [1, 2, 3, 4, 5],
+          defaultPeriodConfig: {
+            startTime: '09:00',
+            periodDuration: 50,
+            periodsPerDay: 7,
+            breaks: [
+              { name: 'Lunch Break', afterPeriod: 4, durationMinutes: 50 },
+            ],
+          },
+          isComplete: true,
+          isDeleted: false,
+        });
+      }
+      if (firstInst) {
+        const id = this.getEntityId(firstInst);
+        if (id) {
+          const instObjId = new Types.ObjectId(id);
+          user.institutionId = instObjId;
+          const uId = this.getEntityId(user);
+          if (uId) {
+            await this.userRepo.update(uId, { institutionId: instObjId });
+          }
+          await this.sessionsService.updateSessionInstitution(sessionId, id);
+        }
+      }
     }
 
     await this.auditService.log(
@@ -692,9 +761,26 @@ export class DefaultAuthService implements AuthService {
     const userDto = this.toUserDto(user);
 
     if (!user.institutionId && this.institutionRepo) {
-      const firstInst = await this.institutionRepo.findOne({
+      let firstInst = await this.institutionRepo.findOne({
         isDeleted: false,
       });
+      if (!firstInst) {
+        firstInst = await this.institutionRepo.create({
+          name: 'Main Campus',
+          code: 'MAIN',
+          workingDays: [1, 2, 3, 4, 5],
+          defaultPeriodConfig: {
+            startTime: '09:00',
+            periodDuration: 50,
+            periodsPerDay: 7,
+            breaks: [
+              { name: 'Lunch Break', afterPeriod: 4, durationMinutes: 50 },
+            ],
+          },
+          isComplete: true,
+          isDeleted: false,
+        });
+      }
       if (firstInst) {
         const id = this.getEntityId(firstInst);
         if (id) {
@@ -796,9 +882,26 @@ export class DefaultAuthService implements AuthService {
     const userDto = this.toUserDto(user);
 
     if (!user.institutionId && this.institutionRepo) {
-      const firstInst = await this.institutionRepo.findOne({
+      let firstInst = await this.institutionRepo.findOne({
         isDeleted: false,
       });
+      if (!firstInst) {
+        firstInst = await this.institutionRepo.create({
+          name: 'Main Campus',
+          code: 'MAIN',
+          workingDays: [1, 2, 3, 4, 5],
+          defaultPeriodConfig: {
+            startTime: '09:00',
+            periodDuration: 50,
+            periodsPerDay: 7,
+            breaks: [
+              { name: 'Lunch Break', afterPeriod: 4, durationMinutes: 50 },
+            ],
+          },
+          isComplete: true,
+          isDeleted: false,
+        });
+      }
       if (firstInst) {
         const id = this.getEntityId(firstInst);
         if (id) {

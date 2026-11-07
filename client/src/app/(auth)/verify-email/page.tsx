@@ -88,6 +88,11 @@ function VerifyEmailForm() {
             required
             autoFocus
           />
+          {process.env.NODE_ENV !== 'production' && (
+            <p className="text-[11px] font-mono text-[#8A8A8A] mt-1">
+              Dev hint: check server logs or use code <code className="text-[#FACC15]">123456</code>
+            </p>
+          )}
         </div>
 
         <Button

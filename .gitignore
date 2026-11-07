@@ -37,6 +37,7 @@ client/AGENTS.md
 # Build Outputs
 **/build/
 **/lib/
+!client/src/lib/
 **/tmp/
 **/temp/
 

@@ -74,7 +74,7 @@ export default function RegisterPage() {
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-mono uppercase text-[#8A8A8A]">Password (min 12 chars)</label>
+          <label className="text-xs font-mono uppercase text-[#8A8A8A]">Password</label>
           <Input
             type="password"
             placeholder="At least 12 characters"
@@ -84,6 +84,9 @@ export default function RegisterPage() {
             autoComplete="new-password"
             minLength={12}
           />
+          <p className="text-[11px] font-mono text-[#8A8A8A]">
+            Must be at least 12 characters and not a common dictionary word.
+          </p>
         </div>
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase text-[#8A8A8A]">
