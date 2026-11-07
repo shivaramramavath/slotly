@@ -1,4 +1,9 @@
-import type { EngineInput, Slot, Violation, ValidationReportDto } from './types';
+import type {
+  EngineInput,
+  Slot,
+  Violation,
+  ValidationReportDto,
+} from './types';
 import { ScheduleState } from './schedule-state';
 import { ConstraintRegistry } from './constraint.registry';
 import { SuggestionStrategy } from './suggestion.strategy';
@@ -106,7 +111,10 @@ export class ValidationService {
       for (const viol of constraintViolations) {
         // Generate ranked conflict-free alternative suggestions for hard violations
         if (viol.type === 'hard' && viol.slotRefs.length > 0) {
-          viol.suggestions = this.suggestionStrategy.generateSuggestions(state, viol);
+          viol.suggestions = this.suggestionStrategy.generateSuggestions(
+            state,
+            viol,
+          );
         }
         violations.push(viol);
       }
@@ -114,13 +122,18 @@ export class ValidationService {
 
     const preBuildErrors = this.preBuildChecker.check(input);
 
-    const hardViolationsCount = violations.filter((v) => v.type === 'hard').length;
-    const softViolationsCount = violations.filter((v) => v.type === 'soft').length;
+    const hardViolationsCount = violations.filter(
+      (v) => v.type === 'hard',
+    ).length;
+    const softViolationsCount = violations.filter(
+      (v) => v.type === 'soft',
+    ).length;
 
     // Calculate score: 100 base score
     // -25 per hard violation
     // -2 per soft violation
-    let calculatedScore = 100 - hardViolationsCount * 25 - softViolationsCount * 2;
+    let calculatedScore =
+      100 - hardViolationsCount * 25 - softViolationsCount * 2;
     if (preBuildErrors.length > 0) {
       calculatedScore -= preBuildErrors.length * 15;
     }

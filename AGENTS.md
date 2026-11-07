@@ -129,3 +129,38 @@ DEFINITION OF DONE (every phase)
 
 Do only the current phase. If something is ambiguous choose the simplest option
 and record it in docs/PROGRESS.md under "Decisions". Do not start the next phase.
+
+GIT WORKFLOW (every phase)
+
+START
+1. Run `git status`. The working tree must be clean. If not, stop and tell me.
+2. Make sure you are on main and up to date (`git pull --ff-only` if a remote
+   named origin exists).
+3. Create a branch: phase/<NN>-<slug> (for example phase/10-board-studio).
+
+DURING
+4. Commit in small logical commits (Conventional Commits):
+   feat(server): ..., feat(client): ..., feat(contracts): ..., test(server): ...,
+   fix: ..., refactor: ..., docs: ..., chore: ...
+   A typical phase has separate commits for contracts, server, client, tests, docs.
+
+BEFORE THE FINAL COMMIT
+5. At the repo root run `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+   All must pass. Never skip hooks, never disable or delete tests to pass.
+6. Safety check: never commit .env files, secrets, tokens, node_modules, build
+   output, uploads or logs. Check .gitignore. Review `git diff --cached --stat`
+   and scan staged files for secret patterns; abort and tell me if anything looks
+   like a secret.
+7. Append the phase entry to docs/PROGRESS.md (what was built, decisions, what was
+   skipped, manual test checklist) and include it in the last commit.
+
+FINISH
+8. Push: `git push -u origin <branch>`. If rejected, `git pull --rebase origin
+   <branch>` and push again. NEVER force-push. If there is no remote, stop and
+   tell me.
+9. Tag: `git tag -a phase-<NN>-done -m "Phase <NN>: <title>"` and `git push origin
+   phase-<NN>-done`.
+10. If the GitHub CLI is available, open a pull request into main titled
+    "Phase <NN>: <title>" with the PROGRESS entry and the manual test checklist
+    as the body. Do NOT merge it.
+11. Report: branch name, list of commits, tag, PR link, test results.

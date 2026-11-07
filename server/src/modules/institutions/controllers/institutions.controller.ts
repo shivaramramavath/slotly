@@ -25,9 +25,11 @@ import {
   CreateSectionDtoSchema,
   UpdateSectionDtoSchema,
   CreateHolidayDtoSchema,
+  CreateInstitutionDtoSchema,
   UpdateInstitutionDtoSchema,
 } from '@slotly/contracts';
 import type {
+  CreateInstitutionDto,
   CreateDepartmentDto,
   UpdateDepartmentDto,
   CreateProgramDto,
@@ -99,6 +101,19 @@ export class InstitutionsController {
   // ==========================================
   // INSTITUTION PROFILE
   // ==========================================
+  @Post()
+  @RequirePermissions('INSTITUTION_MANAGE')
+  async createInstitution(
+    @Req()
+    req: Request & {
+      user: RequestUser & { institutionId?: string | undefined };
+    },
+    @Body(new ZodValidationPipe(CreateInstitutionDtoSchema))
+    dto: CreateInstitutionDto,
+  ): Promise<InstitutionDto> {
+    return this.institutionsService.createInstitution(dto, req.user.id);
+  }
+
   @Get()
   @RequirePermissions('INSTITUTION_READ')
   async getInstitution(

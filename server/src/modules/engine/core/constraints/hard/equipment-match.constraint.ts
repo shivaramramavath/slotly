@@ -13,7 +13,13 @@ export class EquipmentMatchConstraint implements IConstraint {
     const violations: Violation[] = [];
 
     for (const slot of currentState.slots) {
-      if (!slot.roomId || !slot.subjectId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.roomId ||
+        !slot.subjectId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -24,7 +30,9 @@ export class EquipmentMatchConstraint implements IConstraint {
       const requiredEquipment = subject.requirements?.equipment || [];
       if (requiredEquipment.length === 0) continue;
 
-      const roomEquipment = new Set(room.equipment?.map((e) => e.toLowerCase()) || []);
+      const roomEquipment = new Set(
+        room.equipment?.map((e) => e.toLowerCase()) || [],
+      );
       const missingEquipment = requiredEquipment.filter(
         (req) => !roomEquipment.has(req.toLowerCase()),
       );

@@ -4,20 +4,23 @@ import {
   Injectable,
   UnauthorizedException,
   Inject,
+  Optional,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { createHash } from 'crypto';
 import { IS_PUBLIC_KEY } from './public.decorator';
 import { SESSIONS_SERVICE } from '../services/sessions.service';
 import type { SessionsService } from '../services/sessions.service';
+import { USER_REPOSITORY } from '../../users/repositories/user.repository';
+import type { UserRepository } from '../../users/repositories/user.repository';
 import type { UserRole } from '@slotly/contracts';
 
 export interface RequestUser {
   id: string;
   role: UserRole;
   sessionId: string;
-  institutionId?: string;
-  email?: string;
+  institutionId?: string | undefined;
+  email?: string | undefined;
 }
 
 @Injectable()
@@ -25,6 +28,9 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     @Inject(SESSIONS_SERVICE) private readonly sessionsService: SessionsService,
+    @Optional()
+    @Inject(USER_REPOSITORY)
+    private readonly userRepo?: UserRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -110,10 +116,23 @@ export class AuthGuard implements CanActivate {
     );
     await this.sessionsService.touchSession(parsedPayload.sid);
 
+    let institutionId = session.institutionId;
+    if (!institutionId && this.userRepo) {
+      const user = await this.userRepo.findById(session.userId);
+      if (user?.institutionId) {
+        institutionId = user.institutionId.toString();
+        await this.sessionsService.updateSessionInstitution(
+          session.sessionId,
+          institutionId,
+        );
+      }
+    }
+
     request.user = {
       id: session.userId,
       role: session.role,
       sessionId: session.sessionId,
+      institutionId,
     };
 
     return true;

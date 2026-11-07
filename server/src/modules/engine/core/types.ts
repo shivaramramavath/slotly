@@ -86,6 +86,8 @@ export interface EngineSubject {
   electiveGroupId?: string | undefined;
   facultyIds?: string[] | undefined;
   departmentId?: string | undefined;
+  sectionId?: string | undefined;
+  batchId?: string | undefined;
 }
 
 export interface EngineElectiveGroup {
@@ -107,7 +109,12 @@ export interface EngineSettings {
   periodDuration: number;
   startTime?: string | undefined;
   breaks: EngineBreak[];
-  perDayOverrides?: Record<string, { periodsCount?: number | undefined; breaks?: number[] | undefined }> | undefined;
+  perDayOverrides?:
+    | Record<
+        string,
+        { periodsCount?: number | undefined; breaks?: number[] | undefined }
+      >
+    | undefined;
 }
 
 export interface EngineCalendar {
@@ -117,7 +124,8 @@ export interface EngineCalendar {
 
 export interface EngineInput {
   settings: EngineSettings;
-  perDayConfig?: Record<string, { periodsCount: number; breaks: number[] }> | undefined;
+  perDayConfig?:
+    Record<string, { periodsCount: number; breaks: number[] }> | undefined;
   calendar: EngineCalendar;
   sections: EngineSection[];
   batches: EngineBatch[];
@@ -126,7 +134,8 @@ export interface EngineInput {
   subjects: EngineSubject[];
   electiveGroups: EngineElectiveGroup[];
   lockedSlots: Slot[];
-  effectiveConstraints?: Partial<HardConstraintsConfig & SoftConstraintsConfig> | undefined;
+  effectiveConstraints?:
+    Partial<HardConstraintsConfig & SoftConstraintsConfig> | undefined;
   preferences?: Record<string, unknown> | undefined;
 }
 

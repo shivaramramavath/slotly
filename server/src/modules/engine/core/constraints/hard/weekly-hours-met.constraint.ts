@@ -16,7 +16,12 @@ export class WeeklyHoursMetConstraint implements IConstraint {
     const sectionSubjectSlots = new Map<string, Slot[]>();
 
     for (const slot of currentState.slots) {
-      if (!slot.subjectId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.subjectId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
       const key = `${slot.sectionId}:${slot.subjectId}`;
@@ -25,18 +30,24 @@ export class WeeklyHoursMetConstraint implements IConstraint {
       sectionSubjectSlots.set(key, list);
     }
 
-    for (const section of currentState.input.sections) {
-      for (const subject of currentState.input.subjects) {
-        // If subject has weeklyHours required
-        if (!subject.weeklyHours || subject.weeklyHours <= 0) continue;
+    for (const subject of currentState.input.subjects) {
+      if (!subject.weeklyHours || subject.weeklyHours <= 0) continue;
 
+      const targetSections = subject.sectionId
+        ? currentState.input.sections.filter((s) => s.id === subject.sectionId)
+        : currentState.input.sections;
+
+      for (const section of targetSections) {
         const key = `${section.id}:${subject.id}`;
         const slots = sectionSubjectSlots.get(key) || [];
         const scheduledHours = slots.reduce((acc, s) => acc + (s.span || 1), 0);
 
         if (scheduledHours !== subject.weeklyHours) {
           const diff = scheduledHours - subject.weeklyHours;
-          const status = diff > 0 ? `over-scheduled by ${diff}h` : `under-scheduled by ${Math.abs(diff)}h`;
+          const status =
+            diff > 0
+              ? `over-scheduled by ${diff}h`
+              : `under-scheduled by ${Math.abs(diff)}h`;
 
           violations.push({
             id: `viol:weekly-hours:${section.id}:${subject.id}`,

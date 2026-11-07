@@ -120,7 +120,7 @@ export function BlueprintWorkspace({ projectId }: BlueprintWorkspaceProps) {
   };
 
   const handleBuildSchedule = () => {
-    router.push(`/projects/${projectId}/editor`);
+    router.push(`/projects/${projectId}/build`);
   };
 
   if (loadError) {

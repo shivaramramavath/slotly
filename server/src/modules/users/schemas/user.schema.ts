@@ -54,7 +54,7 @@ export class User {
   @Prop({ default: false })
   mfaEnabled!: boolean;
 
-  @Prop()
+  @Prop({ type: String })
   mfaSecret?: string | undefined;
 
   @Prop({ type: [String], default: [] })
@@ -79,5 +79,4 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
-UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ institutionId: 1, role: 1 });

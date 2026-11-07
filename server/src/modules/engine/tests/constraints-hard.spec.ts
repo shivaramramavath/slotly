@@ -62,12 +62,37 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
       },
     ],
     rooms: [
-      { id: 'room_101', name: 'Lecture 101', type: 'lecture', capacity: 60, equipment: ['Projector'] },
-      { id: 'room_lab', name: 'CS Lab 1', type: 'lab', capacity: 40, equipment: ['Projector', 'GPU'] },
-      { id: 'room_small', name: 'Tutorial Room', type: 'lecture', capacity: 25, equipment: [] },
+      {
+        id: 'room_101',
+        name: 'Lecture 101',
+        type: 'lecture',
+        capacity: 60,
+        equipment: ['Projector'],
+      },
+      {
+        id: 'room_lab',
+        name: 'CS Lab 1',
+        type: 'lab',
+        capacity: 40,
+        equipment: ['Projector', 'GPU'],
+      },
+      {
+        id: 'room_small',
+        name: 'Tutorial Room',
+        type: 'lecture',
+        capacity: 25,
+        equipment: [],
+      },
     ],
     subjects: [
-      { id: 'sub_cs101', code: 'CS101', name: 'Intro to CS', type: 'theory', weeklyHours: 3, facultyIds: ['fac_1'] },
+      {
+        id: 'sub_cs101',
+        code: 'CS101',
+        name: 'Intro to CS',
+        type: 'theory',
+        weeklyHours: 3,
+        facultyIds: ['fac_1'],
+      },
       {
         id: 'sub_lab',
         code: 'CS102L',
@@ -78,11 +103,34 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
         facultyIds: ['fac_1'],
         requirements: { roomType: 'lab', minCapacity: 30, equipment: ['GPU'] },
       },
-      { id: 'sub_elec1', code: 'ELE1', name: 'AI Ethics', type: 'theory', weeklyHours: 2, isElective: true, electiveGroupId: 'grp_1', facultyIds: ['fac_1'] },
-      { id: 'sub_elec2', code: 'ELE2', name: 'Robotics', type: 'theory', weeklyHours: 2, isElective: true, electiveGroupId: 'grp_1', facultyIds: ['fac_2'] },
+      {
+        id: 'sub_elec1',
+        code: 'ELE1',
+        name: 'AI Ethics',
+        type: 'theory',
+        weeklyHours: 2,
+        isElective: true,
+        electiveGroupId: 'grp_1',
+        facultyIds: ['fac_1'],
+      },
+      {
+        id: 'sub_elec2',
+        code: 'ELE2',
+        name: 'Robotics',
+        type: 'theory',
+        weeklyHours: 2,
+        isElective: true,
+        electiveGroupId: 'grp_1',
+        facultyIds: ['fac_2'],
+      },
     ],
     electiveGroups: [
-      { id: 'grp_1', name: 'Semester Elective', mustBeSimultaneous: true, subjectIds: ['sub_elec1', 'sub_elec2'] },
+      {
+        id: 'grp_1',
+        name: 'Semester Elective',
+        mustBeSimultaneous: true,
+        subjectIds: ['sub_elec1', 'sub_elec2'],
+      },
     ],
     lockedSlots: [],
   };
@@ -91,8 +139,28 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('1. FacultyNoDoubleBooking: flags duplicate booking at same day & period', () => {
     const constraint = new FacultyNoDoubleBookingConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 2, type: 'theory', facultyId: 'fac_1', roomId: 'room_101', span: 1, isLocked: false },
-      { id: 's2', sectionId: 'sec_2', day: 1, period: 2, type: 'theory', facultyId: 'fac_1', roomId: 'room_lab', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 2,
+        type: 'theory',
+        facultyId: 'fac_1',
+        roomId: 'room_101',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's2',
+        sectionId: 'sec_2',
+        day: 1,
+        period: 2,
+        type: 'theory',
+        facultyId: 'fac_1',
+        roomId: 'room_lab',
+        span: 1,
+        isLocked: false,
+      },
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -103,8 +171,28 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('2. RoomNoDoubleBooking: flags room double-booked at same day & period', () => {
     const constraint = new RoomNoDoubleBookingConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 3, type: 'theory', facultyId: 'fac_1', roomId: 'room_101', span: 1, isLocked: false },
-      { id: 's2', sectionId: 'sec_2', day: 1, period: 3, type: 'theory', facultyId: 'fac_2', roomId: 'room_101', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 3,
+        type: 'theory',
+        facultyId: 'fac_1',
+        roomId: 'room_101',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's2',
+        sectionId: 'sec_2',
+        day: 1,
+        period: 3,
+        type: 'theory',
+        facultyId: 'fac_2',
+        roomId: 'room_101',
+        span: 1,
+        isLocked: false,
+      },
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -115,8 +203,28 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('3. SectionNoDoubleBooking: flags section having two simultaneous whole-section classes', () => {
     const constraint = new SectionNoDoubleBookingConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 1, type: 'theory', facultyId: 'fac_1', roomId: 'room_101', span: 1, isLocked: false },
-      { id: 's2', sectionId: 'sec_1', day: 1, period: 1, type: 'theory', facultyId: 'fac_2', roomId: 'room_lab', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'theory',
+        facultyId: 'fac_1',
+        roomId: 'room_101',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's2',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'theory',
+        facultyId: 'fac_2',
+        roomId: 'room_lab',
+        span: 1,
+        isLocked: false,
+      },
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -127,7 +235,17 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('4. FacultyAvailability: flags slot scheduled during faculty unavailable period', () => {
     const constraint = new FacultyAvailabilityConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 0, period: 1, type: 'theory', facultyId: 'fac_1', roomId: 'room_101', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 0,
+        period: 1,
+        type: 'theory',
+        facultyId: 'fac_1',
+        roomId: 'room_101',
+        span: 1,
+        isLocked: false,
+      },
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -144,9 +262,20 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
       ],
     };
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 2, type: 'theory', roomId: 'room_101', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 2,
+        type: 'theory',
+        roomId: 'room_101',
+        span: 1,
+        isLocked: false,
+      },
     ];
-    const viols = constraint.check(new ScheduleState(inputWithUnavailableRoom, slots));
+    const viols = constraint.check(
+      new ScheduleState(inputWithUnavailableRoom, slots),
+    );
     expect(viols.length).toBe(1);
     expect(viols[0]?.message).toContain('unavailable');
   });
@@ -155,7 +284,16 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('6. SectionAvailability: flags slot on non-working day index', () => {
     const constraint = new SectionAvailabilityConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 6, period: 1, type: 'theory', roomId: 'room_101', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 6,
+        period: 1,
+        type: 'theory',
+        roomId: 'room_101',
+        span: 1,
+        isLocked: false,
+      },
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -166,11 +304,56 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('7. MaxHoursPerDay: flags faculty teaching more than maxHoursPerDay', () => {
     const constraint = new MaxHoursPerDayConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 1, type: 'theory', facultyId: 'fac_1', span: 1, isLocked: false },
-      { id: 's2', sectionId: 'sec_1', day: 1, period: 2, type: 'theory', facultyId: 'fac_1', span: 1, isLocked: false },
-      { id: 's3', sectionId: 'sec_1', day: 1, period: 3, type: 'theory', facultyId: 'fac_1', span: 1, isLocked: false },
-      { id: 's4', sectionId: 'sec_1', day: 1, period: 5, type: 'theory', facultyId: 'fac_1', span: 1, isLocked: false },
-      { id: 's5', sectionId: 'sec_1', day: 1, period: 6, type: 'theory', facultyId: 'fac_1', span: 1, isLocked: false }, // 5 hours > 4
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'theory',
+        facultyId: 'fac_1',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's2',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 2,
+        type: 'theory',
+        facultyId: 'fac_1',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's3',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 3,
+        type: 'theory',
+        facultyId: 'fac_1',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's4',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 5,
+        type: 'theory',
+        facultyId: 'fac_1',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's5',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 6,
+        type: 'theory',
+        facultyId: 'fac_1',
+        span: 1,
+        isLocked: false,
+      }, // 5 hours > 4
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -202,7 +385,16 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('9. MinHoursPerWeek: warns when assigned hours is below minHoursPerWeek', () => {
     const constraint = new MinHoursPerWeekConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 1, type: 'theory', facultyId: 'fac_1', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'theory',
+        facultyId: 'fac_1',
+        span: 1,
+        isLocked: false,
+      },
     ]; // 1 hour < 10
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(2); // fac_1 has 1h, fac_2 has 0h
@@ -213,12 +405,60 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('10. MaxClassesPerDay: flags section with > 5 classes in a day', () => {
     const constraint = new MaxClassesPerDayConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 1, type: 'theory', span: 1, isLocked: false },
-      { id: 's2', sectionId: 'sec_1', day: 1, period: 2, type: 'theory', span: 1, isLocked: false },
-      { id: 's3', sectionId: 'sec_1', day: 1, period: 3, type: 'theory', span: 1, isLocked: false },
-      { id: 's4', sectionId: 'sec_1', day: 1, period: 5, type: 'theory', span: 1, isLocked: false },
-      { id: 's5', sectionId: 'sec_1', day: 1, period: 6, type: 'theory', span: 1, isLocked: false },
-      { id: 's6', sectionId: 'sec_1', day: 1, period: 7, type: 'theory', span: 1, isLocked: false }, // 6 periods > 5
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'theory',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's2',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 2,
+        type: 'theory',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's3',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 3,
+        type: 'theory',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's4',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 5,
+        type: 'theory',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's5',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 6,
+        type: 'theory',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's6',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 7,
+        type: 'theory',
+        span: 1,
+        isLocked: false,
+      }, // 6 periods > 5
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -229,7 +469,15 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('11. MinBreaks: flags classes scheduled on mandatory break period', () => {
     const constraint = new MinBreaksConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 4, type: 'theory', span: 1, isLocked: false }, // period 4 is lunch break
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 4,
+        type: 'theory',
+        span: 1,
+        isLocked: false,
+      }, // period 4 is lunch break
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -240,7 +488,16 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('12. RoomCapacityFitsSection: flags room capacity smaller than section strength', () => {
     const constraint = new RoomCapacityFitsSectionConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 1, type: 'theory', roomId: 'room_small', span: 1, isLocked: false }, // room_small capacity 25 < section 60
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'theory',
+        roomId: 'room_small',
+        span: 1,
+        isLocked: false,
+      }, // room_small capacity 25 < section 60
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -251,7 +508,17 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('13. RoomTypeMatchesSubject: flags lab subject assigned to lecture room', () => {
     const constraint = new RoomTypeMatchesSubjectConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 1, type: 'lab', subjectId: 'sub_lab', roomId: 'room_101', span: 2, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'lab',
+        subjectId: 'sub_lab',
+        roomId: 'room_101',
+        span: 2,
+        isLocked: false,
+      },
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -262,7 +529,17 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('14. EquipmentMatch: flags room lacking required equipment', () => {
     const constraint = new EquipmentMatchConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 1, type: 'lab', subjectId: 'sub_lab', roomId: 'room_101', span: 1, isLocked: false }, // lacks GPU
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'lab',
+        subjectId: 'sub_lab',
+        roomId: 'room_101',
+        span: 1,
+        isLocked: false,
+      }, // lacks GPU
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -273,7 +550,16 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('15. LabConsecutiveBlock: flags lab session crossing over break period', () => {
     const constraint = new LabConsecutiveBlockConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 3, type: 'lab', subjectId: 'sub_lab', span: 2, isLocked: false }, // period 3 & 4 (crosses lunch)
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 3,
+        type: 'lab',
+        subjectId: 'sub_lab',
+        span: 2,
+        isLocked: false,
+      }, // period 3 & 4 (crosses lunch)
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -284,8 +570,26 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('16. ElectiveSimultaneity: flags elective subjects in group not running at the same time', () => {
     const constraint = new ElectiveSimultaneityConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 1, type: 'theory', subjectId: 'sub_elec1', span: 1, isLocked: false },
-      { id: 's2', sectionId: 'sec_1', day: 2, period: 2, type: 'theory', subjectId: 'sub_elec2', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'theory',
+        subjectId: 'sub_elec1',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's2',
+        sectionId: 'sec_1',
+        day: 2,
+        period: 2,
+        type: 'theory',
+        subjectId: 'sub_elec2',
+        span: 1,
+        isLocked: false,
+      },
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBeGreaterThan(0);
@@ -296,7 +600,15 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('17. HolidayExclusion: flags class scheduled on a calendar holiday', () => {
     const constraint = new HolidayExclusionConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 0, period: 2, type: 'theory', span: 1, isLocked: false }, // Monday
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 0,
+        period: 2,
+        type: 'theory',
+        span: 1,
+        isLocked: false,
+      }, // Monday
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
@@ -307,7 +619,16 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('18. WeeklyHoursMet: flags under-scheduled subject hours', () => {
     const constraint = new WeeklyHoursMetConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 1, type: 'theory', subjectId: 'sub_cs101', span: 1, isLocked: false }, // 1h of 3h
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'theory',
+        subjectId: 'sub_cs101',
+        span: 1,
+        isLocked: false,
+      }, // 1h of 3h
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.some((v) => v.message.includes('under-scheduled'))).toBe(true);
@@ -317,7 +638,16 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('19. MissingAllocation: flags slot with missing faculty or missing room', () => {
     const constraint = new MissingAllocationConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 1, type: 'theory', subjectId: 'sub_cs101', span: 1, isLocked: false }, // no faculty, no room
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 1,
+        type: 'theory',
+        subjectId: 'sub_cs101',
+        span: 1,
+        isLocked: false,
+      }, // no faculty, no room
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(2); // missing faculty and missing room
@@ -327,10 +657,20 @@ describe('Hard Constraints Suite (20 Constraints)', () => {
   it('20. BreakNotOverwritable: flags regular class slot placed over a break period', () => {
     const constraint = new BreakNotOverwritableConstraint();
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 1, period: 4, type: 'theory', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 1,
+        period: 4,
+        type: 'theory',
+        span: 1,
+        isLocked: false,
+      },
     ];
     const viols = constraint.check(new ScheduleState(baseInput, slots));
     expect(viols.length).toBe(1);
-    expect(viols[0]?.message).toContain('occupied by an overwriting theory class');
+    expect(viols[0]?.message).toContain(
+      'occupied by an overwriting theory class',
+    );
   });
 });

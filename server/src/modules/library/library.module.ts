@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CacheModule } from '../../common/cache/cache.module';
 import { AuditModule } from '../../common/audit/audit.module';
-import { AuthModule } from '../auth/auth.module';
 import { EventBus } from '../../common/events/event-bus.service';
 import { Faculty, FacultySchema } from './schemas/faculty.schema';
 import { Subject, SubjectSchema } from './schemas/subject.schema';
@@ -54,7 +53,6 @@ import { LibraryController } from './controllers/library.controller';
     ]),
     CacheModule,
     AuditModule,
-    AuthModule,
   ],
   controllers: [LibraryController],
   providers: [

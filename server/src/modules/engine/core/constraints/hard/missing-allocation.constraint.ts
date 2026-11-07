@@ -13,7 +13,11 @@ export class MissingAllocationConstraint implements IConstraint {
     const violations: Violation[] = [];
 
     for (const slot of currentState.slots) {
-      if (slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 

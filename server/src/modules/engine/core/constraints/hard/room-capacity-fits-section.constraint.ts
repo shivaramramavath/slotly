@@ -13,7 +13,12 @@ export class RoomCapacityFitsSectionConstraint implements IConstraint {
     const violations: Violation[] = [];
 
     for (const slot of currentState.slots) {
-      if (!slot.roomId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.roomId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -21,13 +26,25 @@ export class RoomCapacityFitsSectionConstraint implements IConstraint {
       if (!room) continue;
 
       // Determine required capacity
-      let requiredCapacity = 0;
-      if (slot.batchId) {
-        const batch = currentState.findBatch(slot.batchId);
-        requiredCapacity = batch?.size || 30;
-      } else {
-        const section = currentState.findSection(slot.sectionId);
-        requiredCapacity = section?.strength || 60;
+      const subject = slot.subjectId
+        ? currentState.findSubject(slot.subjectId)
+        : undefined;
+      let requiredCapacity = subject?.requirements?.minCapacity || 0;
+      if (!requiredCapacity) {
+        if (slot.batchId) {
+          const batch = currentState.findBatch(slot.batchId);
+          requiredCapacity = batch?.size || 30;
+        } else if (subject?.electiveGroupId) {
+          const group = currentState.input.electiveGroups.find(
+            (eg) => eg.id === subject.electiveGroupId,
+          );
+          const divisor = Math.max(1, group?.subjectIds.length || 1);
+          const section = currentState.findSection(slot.sectionId);
+          requiredCapacity = Math.ceil((section?.strength || 60) / divisor);
+        } else {
+          const section = currentState.findSection(slot.sectionId);
+          requiredCapacity = section?.strength || 60;
+        }
       }
 
       if (room.capacity < requiredCapacity) {

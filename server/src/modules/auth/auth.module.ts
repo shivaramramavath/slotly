@@ -29,12 +29,14 @@ import { AuthGuard } from './guards/auth.guard';
 import { StepUpGuard } from './guards/step-up.guard';
 import { PermissionsGuard } from '../../common/rbac/permissions.guard';
 import { UsersModule } from '../users/users.module';
+import { InstitutionsModule } from '../institutions/institutions.module';
 
 @Global()
 @Module({
   imports: [
     BullModule.registerQueue({ name: 'notifications' }),
     forwardRef(() => UsersModule),
+    forwardRef(() => InstitutionsModule),
   ],
   controllers: [AuthController],
   providers: [

@@ -41,7 +41,8 @@ export class SpreadSubjectsAcrossDaysConstraint implements IConstraint {
         const day = parseInt(dayStr!, 10);
         const section = currentState.findSection(sectionId!);
         const subject = currentState.findSubject(subjectId!);
-        const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
+        const dayName =
+          currentState.input.settings.days[day] || `Day ${day + 1}`;
 
         violations.push({
           id: `viol:soft:spread-subjects:${sectionId}:${subjectId}:${day}`,

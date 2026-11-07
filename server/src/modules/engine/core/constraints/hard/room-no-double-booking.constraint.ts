@@ -14,7 +14,12 @@ export class RoomNoDoubleBookingConstraint implements IConstraint {
     const seen = new Map<string, Slot[]>();
 
     for (const slot of currentState.slots) {
-      if (!slot.roomId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.roomId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -35,7 +40,8 @@ export class RoomNoDoubleBookingConstraint implements IConstraint {
         const period = parseInt(periodStr!, 10);
         const room = currentState.findRoom(roomId!);
         const roomName = room?.name || roomId;
-        const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
+        const dayName =
+          currentState.input.settings.days[day] || `Day ${day + 1}`;
 
         violations.push({
           id: `viol:room-double-book:${roomId}:${day}:${period}`,

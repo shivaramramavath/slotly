@@ -14,6 +14,9 @@ import type {
   CreateBlueprintSnapshotDto,
   CreateGraphTemplateDto,
   GraphTemplateDto,
+  ValidateProjectDto,
+  ValidateVersionDto,
+  ValidationReportDto,
 } from '@slotly/contracts';
 
 export const blueprintApi = {
@@ -42,6 +45,26 @@ export const blueprintApi = {
 
   async getReadiness(projectId: string): Promise<BlueprintReadinessDto> {
     return apiClient<BlueprintReadinessDto>(`/projects/${projectId}/blueprint/readiness`);
+  },
+
+  async validateProject(
+    projectId: string,
+    dto: ValidateProjectDto = {},
+  ): Promise<ValidationReportDto> {
+    return apiClient<ValidationReportDto>(`/projects/${projectId}/validate`, {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
+  },
+
+  async validateVersion(
+    versionId: string,
+    dto: ValidateVersionDto = {},
+  ): Promise<ValidationReportDto> {
+    return apiClient<ValidationReportDto>(`/versions/${versionId}/validate`, {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
   },
 
   async getImpact(projectId: string, nodeId: string): Promise<BlueprintImpactDto> {

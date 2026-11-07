@@ -18,6 +18,7 @@ import { blueprintApi } from '@/features/projects/services/blueprint.api';
 import { useBlueprintStore } from '../../store/blueprint.store';
 import type { BlueprintCanvasNode } from '../../types/canvas.types';
 import type { BlueprintRecommendationDto } from '@slotly/contracts';
+import { BlueprintConstraintsTab } from './tabs/blueprint-constraints-tab';
 
 interface BlueprintSidebarProps {
   projectId: string;
@@ -604,13 +605,7 @@ export function BlueprintSidebar({ projectId, onUpdateConfig }: BlueprintSidebar
         )}
 
         {activeTab === 'constraints' && (
-          <div className="py-8 text-center text-[#8A8A8A]">
-            <ShieldCheck className="h-8 w-8 text-[#333333] mx-auto mb-2" />
-            <h4 className="text-xs font-semibold text-[#FAFAFA]">Constraint Engine</h4>
-            <p className="text-[11px] font-mono mt-1 leading-relaxed">
-              Constraint inheritance and conflict solver will be fully connected in Phase 8.
-            </p>
-          </div>
+          <BlueprintConstraintsTab projectId={projectId} />
         )}
 
         {activeTab === 'ai' && (

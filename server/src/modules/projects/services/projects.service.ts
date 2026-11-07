@@ -256,6 +256,17 @@ export class ProjectsService {
     return this.toDto(updated!);
   }
 
+  async updateStatus(
+    projectId: string,
+    status: Project['status'],
+  ): Promise<ProjectDto> {
+    const updated = await this.projectRepo.update(projectId, { status });
+    if (!updated) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+    return this.toDto(updated);
+  }
+
   async delete(projectId: string, userId: string): Promise<boolean> {
     const project = await this.projectRepo.findById(projectId);
     if (!project) {

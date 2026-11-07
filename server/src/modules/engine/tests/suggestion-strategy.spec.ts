@@ -33,7 +33,13 @@ describe('SuggestionStrategy', () => {
       { id: 'room_small', name: 'Small Room', type: 'lecture', capacity: 25 },
     ],
     subjects: [
-      { id: 'sub_1', code: 'CS101', name: 'Algorithms', type: 'theory', weeklyHours: 3 },
+      {
+        id: 'sub_1',
+        code: 'CS101',
+        name: 'Algorithms',
+        type: 'theory',
+        weeklyHours: 3,
+      },
     ],
     electiveGroups: [],
     lockedSlots: [],
@@ -49,8 +55,28 @@ describe('SuggestionStrategy', () => {
 
     // Slot 1 and Slot 2 are double-booked at day 0, period 1 with fac_1
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 0, period: 1, type: 'theory', facultyId: 'fac_1', roomId: 'room_101', span: 1, isLocked: false },
-      { id: 's2', sectionId: 'sec_2', day: 0, period: 1, type: 'theory', facultyId: 'fac_1', roomId: 'room_102', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 0,
+        period: 1,
+        type: 'theory',
+        facultyId: 'fac_1',
+        roomId: 'room_101',
+        span: 1,
+        isLocked: false,
+      },
+      {
+        id: 's2',
+        sectionId: 'sec_2',
+        day: 0,
+        period: 1,
+        type: 'theory',
+        facultyId: 'fac_1',
+        roomId: 'room_102',
+        span: 1,
+        isLocked: false,
+      },
     ];
 
     const state = new ScheduleState(baseInput, slots);
@@ -74,7 +100,16 @@ describe('SuggestionStrategy', () => {
 
     // Section A (60 students) placed in room_small (capacity 25)
     const slots: Slot[] = [
-      { id: 's1', sectionId: 'sec_1', day: 0, period: 1, type: 'theory', roomId: 'room_small', span: 1, isLocked: false },
+      {
+        id: 's1',
+        sectionId: 'sec_1',
+        day: 0,
+        period: 1,
+        type: 'theory',
+        roomId: 'room_small',
+        span: 1,
+        isLocked: false,
+      },
     ];
 
     const state = new ScheduleState(baseInput, slots);

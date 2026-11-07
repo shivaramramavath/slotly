@@ -15,6 +15,7 @@ export interface SessionData {
   sessionId: string;
   userId: string;
   role: UserRole;
+  institutionId?: string | undefined;
   device: string;
   browser: string;
   ip: string;
@@ -41,6 +42,7 @@ export interface SessionsService {
     userId: string,
     role: UserRole,
     meta: {
+      institutionId?: string | undefined;
       device?: string | undefined;
       browser?: string | undefined;
       ip?: string | undefined;
@@ -53,6 +55,10 @@ export interface SessionsService {
   }>;
   validateSession(sessionId: string): Promise<SessionData>;
   touchSession(sessionId: string): Promise<void>;
+  updateSessionInstitution(
+    sessionId: string,
+    institutionId: string,
+  ): Promise<void>;
   rotateRefreshToken(
     sessionId: string,
     presentedRefreshToken: string,
@@ -127,6 +133,7 @@ export class RedisSessionsService implements SessionsService {
     userId: string,
     role: UserRole,
     meta: {
+      institutionId?: string | undefined;
       device?: string | undefined;
       browser?: string | undefined;
       ip?: string | undefined;
@@ -147,6 +154,7 @@ export class RedisSessionsService implements SessionsService {
       sessionId,
       userId,
       role,
+      institutionId: meta.institutionId,
       device: meta.device || 'Unknown Device',
       browser: meta.browser || 'Unknown Browser',
       ip: meta.ip || '127.0.0.1',
@@ -216,6 +224,18 @@ export class RedisSessionsService implements SessionsService {
         session,
         this.inactivityTtl,
       );
+    }
+  }
+
+  async updateSessionInstitution(
+    sessionId: string,
+    institutionId: string,
+  ): Promise<void> {
+    const key = this.getSessionKey(sessionId);
+    const session = await this.cache.get<SessionData>(key);
+    if (session) {
+      session.institutionId = institutionId;
+      await this.cache.set(key, session, this.inactivityTtl);
     }
   }
 

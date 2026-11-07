@@ -14,7 +14,12 @@ export class FacultyNoDoubleBookingConstraint implements IConstraint {
     const seen = new Map<string, Slot[]>();
 
     for (const slot of currentState.slots) {
-      if (!slot.facultyId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.facultyId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -37,7 +42,8 @@ export class FacultyNoDoubleBookingConstraint implements IConstraint {
         const faculty = currentState.findFaculty(facultyId!);
         const facultyName = faculty?.name || facultyId;
 
-        const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
+        const dayName =
+          currentState.input.settings.days[day] || `Day ${day + 1}`;
 
         violations.push({
           id: `viol:faculty-double-book:${facultyId}:${day}:${period}`,

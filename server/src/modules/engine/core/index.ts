@@ -7,3 +7,4 @@ export * from './pre-build.checker';
 export * from './validation.service';
 export * from './constraints/hard';
 export * from './constraints/soft';
+export * from './solver';

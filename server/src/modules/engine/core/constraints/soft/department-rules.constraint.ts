@@ -31,7 +31,8 @@ export class DepartmentRulesConstraint implements IConstraint {
         !subject.isElective;
 
       if (isCore && slot.period > 4) {
-        const dayName = currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
+        const dayName =
+          currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
         violations.push({
           id: `viol:soft:dept-rules:${slot.id}`,
           constraintId: this.id,

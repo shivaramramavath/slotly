@@ -16,7 +16,11 @@ export class MinBreaksConstraint implements IConstraint {
     if (breaks.length === 0) return violations;
 
     for (const slot of currentState.slots) {
-      if (slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -25,11 +29,13 @@ export class MinBreaksConstraint implements IConstraint {
         const period = slot.period + p;
         // Check if (slot.day, period) is a break period
         const isBreak = breaks.some(
-          (b) => (b.day === undefined || b.day === slot.day) && b.period === period,
+          (b) =>
+            (b.day === undefined || b.day === slot.day) && b.period === period,
         );
 
         if (isBreak) {
-          const dayName = currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
+          const dayName =
+            currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
           violations.push({
             id: `viol:min-breaks:${slot.sectionId}:${slot.day}:${period}:${slot.id}`,
             constraintId: this.id,

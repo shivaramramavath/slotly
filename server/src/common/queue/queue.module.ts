@@ -17,7 +17,11 @@ import { WriteBehindService, WRITE_BEHIND_QUEUE } from './write-behind.service';
       }),
       inject: [ConfigService],
     }),
-    BullModule.registerQueue({ name: WRITE_BEHIND_QUEUE }, { name: 'audit' }),
+    BullModule.registerQueue(
+      { name: WRITE_BEHIND_QUEUE },
+      { name: 'audit' },
+      { name: 'notifications' },
+    ),
   ],
   providers: [WriteBehindService],
   exports: [WriteBehindService, BullModule],

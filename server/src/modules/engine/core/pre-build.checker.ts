@@ -21,21 +21,30 @@ export class PreBuildChecker {
     const periodsPerDay = input.settings.periodsPerDay || 7;
     const breaksCount = (input.settings.breaks || []).length;
     const availablePeriodsPerDay = Math.max(1, periodsPerDay - breaksCount);
-    const totalLabCapacity = labRooms.length * workingDaysCount * availablePeriodsPerDay;
+    const totalLabCapacity =
+      labRooms.length * workingDaysCount * availablePeriodsPerDay;
 
     if (labRooms.length === 0 && labSubjects.length > 0) {
       errors.push({
         code: 'INSUFFICIENT_LAB_CAPACITY',
         message: `Project requires ${totalLabHoursNeeded} weekly laboratory hours, but no Laboratory rooms exist in the library.`,
         fixHint: { field: 'rooms' },
-        details: { totalLabHoursNeeded, availableLabCapacity: 0, labRoomsCount: 0 },
+        details: {
+          totalLabHoursNeeded,
+          availableLabCapacity: 0,
+          labRoomsCount: 0,
+        },
       });
     } else if (totalLabHoursNeeded > totalLabCapacity) {
       errors.push({
         code: 'INSUFFICIENT_LAB_CAPACITY',
         message: `Insufficient lab capacity: ${totalLabHoursNeeded} weekly lab hours required, but only ${totalLabCapacity} hours available across ${labRooms.length} lab room(s).`,
         fixHint: { field: 'rooms' },
-        details: { totalLabHoursNeeded, totalLabCapacity, labRoomsCount: labRooms.length },
+        details: {
+          totalLabHoursNeeded,
+          totalLabCapacity,
+          labRoomsCount: labRooms.length,
+        },
       });
     }
 
@@ -91,7 +100,8 @@ export class PreBuildChecker {
     if (input.sections.length === 0) {
       errors.push({
         code: 'INVALID_GRAPH',
-        message: 'Blueprint contains no sections. At least one section is required to generate a schedule.',
+        message:
+          'Blueprint contains no sections. At least one section is required to generate a schedule.',
         fixHint: { field: 'sections' },
       });
     }

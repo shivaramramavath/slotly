@@ -13,7 +13,13 @@ export class RoomTypeMatchesSubjectConstraint implements IConstraint {
     const violations: Violation[] = [];
 
     for (const slot of currentState.slots) {
-      if (!slot.roomId || !slot.subjectId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.roomId ||
+        !slot.subjectId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 

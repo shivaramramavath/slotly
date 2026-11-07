@@ -11,13 +11,19 @@ export class MaxHoursPerDayConstraint implements IConstraint {
   check(state: ScheduleState, move?: Move): Violation[] {
     const currentState = move ? state.cloneWithMove(move) : state;
     const violations: Violation[] = [];
-    const defaultMax = currentState.input.effectiveConstraints?.maxHoursPerDay ?? 4;
+    const defaultMax =
+      currentState.input.effectiveConstraints?.maxHoursPerDay ?? 4;
 
     // Faculty -> Day -> Slots
     const facultyDaySlots = new Map<string, Slot[]>();
 
     for (const slot of currentState.slots) {
-      if (!slot.facultyId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.facultyId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
       const key = `${slot.facultyId}:${slot.day}`;
@@ -35,7 +41,8 @@ export class MaxHoursPerDayConstraint implements IConstraint {
       const totalHours = slots.reduce((acc, s) => acc + (s.span || 1), 0);
 
       if (totalHours > limit) {
-        const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
+        const dayName =
+          currentState.input.settings.days[day] || `Day ${day + 1}`;
         violations.push({
           id: `viol:max-hours-per-day:${facultyId}:${day}`,
           constraintId: this.id,

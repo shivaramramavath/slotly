@@ -17,8 +17,12 @@ export class LabConsecutiveBlockConstraint implements IConstraint {
     for (const slot of currentState.slots) {
       if (slot.type !== 'lab') continue;
 
-      const subject = slot.subjectId ? currentState.findSubject(slot.subjectId) : undefined;
-      const requiredConsecutive = subject?.consecutivePeriods || (slot.span && slot.span > 1 ? slot.span : 2);
+      const subject = slot.subjectId
+        ? currentState.findSubject(slot.subjectId)
+        : undefined;
+      const requiredConsecutive =
+        subject?.consecutivePeriods ||
+        (slot.span && slot.span > 1 ? slot.span : 2);
 
       const span = slot.span || 1;
 
@@ -41,7 +45,9 @@ export class LabConsecutiveBlockConstraint implements IConstraint {
       for (let p = 0; p < span; p++) {
         const currentPeriod = slot.period + p;
         const isBreak = breaks.some(
-          (b) => (b.day === undefined || b.day === slot.day) && b.period === currentPeriod,
+          (b) =>
+            (b.day === undefined || b.day === slot.day) &&
+            b.period === currentPeriod,
         );
         if (isBreak) {
           violations.push({

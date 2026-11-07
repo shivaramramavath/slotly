@@ -77,7 +77,9 @@ export class SuggestionStrategy {
     // 2. Search alternative periods (prefer same day first, then other working days)
     const dayOrder = [
       slot.day,
-      ...Array.from({ length: daysCount }, (_, i) => i).filter((d) => d !== slot.day),
+      ...Array.from({ length: daysCount }, (_, i) => i).filter(
+        (d) => d !== slot.day,
+      ),
     ];
 
     for (const d of dayOrder) {

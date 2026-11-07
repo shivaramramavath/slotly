@@ -11,12 +11,18 @@ export class MaxHoursPerWeekConstraint implements IConstraint {
   check(state: ScheduleState, move?: Move): Violation[] {
     const currentState = move ? state.cloneWithMove(move) : state;
     const violations: Violation[] = [];
-    const defaultMax = currentState.input.effectiveConstraints?.maxHoursPerWeek ?? 18;
+    const defaultMax =
+      currentState.input.effectiveConstraints?.maxHoursPerWeek ?? 18;
 
     const facultySlots = new Map<string, Slot[]>();
 
     for (const slot of currentState.slots) {
-      if (!slot.facultyId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.facultyId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
       const list = facultySlots.get(slot.facultyId) || [];

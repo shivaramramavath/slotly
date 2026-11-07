@@ -25,8 +25,11 @@ export class LabsInAfternoonConstraint implements IConstraint {
 
       // If scheduled in early morning periods before lunch break
       if (slot.period < lunchBreak) {
-        const subject = slot.subjectId ? currentState.findSubject(slot.subjectId) : undefined;
-        const dayName = currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
+        const subject = slot.subjectId
+          ? currentState.findSubject(slot.subjectId)
+          : undefined;
+        const dayName =
+          currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
 
         violations.push({
           id: `viol:soft:morning-lab:${slot.id}`,

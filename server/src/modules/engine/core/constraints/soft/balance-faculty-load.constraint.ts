@@ -20,7 +20,12 @@ export class BalanceFacultyLoadConstraint implements IConstraint {
 
     const facultySlots = new Map<string, Slot[]>();
     for (const slot of currentState.slots) {
-      if (!slot.facultyId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.facultyId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
       const list = facultySlots.get(slot.facultyId) || [];

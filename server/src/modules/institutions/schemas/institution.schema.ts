@@ -15,7 +15,7 @@ export class Institution {
   @Prop({ required: true, unique: true, uppercase: true, trim: true })
   code!: string;
 
-  @Prop({ default: '', trim: true })
+  @Prop({ type: String, default: '', trim: true })
   address?: string | undefined;
 
   @Prop({ type: [Number], default: [1, 2, 3, 4, 5] })
@@ -38,10 +38,8 @@ export class Institution {
   @Prop({ default: false, index: true })
   isDeleted!: boolean;
 
-  @Prop()
+  @Prop({ type: Date })
   deletedAt?: Date | undefined;
 }
 
 export const InstitutionSchema = SchemaFactory.createForClass(Institution);
-InstitutionSchema.index({ code: 1 }, { unique: true });
-InstitutionSchema.index({ isDeleted: 1 });

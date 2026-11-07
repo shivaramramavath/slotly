@@ -14,7 +14,11 @@ export class SectionAvailabilityConstraint implements IConstraint {
     const validDaysCount = currentState.input.settings.days.length;
 
     for (const slot of currentState.slots) {
-      if (slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -35,7 +39,8 @@ export class SectionAvailabilityConstraint implements IConstraint {
 
       const section = currentState.findSection(slot.sectionId);
       if (section?.workingDays && !section.workingDays.includes(slot.day)) {
-        const dayName = currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
+        const dayName =
+          currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
         violations.push({
           id: `viol:section-avail:${slot.sectionId}:${slot.day}:${slot.id}`,
           constraintId: this.id,

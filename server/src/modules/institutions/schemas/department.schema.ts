@@ -28,7 +28,7 @@ export class Department {
   @Prop({ default: false, index: true })
   isDeleted!: boolean;
 
-  @Prop()
+  @Prop({ type: Date })
   deletedAt?: Date | undefined;
 }
 

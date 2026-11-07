@@ -7,7 +7,8 @@ import { AppService } from './app.service';
 import { CacheModule } from './common/cache/cache.module';
 import { AppQueueModule } from './common/queue/queue.module';
 import { AuditModule } from './common/audit/audit.module';
-import { EventBus } from './common/events/event-bus.service';
+import { EventsModule } from './common/events/events.module';
+import { EmailModule } from './common/email/email.module';
 import { TransactionHelper } from './common/database/transaction.helper';
 import {
   MetricsService,
@@ -21,6 +22,7 @@ import { LibraryModule } from './modules/library/library.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { BlueprintModule } from './modules/blueprint/blueprint.module';
 import { EngineModule } from './modules/engine/engine.module';
+import { BuildsModule } from './modules/builds/builds.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { EngineModule } from './modules/engine/engine.module';
     CacheModule,
     AppQueueModule,
     AuditModule,
+    EventsModule,
+    EmailModule,
     UsersModule,
     AuthModule,
     InstitutionsModule,
@@ -47,16 +51,16 @@ import { EngineModule } from './modules/engine/engine.module';
     ProjectsModule,
     BlueprintModule,
     EngineModule,
+    BuildsModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    EventBus,
     TransactionHelper,
     MetricsService,
     MetricsInterceptor,
   ],
-  exports: [EventBus, TransactionHelper, MetricsService],
+  exports: [TransactionHelper, MetricsService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

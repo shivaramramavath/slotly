@@ -54,7 +54,6 @@ import {
 import { InstitutionsController } from './controllers/institutions.controller';
 import { CACHE_SERVICE } from '../../common/cache/cache.interface';
 import type { CacheService } from '../../common/cache/cache.interface';
-import { AuthModule } from '../auth/auth.module';
 import { AuditModule } from '../../common/audit/audit.module';
 
 @Module({
@@ -68,7 +67,6 @@ import { AuditModule } from '../../common/audit/audit.module';
       { name: Section.name, schema: SectionSchema },
       { name: Holiday.name, schema: HolidaySchema },
     ]),
-    AuthModule,
     AuditModule,
   ],
   controllers: [InstitutionsController],

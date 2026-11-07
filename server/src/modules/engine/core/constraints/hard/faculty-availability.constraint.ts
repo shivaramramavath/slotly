@@ -13,7 +13,12 @@ export class FacultyAvailabilityConstraint implements IConstraint {
     const violations: Violation[] = [];
 
     for (const slot of currentState.slots) {
-      if (!slot.facultyId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.facultyId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -33,7 +38,11 @@ export class FacultyAvailabilityConstraint implements IConstraint {
         }
 
         // Check availability matrix [day][period - 1]
-        if (!isUnavailable && faculty.availability && faculty.availability[slot.day]) {
+        if (
+          !isUnavailable &&
+          faculty.availability &&
+          faculty.availability[slot.day]
+        ) {
           const dayAvailability = faculty.availability[slot.day];
           if (dayAvailability && dayAvailability[period - 1] === false) {
             isUnavailable = true;
@@ -41,7 +50,8 @@ export class FacultyAvailabilityConstraint implements IConstraint {
         }
 
         if (isUnavailable) {
-          const dayName = currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
+          const dayName =
+            currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
           violations.push({
             id: `viol:faculty-avail:${slot.facultyId}:${slot.day}:${period}:${slot.id}`,
             constraintId: this.id,

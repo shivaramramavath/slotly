@@ -1514,3 +1514,82 @@ export const ConstraintGroupConfigSchema = z.object({
 });
 export type ConstraintGroupConfig = z.infer<typeof ConstraintGroupConfigSchema>;
 
+// ============================================================================
+// Phase 9: Builds & Schedule Versions
+// ============================================================================
+
+export const ScheduleVersionKindSchema = z.enum(['auto', 'regenerate', 'manual']);
+export type ScheduleVersionKind = z.infer<typeof ScheduleVersionKindSchema>;
+
+export const ScheduleVersionStatusSchema = z.enum(['draft', 'ready', 'published', 'archived']);
+export type ScheduleVersionStatus = z.infer<typeof ScheduleVersionStatusSchema>;
+
+export const ScheduleVersionStatsSchema = z.object({
+  totalSlots: z.number().int().default(0),
+  occupiedSlots: z.number().int().default(0),
+  roomUtilizationPct: z.number().min(0).max(100).default(0),
+  facultyLoadBalanceScore: z.number().min(0).max(100).default(0),
+  afternoonLabPct: z.number().min(0).max(100).default(0),
+});
+export type ScheduleVersionStats = z.infer<typeof ScheduleVersionStatsSchema>;
+
+export const ScheduleVersionDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  versionNo: z.number().int(),
+  label: z.string(),
+  slots: z.array(SlotDtoSchema),
+  conflicts: z.array(ViolationDtoSchema).default([]),
+  stats: ScheduleVersionStatsSchema,
+  score: z.number().min(0).max(100).default(100),
+  kind: ScheduleVersionKindSchema.default('auto'),
+  revision: z.number().int().default(1),
+  status: ScheduleVersionStatusSchema.default('ready'),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type ScheduleVersionDto = z.infer<typeof ScheduleVersionDtoSchema>;
+
+export const BuildProfileSchema = z.enum([
+  'standard',
+  'workload-balanced',
+  'preference-first',
+  'room-efficient',
+]);
+export type BuildProfile = z.infer<typeof BuildProfileSchema>;
+
+export const BuildModeSchema = z.enum(['fresh', 'regenerate']);
+export type BuildMode = z.infer<typeof BuildModeSchema>;
+
+export const CreateBuildDtoSchema = z.object({
+  alternatives: z.number().int().min(1).max(5).default(3),
+  profile: BuildProfileSchema.default('standard'),
+  mode: BuildModeSchema.default('fresh'),
+  seed: z.number().int().optional(),
+  timeLimitMs: z.number().int().min(1000).max(60000).default(10000),
+});
+export type CreateBuildDto = z.infer<typeof CreateBuildDtoSchema>;
+
+export const BuildJobStatusSchema = z.enum([
+  'queued',
+  'running',
+  'completed',
+  'failed',
+  'cancelled',
+]);
+export type BuildJobStatus = z.infer<typeof BuildJobStatusSchema>;
+
+export const BuildProgressPayloadSchema = z.object({
+  projectId: z.string(),
+  buildId: z.string().optional(),
+  status: BuildJobStatusSchema,
+  progress: z.number().min(0).max(100),
+  step: z.string(),
+  message: z.string(),
+  versions: z.array(ScheduleVersionDtoSchema).optional(),
+  error: z.string().optional(),
+  missing: z.array(z.unknown()).optional(),
+});
+export type BuildProgressPayload = z.infer<typeof BuildProgressPayloadSchema>;
+
+
