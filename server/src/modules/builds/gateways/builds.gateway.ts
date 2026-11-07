@@ -149,6 +149,10 @@ export class BuildsGateway
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { projectId: string },
   ) {
+    const user = client.data?.user;
+    if (!user) {
+      return { success: false, message: 'Unauthenticated' };
+    }
     if (data?.projectId) {
       const room = `project:${data.projectId}`;
       void client.join(room);
@@ -162,6 +166,10 @@ export class BuildsGateway
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { projectId: string },
   ) {
+    const user = client.data?.user;
+    if (!user) {
+      return { success: false, message: 'Unauthenticated' };
+    }
     if (data?.projectId) {
       const room = `project:${data.projectId}`;
       void client.leave(room);

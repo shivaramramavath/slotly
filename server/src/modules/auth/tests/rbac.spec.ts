@@ -31,6 +31,20 @@ describe('RBAC Permission Registry & StandardAccessPolicy', () => {
     expect(await policy.can(designer, 'TIMETABLE_EDIT')).toBe(true);
     // Designer cannot publish without Admin approval
     expect(await policy.can(designer, 'TIMETABLE_PUBLISH')).toBe(false);
+
+    // Audit logs: only SUPER_ADMIN and ADMIN
+    expect(await policy.can(designer, 'AUDIT_READ')).toBe(false);
+    expect(await policy.can(faculty, 'AUDIT_READ')).toBe(false);
+    expect(await policy.can(student, 'AUDIT_READ')).toBe(false);
+    const admin = { userId: 'admin-1', role: 'ADMIN' as const };
+    expect(await policy.can(admin, 'AUDIT_READ')).toBe(true);
+
+    // Blueprint edit & structure manage
+    expect(await policy.can(admin, 'BLUEPRINT_EDIT')).toBe(true);
+    expect(await policy.can(admin, 'STRUCTURE_MANAGE')).toBe(true);
+    expect(await policy.can(designer, 'STRUCTURE_MANAGE')).toBe(false);
+    expect(await policy.can(faculty, 'STRUCTURE_MANAGE')).toBe(false);
+    expect(await policy.can(student, 'STRUCTURE_MANAGE')).toBe(false);
   });
 
   it('should reject access across institutional boundaries', async () => {
