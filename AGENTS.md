@@ -121,6 +121,15 @@ ENGINEERING RULES
 - Unit tests for all pure logic (gates, completion rules, validators, engine,
   factories, cache, state machines).
 
+CODE MAP RULES
+- Before writing ANY new class, service, hook, component, repository or utility,
+  search docs/CODEMAP.md and docs/codemap/*.md for existing solutions.
+- Reuse first. Do NOT duplicate functionality that already exists.
+- Every source file MUST have a line 1 purpose comment.
+- Every exported symbol MUST have a one-line JSDoc.
+- Internal / unexported helpers MUST NOT have export keywords.
+- Run `pnpm codemap` before committing to keep the map in sync.
+
 DEFINITION OF DONE (every phase)
 1. `build`, `lint` and `typecheck` pass in client, server and contracts.
 2. New pure logic has tests.
@@ -143,6 +152,7 @@ DURING
    feat(server): ..., feat(client): ..., feat(contracts): ..., test(server): ...,
    fix: ..., refactor: ..., docs: ..., chore: ...
    A typical phase has separate commits for contracts, server, client, tests, docs.
+   Before step 5 run `pnpm codemap` and commit the result.
 
 BEFORE THE FINAL COMMIT
 5. At the repo root run `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.

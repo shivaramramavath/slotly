@@ -796,6 +796,68 @@
 ## Next Steps
 - **Phase 10:** Studio Grid (Interactive timetable editor, drag-and-drop slot moves, live move validation, conflict highlighting, undo/redo).
 
+---
+
+## Task: Code Map for Fast Navigation and Reuse
+
+### What Was Built
+1. **Central Code Map Index (`docs/CODEMAP.md`):**
+   - High-level directory overview with one-line descriptions for all workspaces, app paths, module directories, and feature folders.
+   - Verified "Reuse First" table mapping common development tasks to verified reusable singletons, repositories, services, decorators, components, and hooks.
+   - Verified "Extension Points" table mapping strategy families and registries to their interfaces, locations, and copyable unit test templates.
+   - Core development conventions covering naming, dependency injection tokens, cache keys, write-behind jobs, and Zustand store architecture.
+   - Key system gotchas covering in-memory token lifecycle, write-behind barrier flushes, exactOptionalPropertyTypes, React 19 render-phase synchronization, and MongoDB replica sets.
+   - Auto-updating table linking to all 16 module code maps with line counts.
+
+2. **Automated Code Map Generator & Checker (`scripts/codemap/generate.ts`):**
+   - Fast AST scanner leveraging `ts-morph` parsing 316 source files across `packages/contracts`, `server`, and `client`.
+   - Generates 16 detailed, deterministic module maps under `docs/codemap/`.
+   - Extracts and cleanly formats special patterns:
+     - NestJS Controllers: HTTP method, full route path, permission requirements, and guard bindings (including `public`).
+     - WebSocket Gateways: namespace and `@SubscribeMessage` event bindings.
+     - BullMQ Processors: queue names, worker hosts, and job handlers.
+     - Injectables: constructor dependency tokens and classes.
+     - Mongoose Schemas: collection names and indexed fields.
+     - Zod Schemas: schema identifier -> inferred TypeScript DTO type.
+     - Next.js App Routes: derived route URLs with route groups stripped, parallel slots noted, and exported components.
+     - React Hooks & Components: parameters and return/prop types.
+     - Zustand Stores: store name and exposed action method list.
+   - Link and symbol checker validating that every path and exported identifier in `docs/CODEMAP.md` exists on disk.
+   - CLI flags: `pnpm codemap` updates on-disk maps; `pnpm codemap:check` validates in CI without side effects.
+
+3. **Generator Fixtures & Golden Test (`scripts/codemap/tests/generate.spec.ts`):**
+   - Unit tests running on 7 synthetic fixtures (`tiny.controller.ts`, `tiny.gateway.ts`, `tiny.processor.ts`, `tiny.schema.ts`, `tiny.zod.ts`, `tiny.hook.ts`, `tiny.page.tsx`).
+   - Compares generator AST extraction against `scripts/codemap/tests/golden.md`.
+   - Integrated into root `pnpm test` script.
+
+4. **100% Export Documentation & Line 1 Purpose Backfill:**
+   - Line 1 purpose comments added to all 316 source files in `packages/contracts`, `server`, and `client`.
+   - One-line JSDoc summaries added to all 903 exported classes, functions, interfaces, types, constants, components, hooks, and stores.
+   - Zero files remaining without a header description (`Files without header purpose: 0`).
+
+5. **Agent Governance & CI Enforcement (`AGENTS.md`):**
+   - Added "CODE MAP RULES" instructing agents to check `docs/CODEMAP.md` before creating any new classes, components, or utilities.
+   - Updated git workflow requiring `pnpm codemap` before committing.
+   - CI check command `pnpm codemap:check` ready for Phase 15 pipeline integration.
+
+### Decisions Made
+- **Markdown Tables Format:** Tables in `docs/CODEMAP.md` separated with `<!-- MANUAL:START -->` and `<!-- MANUAL:END -->` to allow developer customization while keeping generated tables strictly synchronized via `<!-- GENERATED:START -->`.
+- **Prettier & Line Ending Normalization:** Formatted all generated and annotated source files to ensure clean compliance with project ESLint and Prettier rules.
+- **AST Parsing with ts-morph:** Selected `ts-morph` for AST extraction to accurately resolve decorators, types, parameters, and JSDoc tags without executing runtime code.
+
+### Possible Duplicates / Cleanup Candidates
+- **Date / Time Formatting:** Identified multiple formatters in `client/src/features/institution/` and `client/src/features/library/` (e.g. `formatTime`, `formatDateRange`) that can be consolidated into `client/src/lib/formatters.ts` in a future refactor.
+- **Dialog Shell Wrappers:** Modal wrapper structures in `client/src/features/blueprint/components/dialogs/` share common header/footer boilerplate that could benefit from a unified `ResponsiveDialog` component.
+
+### Manual Verification Checklist
+- [x] Run `pnpm codemap`: 316 files parsed, 903 symbols extracted, 0 broken links, 0 broken symbols.
+- [x] Run `pnpm codemap:check`: In-memory regeneration matches on-disk maps cleanly.
+- [x] Run `pnpm test`: 32 Jest test suites (166 tests) + generator golden test pass.
+- [x] Run `pnpm typecheck`: Contracts, server, and client all typecheck with zero errors.
+- [x] Run `pnpm lint`: Contracts, server, and client lint with zero errors or warnings.
+- [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Next.js build all complete successfully.
+
+
 
 
 
