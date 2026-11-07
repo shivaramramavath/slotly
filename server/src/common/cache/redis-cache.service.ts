@@ -91,10 +91,11 @@ export class RedisCacheService implements CacheService, OnModuleDestroy {
     }
     try {
       const serialized = JSON.stringify(value);
-      if (ttlSeconds) {
-        await this.client.set(key, serialized, 'EX', ttlSeconds);
+      const effectiveTtl = typeof ttlSeconds === 'number' ? ttlSeconds : 3600;
+      if (effectiveTtl > 0) {
+        await this.client.set(key, serialized, 'EX', effectiveTtl);
       } else {
-        await this.client.set(key, serialized);
+        await this.client.set(key, serialized, 'PX', 1); // immediately expire negative/zero TTL
       }
 
       // Associate key with tags
@@ -102,9 +103,7 @@ export class RedisCacheService implements CacheService, OnModuleDestroy {
         const pipeline = this.client.pipeline();
         for (const tag of tags) {
           pipeline.sadd(`tag:${tag}`, key);
-          if (ttlSeconds) {
-            pipeline.expire(`tag:${tag}`, Math.max(ttlSeconds * 2, 3600));
-          }
+          pipeline.expire(`tag:${tag}`, Math.max(effectiveTtl * 2, 3600));
         }
         await pipeline.exec();
       }

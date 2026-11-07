@@ -30,7 +30,8 @@ export class InMemoryCacheService implements CacheService {
     ttlSeconds?: number,
     tags: string[] = [],
   ): Promise<void> {
-    const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1000 : null;
+    const effectiveTtl = typeof ttlSeconds === 'number' ? ttlSeconds : 3600;
+    const expiresAt = Date.now() + effectiveTtl * 1000;
     this.store.set(key, { value, expiresAt, tags });
     return Promise.resolve();
   }

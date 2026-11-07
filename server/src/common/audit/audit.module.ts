@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { BullModule } from '@nestjs/bullmq';
 import { AuditLog, AuditLogSchema } from './audit-log.schema';
 import { AuditService } from './audit.service';
+import { AuditProcessor } from './audit.processor';
 
 /** Class implementing audit module. */
 @Global()
@@ -14,7 +15,7 @@ import { AuditService } from './audit.service';
     ]),
     BullModule.registerQueue({ name: 'audit' }),
   ],
-  providers: [AuditService],
+  providers: [AuditService, AuditProcessor],
   exports: [AuditService],
 })
 export class AuditModule {}

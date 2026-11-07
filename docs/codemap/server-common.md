@@ -29,6 +29,12 @@
 
 - **Class** `AuditModule` - Class implementing audit module.
 
+### `server/src/common/audit/audit.processor.ts`
+*Queue processor handling background jobs for audit.processor.*
+
+- **Queue Processor** `AuditProcessor` (queue: `audit`) - BullMQ queue processor for audit processor jobs.
+  - `audit: *` -> `AuditProcessor.process()`
+
 ### `server/src/common/audit/audit.service.ts`
 *Domain service orchestrating audit.service business logic.*
 

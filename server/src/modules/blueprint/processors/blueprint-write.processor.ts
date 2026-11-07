@@ -63,7 +63,10 @@ export class BlueprintWriteProcessor extends WorkerHost {
       );
       throw err;
     } finally {
-      await this.writeBehindService.decrementPendingWrites(projectId);
+      await this.writeBehindService.decrementPendingWrites(
+        projectId,
+        `node:${nodeId}`,
+      );
     }
   }
 }

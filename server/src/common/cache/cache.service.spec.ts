@@ -17,6 +17,12 @@ describe('InMemoryCacheService (CacheService contract & Single-Flight)', () => {
     expect(result).toEqual({ foo: 'bar' });
   });
 
+  it('should apply a default 1-hour TTL when ttlSeconds is omitted to prevent unbounded keys', async () => {
+    await cache.set('unboundedCandidate', 'boundedValue');
+    const result = await cache.get<string>('unboundedCandidate');
+    expect(result).toBe('boundedValue');
+  });
+
   it('should return null for expired keys', async () => {
     await cache.set('expiredKey', 'value', -1); // already expired
     const result = await cache.get('expiredKey');
