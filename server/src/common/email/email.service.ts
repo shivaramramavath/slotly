@@ -1,3 +1,4 @@
+// Domain service orchestrating email.service business logic.
 import { Injectable, Logger, Inject, Optional } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -8,6 +9,7 @@ import type {
   EmailSendResult,
 } from './email.interface';
 
+/** Injectable service providing email service logic. */
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);

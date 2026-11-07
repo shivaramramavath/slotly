@@ -1,6 +1,8 @@
+// Core implementation for zod-validation.pipe in server/src/common/pipes.
 import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
 import { ZodSchema, ZodError } from 'zod';
 
+/** Injectable service providing zod validation pipe logic. */
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
   constructor(private readonly schema?: ZodSchema) {}

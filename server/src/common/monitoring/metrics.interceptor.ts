@@ -1,3 +1,4 @@
+// Core implementation for metrics.interceptor in server/src/common/monitoring.
 import {
   CallHandler,
   ExecutionContext,
@@ -7,12 +8,14 @@ import {
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
+/** Interface defining structure for route metrics. */
 export interface RouteMetrics {
   count: number;
   totalDurationMs: number;
   lastDurationMs: number;
 }
 
+/** Injectable service providing metrics service logic. */
 @Injectable()
 export class MetricsService {
   private readonly metrics = new Map<string, RouteMetrics>();
@@ -38,6 +41,7 @@ export class MetricsService {
   }
 }
 
+/** Injectable service providing metrics interceptor logic. */
 @Injectable()
 export class MetricsInterceptor implements NestInterceptor {
   constructor(private readonly metricsService: MetricsService) {}

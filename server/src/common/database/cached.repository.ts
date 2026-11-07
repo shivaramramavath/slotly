@@ -1,6 +1,8 @@
+// Database repository managing cached.repository persistence.
 import { BaseRepository } from './base.repository';
 import { CacheService } from '../cache/cache.interface';
 
+/** Class implementing cached repository. */
 export abstract class CachedRepository<
   T extends { id?: string | undefined; _id?: unknown },
 > implements BaseRepository<T> {

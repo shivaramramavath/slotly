@@ -1,3 +1,4 @@
+// Core implementation for email.module in server/src/common/email.
 import { Global, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { EMAIL_SENDER, NOTIFICATIONS_QUEUE } from './email.interface';
@@ -6,6 +7,7 @@ import { BrevoEmailSender } from './brevo-email.sender';
 import { EmailService } from './email.service';
 import { EmailProcessor } from './email.processor';
 
+/** Class implementing email module. */
 @Global()
 @Module({
   imports: [

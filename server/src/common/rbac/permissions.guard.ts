@@ -1,3 +1,4 @@
+// Route guard controlling access for permissions.guard.
 import {
   CanActivate,
   ExecutionContext,
@@ -17,6 +18,7 @@ import type {
   AccessResource,
 } from './access-policy.interface';
 
+/** Interface defining structure for request with subject. */
 export interface RequestWithSubject {
   user?: {
     id: string;
@@ -27,6 +29,7 @@ export interface RequestWithSubject {
   resource?: AccessResource;
 }
 
+/** Injectable service providing standard access policy logic. */
 @Injectable()
 export class StandardAccessPolicy implements AccessPolicy {
   can(
@@ -61,6 +64,7 @@ export class StandardAccessPolicy implements AccessPolicy {
   }
 }
 
+/** Injectable service providing permissions guard logic. */
 @Injectable()
 export class PermissionsGuard implements CanActivate {
   constructor(

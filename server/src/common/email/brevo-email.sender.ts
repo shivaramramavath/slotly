@@ -1,3 +1,4 @@
+// Core implementation for brevo-email.sender in server/src/common/email.
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import type {
   IEmailSender,
@@ -7,14 +8,17 @@ import type {
 } from './email.interface';
 import { EmailTemplateRenderer } from './email-template.renderer';
 
+/** Interface defining structure for brevo config. */
 export interface BrevoConfig {
   apiKey?: string | undefined;
   fromEmail?: string | undefined;
   fromName?: string | undefined;
 }
 
+/** Constant representing brevo config. */
 export const BREVO_CONFIG = Symbol('BREVO_CONFIG');
 
+/** Injectable service providing brevo email sender logic. */
 @Injectable()
 export class BrevoEmailSender implements IEmailSender {
   private readonly logger = new Logger(BrevoEmailSender.name);

@@ -1,6 +1,8 @@
+// Core implementation for email-template.renderer in server/src/common/email.
 import { Injectable } from '@nestjs/common';
 import type { EmailMessage } from './email.interface';
 
+/** Interface defining structure for rendered email. */
 export interface RenderedEmail {
   html: string;
   text: string;
@@ -12,6 +14,7 @@ function str(val: unknown, fallback = ''): string {
   return fallback;
 }
 
+/** Injectable service providing email template renderer logic. */
 @Injectable()
 export class EmailTemplateRenderer {
   /**

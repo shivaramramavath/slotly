@@ -1,3 +1,4 @@
+// Core implementation for index in server/src/common/email.
 export * from './email.interface';
 export * from './email-template.renderer';
 export * from './brevo-email.sender';

@@ -1,8 +1,10 @@
+// Core implementation for queue.module in server/src/common/queue.
 import { Global, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WriteBehindService, WRITE_BEHIND_QUEUE } from './write-behind.service';
 
+/** Class implementing app queue module. */
 @Global()
 @Module({
   imports: [

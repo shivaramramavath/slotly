@@ -1,3 +1,4 @@
+// Domain service orchestrating in-memory-cache.service business logic.
 import { Injectable } from '@nestjs/common';
 import { CacheService } from './cache.interface';
 
@@ -7,6 +8,7 @@ interface CacheEntry<T> {
   tags: string[];
 }
 
+/** Injectable service providing in memory cache service logic. */
 @Injectable()
 export class InMemoryCacheService implements CacheService {
   private readonly store = new Map<string, CacheEntry<unknown>>();

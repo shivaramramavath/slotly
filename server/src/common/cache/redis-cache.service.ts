@@ -1,9 +1,11 @@
+// Domain service orchestrating redis-cache.service business logic.
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from './cache.interface';
 import { InMemoryCacheService } from './in-memory-cache.service';
 
+/** Injectable service providing redis cache service logic. */
 @Injectable()
 export class RedisCacheService implements CacheService, OnModuleDestroy {
   private readonly logger = new Logger(RedisCacheService.name);

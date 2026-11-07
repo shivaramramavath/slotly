@@ -1,3 +1,4 @@
+// Queue processor handling background jobs for email.processor.
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, Inject } from '@nestjs/common';
 import { Job } from 'bullmq';
@@ -8,6 +9,7 @@ import type {
   EmailSendResult,
 } from './email.interface';
 
+/** BullMQ queue processor for email processor jobs. */
 @Processor(NOTIFICATIONS_QUEUE, { concurrency: 5 })
 export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);

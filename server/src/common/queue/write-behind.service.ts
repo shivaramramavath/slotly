@@ -1,3 +1,4 @@
+// Domain service orchestrating write-behind.service business logic.
 import {
   Injectable,
   Logger,
@@ -9,6 +10,7 @@ import { Queue } from 'bullmq';
 import { CACHE_SERVICE } from '../cache/cache.interface';
 import type { CacheService } from '../cache/cache.interface';
 
+/** Interface defining structure for write behind job. */
 export interface WriteBehindJob<T = unknown> {
   entity: string;
   id: string;
@@ -17,8 +19,10 @@ export interface WriteBehindJob<T = unknown> {
   timestamp: number;
 }
 
+/** Constant representing write behind queue. */
 export const WRITE_BEHIND_QUEUE = 'write-behind';
 
+/** Injectable service providing write behind service logic. */
 @Injectable()
 export class WriteBehindService implements OnModuleDestroy {
   private readonly logger = new Logger(WriteBehindService.name);
