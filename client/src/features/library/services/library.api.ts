@@ -19,9 +19,26 @@ import type {
   FacultyQualificationResult,
   ImportEntity,
   ImportValidationReport,
+  LibraryCountsDto,
 } from '@slotly/contracts';
 
 export const libraryApi = {
+  // ==========================================
+  // COUNTS
+  // ==========================================
+  async getCounts(params?: {
+    departmentId?: string | undefined;
+    archived?: boolean | undefined;
+    institutionId?: string | undefined;
+  }): Promise<LibraryCountsDto> {
+    const query = new URLSearchParams();
+    if (params?.departmentId) query.set('departmentId', params.departmentId);
+    if (typeof params?.archived === 'boolean') query.set('archived', String(params.archived));
+    if (params?.institutionId) query.set('institutionId', params.institutionId);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiClient<LibraryCountsDto>(`/library/counts${qs}`);
+  },
+
   // ==========================================
   // FACULTY
   // ==========================================
