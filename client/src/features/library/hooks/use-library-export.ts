@@ -1,3 +1,4 @@
+// Hook handling file downloads and error retry toasts for library entity export.
 'use client';
 
 import * as React from 'react';
@@ -7,6 +8,7 @@ import { buildExportFilename } from '../utils/export-filename';
 import type { ExportFormat } from '../config/export-formats';
 import type { ImportEntity } from '@slotly/contracts';
 
+/** Options passed to the useLibraryExport hook. */
 export interface UseLibraryExportOptions {
   entity: ImportEntity;
   departmentId?: string | undefined;
@@ -14,6 +16,9 @@ export interface UseLibraryExportOptions {
   count?: number | undefined;
 }
 
+/**
+ * Handles blob download for the current entity, format, and active filters with retry toast on failure.
+ */
 export function useLibraryExport({
   entity,
   departmentId,
@@ -23,6 +28,8 @@ export function useLibraryExport({
   const [isExporting, setIsExporting] = React.useState(false);
 
   const canExport = count > 0;
+
+  const exportRef = React.useRef<((fmt: ExportFormat) => Promise<void>) | undefined>(undefined);
 
   const exportAs = React.useCallback(
     async (format: ExportFormat) => {
@@ -61,7 +68,7 @@ export function useLibraryExport({
         toast.error('Export Error', `${message}. Would you like to retry?`, {
           label: 'Retry',
           onClick: () => {
-            void exportAs(format);
+            void exportRef.current?.(format);
           },
         });
       } finally {
@@ -70,6 +77,10 @@ export function useLibraryExport({
     },
     [canExport, isExporting, entity, departmentId, archived],
   );
+
+  React.useEffect(() => {
+    exportRef.current = exportAs;
+  }, [exportAs]);
 
   return {
     exportAs,

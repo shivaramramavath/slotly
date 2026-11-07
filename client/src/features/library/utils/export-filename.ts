@@ -1,3 +1,8 @@
+// Utility function to generate timestamped export filenames for library downloads.
+
+/**
+ * Builds a standardized export filename formatted as <entity>-<YYYY-MM-DD>.<ext>.
+ */
 export function buildExportFilename(
   entity: string,
   extension: string,

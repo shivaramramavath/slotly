@@ -1,9 +1,11 @@
+// Hook and helpers for URL-synchronized filter state with debounced search input.
 'use client';
 
 import * as React from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 
+/** Zod schema validating library query parameters. */
 export const LibraryFiltersSchema = z.object({
   q: z.string().catch('').default(''),
   dept: z.string().catch('').default(''),
@@ -11,8 +13,10 @@ export const LibraryFiltersSchema = z.object({
   page: z.number().int().positive().catch(1).default(1),
 });
 
+/** Inferred type of validated library filters. */
 export type LibraryFilters = z.infer<typeof LibraryFiltersSchema>;
 
+/** Default fallback values for library filters. */
 export const DEFAULT_LIBRARY_FILTERS: LibraryFilters = {
   q: '',
   dept: '',
@@ -20,6 +24,9 @@ export const DEFAULT_LIBRARY_FILTERS: LibraryFilters = {
   page: 1,
 };
 
+/**
+ * Parses URL search params or record objects into validated library filters.
+ */
 export function parseLibraryFilters(
   input: URLSearchParams | Record<string, string | string[] | undefined> | string,
 ): LibraryFilters {
@@ -62,6 +69,9 @@ export function parseLibraryFilters(
   return result.success ? result.data : DEFAULT_LIBRARY_FILTERS;
 }
 
+/**
+ * Serializes partial library filter changes into updated URLSearchParams.
+ */
 export function serializeLibraryFilters(
   filters: Partial<LibraryFilters>,
   existingParams?: URLSearchParams,
@@ -95,6 +105,9 @@ export function serializeLibraryFilters(
   return params;
 }
 
+/**
+ * Hook providing URL-synchronized library filters with debounced search, setters, and chip actions.
+ */
 export function useLibraryFilters() {
   const router = useRouter();
   const pathname = usePathname();
@@ -107,10 +120,12 @@ export function useLibraryFilters() {
 
   // Local state for instant typing responsiveness before debounce
   const [searchInput, setSearchInput] = React.useState(filters.q);
+  const [prevFilterQ, setPrevFilterQ] = React.useState(filters.q);
 
-  React.useEffect(() => {
+  if (filters.q !== prevFilterQ) {
+    setPrevFilterQ(filters.q);
     setSearchInput(filters.q);
-  }, [filters.q]);
+  }
 
   const updateUrl = React.useCallback(
     (newFilters: Partial<LibraryFilters>) => {
@@ -194,11 +209,15 @@ export function useLibraryFilters() {
     filters,
     searchInput,
     setSearch,
+    setSearchInput,
     setDepartment,
     setArchived,
     setPage,
     removeFilter,
+    clearFilterKey: removeFilter,
     clearFilters,
+    resetFilters: clearFilters,
     isFiltered,
+    hasActiveFilters: isFiltered,
   };
 }

@@ -1,5 +1,9 @@
+// Export format configurations and MIME type definitions for library data.
+
+/** Supported file formats for entity data export. */
 export type ExportFormat = 'xlsx' | 'csv';
 
+/** Configuration option for an export format item. */
 export interface ExportFormatOption {
   format: ExportFormat;
   label: string;
@@ -7,6 +11,7 @@ export interface ExportFormatOption {
   mimeType: string;
 }
 
+/** Available export formats for spreadsheet and tabular data. */
 export const EXPORT_FORMATS: ExportFormatOption[] = [
   {
     format: 'xlsx',

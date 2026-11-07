@@ -27,13 +27,22 @@ import { AuditService } from '../../../common/audit/audit.service';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import { FACULTY_REPOSITORY } from '../repositories/faculty.repository';
-import type { FacultyRepository } from '../repositories/faculty.repository';
+import type {
+  FacultyRepository,
+  FacultyFilterOptions,
+} from '../repositories/faculty.repository';
 import { SUBJECT_REPOSITORY } from '../repositories/subject.repository';
-import type { SubjectRepository } from '../repositories/subject.repository';
+import type {
+  SubjectRepository,
+  SubjectFilterOptions,
+} from '../repositories/subject.repository';
 import { ELECTIVE_GROUP_REPOSITORY } from '../repositories/elective-group.repository';
 import type { ElectiveGroupRepository } from '../repositories/elective-group.repository';
 import { ROOM_REPOSITORY } from '../repositories/room.repository';
-import type { RoomRepository } from '../repositories/room.repository';
+import type {
+  RoomRepository,
+  RoomFilterOptions,
+} from '../repositories/room.repository';
 import { ROOM_MATCHER } from '../strategies/room-matcher.strategy';
 import type { IRoomMatcher } from '../strategies/room-matcher.strategy';
 import { FACULTY_QUALIFIER } from '../strategies/faculty-qualifier.strategy';
@@ -107,22 +116,27 @@ export class LibraryService {
       cacheKey,
       3600,
       async () => {
+        const facultyOpts: FacultyFilterOptions = { limit: 1 };
+        if (options?.departmentId)
+          facultyOpts.departmentId = options.departmentId;
+        if (options?.archived !== undefined)
+          facultyOpts.archived = options.archived;
+
+        const subjectOpts: SubjectFilterOptions = { limit: 1 };
+        if (options?.departmentId)
+          subjectOpts.departmentId = options.departmentId;
+        if (options?.archived !== undefined)
+          subjectOpts.archived = options.archived;
+
+        const roomOpts: RoomFilterOptions = { limit: 1 };
+        if (options?.departmentId) roomOpts.departmentId = options.departmentId;
+        if (options?.archived !== undefined)
+          roomOpts.archived = options.archived;
+
         const [facultyRes, subjectRes, roomRes] = await Promise.all([
-          this.facultyRepo.findByInstitution(institutionId, {
-            departmentId: options?.departmentId,
-            archived: options?.archived,
-            limit: 1,
-          }),
-          this.subjectRepo.findByInstitution(institutionId, {
-            departmentId: options?.departmentId,
-            archived: options?.archived,
-            limit: 1,
-          }),
-          this.roomRepo.findByInstitution(institutionId, {
-            departmentId: options?.departmentId,
-            archived: options?.archived,
-            limit: 1,
-          }),
+          this.facultyRepo.findByInstitution(institutionId, facultyOpts),
+          this.subjectRepo.findByInstitution(institutionId, subjectOpts),
+          this.roomRepo.findByInstitution(institutionId, roomOpts),
         ]);
 
         return {

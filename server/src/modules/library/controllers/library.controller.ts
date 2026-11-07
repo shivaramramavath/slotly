@@ -96,10 +96,10 @@ export class LibraryController {
         : archivedStr === 'false'
           ? false
           : undefined;
-    return this.libraryService.getCounts(institutionId, {
-      departmentId,
-      archived,
-    });
+    const countOpts: { departmentId?: string; archived?: boolean } = {};
+    if (departmentId) countOpts.departmentId = departmentId;
+    if (archived !== undefined) countOpts.archived = archived;
+    return this.libraryService.getCounts(institutionId, countOpts);
   }
 
   // ==========================================

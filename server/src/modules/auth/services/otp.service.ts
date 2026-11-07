@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, Inject, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Inject,
+  Logger,
+} from '@nestjs/common';
 import { createHash, randomInt } from 'crypto';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
@@ -71,8 +76,8 @@ export class RedisOtpService implements OtpService {
 
     Logger.log(
       `\n=======================================================\n` +
-      `[AUTH OTP GENERATED] To: ${email} | Purpose: ${purpose} | Code: >>> ${code} <<<\n` +
-      `=======================================================\n`,
+        `[AUTH OTP GENERATED] To: ${email} | Purpose: ${purpose} | Code: >>> ${code} <<<\n` +
+        `=======================================================\n`,
       'RedisOtpService',
     );
 

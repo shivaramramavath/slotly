@@ -1,10 +1,15 @@
+// Open-closed registry defining configurations, labels, and routes for library entities.
 import type * as React from 'react';
 import { Users, BookOpen, DoorOpen } from 'lucide-react';
 import type { ImportEntity } from '@slotly/contracts';
 
+/** Supported library resource entity keys. */
 export type LibraryEntityKey = 'faculty' | 'subjects' | 'rooms';
+
+/** Supported entity dialog types. */
 export type LibraryDialogType = 'faculty' | 'subject' | 'room';
 
+/** Configuration defining display metadata and behaviors for a library entity. */
 export interface LibraryEntityConfig {
   key: LibraryEntityKey;
   label: string;
@@ -19,6 +24,7 @@ export interface LibraryEntityConfig {
   emptyDescription: string;
 }
 
+/** Registry map of all library entity configurations. */
 export const LIBRARY_ENTITIES: Record<LibraryEntityKey, LibraryEntityConfig> = {
   faculty: {
     key: 'faculty',
@@ -61,12 +67,16 @@ export const LIBRARY_ENTITIES: Record<LibraryEntityKey, LibraryEntityConfig> = {
   },
 };
 
+/** Array of library entity configurations in default display order. */
 export const LIBRARY_ENTITY_LIST: LibraryEntityConfig[] = [
   LIBRARY_ENTITIES.faculty,
   LIBRARY_ENTITIES.subjects,
   LIBRARY_ENTITIES.rooms,
 ];
 
+/**
+ * Retrieves the configuration for a given library entity key with fallback to faculty.
+ */
 export function getLibraryEntity(key?: string | null): LibraryEntityConfig {
   if (key && key in LIBRARY_ENTITIES) {
     return LIBRARY_ENTITIES[key as LibraryEntityKey];
@@ -74,6 +84,9 @@ export function getLibraryEntity(key?: string | null): LibraryEntityConfig {
   return LIBRARY_ENTITIES.faculty;
 }
 
+/**
+ * Resolves the matching library entity configuration based on route pathname.
+ */
 export function getLibraryEntityByRoute(pathname?: string | null): LibraryEntityConfig {
   if (!pathname) return LIBRARY_ENTITIES.faculty;
   const match = LIBRARY_ENTITY_LIST.find((e) => pathname.startsWith(e.route));

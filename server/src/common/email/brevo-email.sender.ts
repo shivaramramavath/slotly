@@ -100,9 +100,10 @@ export class BrevoEmailSender implements IEmailSender {
         this.logger.error(
           `Brevo API responded with status ${response.status}: ${errorBody}`,
         );
-        if (message.variables?.['code']) {
+        const rawCode = message.variables?.['code'];
+        if (typeof rawCode === 'string' || typeof rawCode === 'number') {
           this.logger.warn(
-            `[BREVO FALLBACK] Delivery failed via Brevo. Code for ${recipients.map((r) => r.email).join(', ')} is: >>> ${message.variables['code']} <<<`,
+            `[BREVO FALLBACK] Delivery failed via Brevo. Code for ${recipients.map((r) => r.email).join(', ')} is: >>> ${rawCode} <<<`,
           );
         }
         return {

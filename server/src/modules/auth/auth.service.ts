@@ -107,7 +107,10 @@ export class DefaultAuthService implements AuthService {
         const instName = dto.institutionName.trim();
         const instCode =
           dto.institutionCode?.trim().toUpperCase() ||
-          instName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() ||
+          instName
+            .replace(/[^a-zA-Z0-9]/g, '')
+            .slice(0, 6)
+            .toUpperCase() ||
           'INST';
         const newInst = await this.institutionRepo.create({
           name: instName,
@@ -117,18 +120,30 @@ export class DefaultAuthService implements AuthService {
             startTime: '09:00',
             periodDuration: 50,
             periodsPerDay: 7,
-            breaks: [{ name: 'Lunch Break', afterPeriod: 4, durationMinutes: 50 }],
+            breaks: [
+              { name: 'Lunch Break', afterPeriod: 4, durationMinutes: 50 },
+            ],
           },
           isComplete: true,
           isDeleted: false,
         });
-        const id = newInst.id || (newInst as unknown as { _id?: unknown })._id;
-        if (id) institutionId = new Types.ObjectId(id.toString());
+        const id =
+          newInst.id ||
+          (
+            newInst as unknown as { _id?: { toString(): string } }
+          )._id?.toString();
+        if (id) institutionId = new Types.ObjectId(id);
       } else {
-        const firstInst = await this.institutionRepo.findOne({ isDeleted: false });
+        const firstInst = await this.institutionRepo.findOne({
+          isDeleted: false,
+        });
         if (firstInst) {
-          const id = firstInst.id || (firstInst as unknown as { _id?: unknown })._id;
-          if (id) institutionId = new Types.ObjectId(id.toString());
+          const id =
+            firstInst.id ||
+            (
+              firstInst as unknown as { _id?: { toString(): string } }
+            )._id?.toString();
+          if (id) institutionId = new Types.ObjectId(id);
         }
       }
     }
@@ -235,13 +250,19 @@ export class DefaultAuthService implements AuthService {
     const userDto = this.toUserDto(user);
 
     if (!user.institutionId && this.institutionRepo) {
-      const firstInst = await this.institutionRepo.findOne({ isDeleted: false });
+      const firstInst = await this.institutionRepo.findOne({
+        isDeleted: false,
+      });
       if (firstInst) {
-        const id = firstInst.id || (firstInst as unknown as { _id?: unknown })._id;
+        const id =
+          firstInst.id ||
+          (
+            firstInst as unknown as { _id?: { toString(): string } }
+          )._id?.toString();
         if (id) {
-          const instObjId = new Types.ObjectId(id.toString());
+          const instObjId = new Types.ObjectId(id);
           user.institutionId = instObjId;
-          userDto.institutionId = id.toString();
+          userDto.institutionId = id;
           const uId = (user.id || user._id)?.toString();
           if (uId) {
             await this.userRepo.update(uId, { institutionId: instObjId });
@@ -666,13 +687,19 @@ export class DefaultAuthService implements AuthService {
     const userDto = this.toUserDto(user);
 
     if (!user.institutionId && this.institutionRepo) {
-      const firstInst = await this.institutionRepo.findOne({ isDeleted: false });
+      const firstInst = await this.institutionRepo.findOne({
+        isDeleted: false,
+      });
       if (firstInst) {
-        const id = firstInst.id || (firstInst as unknown as { _id?: unknown })._id;
+        const id =
+          firstInst.id ||
+          (
+            firstInst as unknown as { _id?: { toString(): string } }
+          )._id?.toString();
         if (id) {
-          const instObjId = new Types.ObjectId(id.toString());
+          const instObjId = new Types.ObjectId(id);
           user.institutionId = instObjId;
-          userDto.institutionId = id.toString();
+          userDto.institutionId = id;
           const uId = (user.id || user._id)?.toString();
           if (uId) {
             await this.userRepo.update(uId, { institutionId: instObjId });
@@ -768,13 +795,19 @@ export class DefaultAuthService implements AuthService {
     const userDto = this.toUserDto(user);
 
     if (!user.institutionId && this.institutionRepo) {
-      const firstInst = await this.institutionRepo.findOne({ isDeleted: false });
+      const firstInst = await this.institutionRepo.findOne({
+        isDeleted: false,
+      });
       if (firstInst) {
-        const id = firstInst.id || (firstInst as unknown as { _id?: unknown })._id;
+        const id =
+          firstInst.id ||
+          (
+            firstInst as unknown as { _id?: { toString(): string } }
+          )._id?.toString();
         if (id) {
-          const instObjId = new Types.ObjectId(id.toString());
+          const instObjId = new Types.ObjectId(id);
           user.institutionId = instObjId;
-          userDto.institutionId = id.toString();
+          userDto.institutionId = id;
           const uId = (user.id || user._id)?.toString();
           if (uId) {
             await this.userRepo.update(uId, { institutionId: instObjId });

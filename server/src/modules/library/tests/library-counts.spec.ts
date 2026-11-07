@@ -30,7 +30,7 @@ describe('LibraryService - getCounts', () => {
     };
 
     cache = {
-      remember: jest.fn().mockImplementation(async (_key, _ttl, loader, _tags) => {
+      remember: jest.fn().mockImplementation(async (_key, _ttl, loader) => {
         return (loader as () => Promise<unknown>)();
       }),
     };

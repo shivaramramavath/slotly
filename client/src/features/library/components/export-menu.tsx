@@ -1,6 +1,6 @@
+// Dropdown menu button for exporting resource library entities to Excel or CSV.
 'use client';
 
-import * as React from 'react';
 import { Download, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -15,24 +15,31 @@ import { EXPORT_FORMATS } from '../config/export-formats';
 import { useLibraryExport } from '../hooks/use-library-export';
 import type { ImportEntity } from '@slotly/contracts';
 
+/** Props for the ExportMenu dropdown component. */
 export interface ExportMenuProps {
   entity: ImportEntity;
-  count: number;
+  count?: number | undefined;
+  totalCount?: number | undefined;
   departmentId?: string | undefined;
   archived?: boolean | undefined;
   className?: string | undefined;
 }
 
+/**
+ * Dropdown trigger rendering options to export the active entity in XLSX or CSV formats.
+ */
 export function ExportMenu({
   entity,
   count,
+  totalCount,
   departmentId,
   archived,
   className,
 }: ExportMenuProps) {
+  const effectiveCount = totalCount ?? count ?? 0;
   const { exportAs, isExporting, canExport, disabledReason } = useLibraryExport({
     entity,
-    count,
+    count: effectiveCount,
     departmentId,
     archived,
   });
