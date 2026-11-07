@@ -793,8 +793,97 @@
 
 ---
 
+## UX Task 02: Library Routes, Shared Layout & Export Dropdown
+
+### What Was Built
+1. **Server Architecture (Counts Endpoint & Caching):**
+   - **`GET /library/counts` Endpoint:**
+     - Added endpoint to `LibraryController` accepting `departmentId`, `archived`, and optional `institutionId` query parameters.
+     - Implemented `LibraryService.getCounts` running parallel count queries across faculty, subject, and room repositories.
+     - Integrated Redis cache-aside caching via `CacheService.remember` with cache key `slotly:library:counts:${institutionId}:${deptPart}:${archPart}`, 3600s TTL, and invalidation tag `library:${institutionId}`.
+     - Registered `LibraryCountsDtoSchema` in `@slotly/contracts`.
+     - Documented route in `docs/ROUTES.md`.
+     - Unit test suite `library-counts.spec.ts` verifying filtering, aggregation, and cache-aside tag invalidation (100% passing).
+
+2. **Client Architecture (Routes & Shared Layout):**
+   - **Shared Layout & Navigation Shell (`src/app/library/layout.tsx` & `LibraryShell`):**
+     - Server layout component wrapping child routes in `AppLayout`, `React.Suspense`, and `<LibraryShell>`.
+     - Stays persistently mounted when switching across catalog tabs.
+     - `<LibraryShell>` renders page title, description, header action toolbar, search/department/archive filter toolbar, removable active filter chips, and navigation link tabs.
+   - **Routing & Thin Page Structure:**
+     - `src/app/library/page.tsx`: Redirects `/library` to `/library/faculty`.
+     - `next.config.ts`: Configured permanent redirects `/library/subject -> /library/subjects` and `/library/room -> /library/rooms`.
+     - Sub-routes for `/library/faculty`, `/library/subjects`, and `/library/rooms`, each rendering only its specialized table component.
+     - Column-accurate `loading.tsx` routes for all three tabs using `LibraryTableSkeleton` to eliminate layout shift during route transitions.
+   - **Accessible Navigation Link Tabs:**
+     - `<nav aria-label="Library catalog tabs">` with `aria-current="page"` on the active tab, resolved dynamically using `useSelectedLayoutSegment()`.
+     - Hover and focus prefetch both the Next.js page route and the TanStack list query (`client.prefetchQuery`).
+     - Tab switching preserves URL query parameters while resetting `page=1`.
+     - Live count badge on each tab displaying a skeleton pill while loading (never jumping from "(0)").
+
+3. **URL-Driven Filters & Active Chips:**
+   - **`use-library-filters` Hook:**
+     - Parses and serializes `q`, `dept`, `archived`, and `page` using Zod schema `LibraryFiltersSchema`.
+     - 250ms debounced search input updating the URL via `router.replace` inside `React.startTransition` for typing responsiveness.
+     - Search, department, and archived filter changes automatically reset `page` to 1.
+     - Active filters render as removable chips (`[Search: "..." ×]`, `[Dept: CSE ×]`, `[Archived ×]`) with a "Clear filters" action.
+
+4. **Table Components & Dual Empty States:**
+   - Standalone table components: `faculty-table.tsx`, `subject-table.tsx`, and `room-table.tsx`.
+   - TanStack Query integration with `placeholderData: keepPreviousData`.
+   - Rows dim to 60% opacity with a thin indeterminate yellow progress bar at table top while refetching.
+   - Dual empty states:
+     - Zero items overall: Standard empty state with primary "Add <entity>" and secondary "Import" buttons.
+     - Zero results for active filters: "No results for these filters" empty state with a "Clear filters" button.
+
+5. **Open/Closed Entity Registry (`library-entities.ts`):**
+   - Single registry defining `key`, `label`, `singularLabel`, `route`, `addLabel`, `searchPlaceholder`, `exportKey`, `dialog`, `icon`, and empty state texts.
+   - Shell header, toolbar, and tabs read directly from the registry without entity switch statements.
+
+6. **Export Dropdown (`ExportMenu` & `use-library-export`):**
+   - Accessible B&W `DropdownMenu` component with `Excel (.xlsx)` and `CSV (.csv)` export options.
+   - `use-library-export` downloads `<entity>-<YYYY-MM-DD>.<ext>` blob respecting active search, department, and archived filters.
+   - Disabled with explanatory tooltip when current tab count is 0.
+   - Retry action toast upon download failure.
+   - Responsive mobile collapse: On screens under 640px, secondary header actions collapse into a `"⋯"` overflow menu.
+
+7. **Centralized Dialog Context (`LibraryDialogsProvider`):**
+   - Mounts `FacultyDialog`, `SubjectDialog`, `RoomDialog`, `ElectiveGroupDialog`, `ImportWizardDialog`, and `ConfirmDialog` once at shell root.
+   - Exposes `useLibraryDialogs()` (`openAdd`, `openEdit`, `openImport`, `openElectiveGroups`, `confirmDelete`, `archiveItem`).
+
+8. **Top Nav Active Fix & Client Unit Tests:**
+   - Pure `getActiveNavSection(pathname)` helper in `src/components/layouts/nav-active.ts` matching on first path segment.
+   - Integrated Vitest, `@testing-library/react`, and `happy-dom` in client.
+   - 26 client unit tests across 5 test suites covering filter URL parsing, export filenames, entity registry completeness, ExportMenu interactions, and active nav section matching.
+   - Monorepo totals: 194 passing unit tests across server and client.
+
+### Decisions Made
+- **React Suspense Boundary for `useSearchParams`:** Wrapped `<LibraryShell>` inside `<React.Suspense>` in `LibraryLayout` to satisfy Next.js static prerendering requirements when using `useSearchParams`.
+- **Render-Time State Adjustment in `useLibraryFilters`:** Kept local `searchInput` synchronized with external URL changes using React's render-time state adjustment pattern instead of `useEffect` setState, avoiding cascading render warnings under React 19.
+- **Single Request Filtered Counts:** Server `GET /library/counts` aggregates faculty, subject, and room counts in one round-trip and respects active department and archive filters, preventing mismatched list counts.
+
+### What Was Skipped
+- Faculty detail drawer (`/library/faculty/[facultyId]`) and availability grid editing sheet (scheduled for detail view phase).
+- Batch multi-select actions bar on tables (bulk archive/restore).
+
+### Manual Test Checklist
+- [x] Navigate to `/library`: redirects to `/library/faculty`.
+- [x] Navigate to `/library/subject` or `/library/room`: redirects permanently to plural routes `/library/subjects` and `/library/rooms`.
+- [x] Top nav: "Library" link is highlighted when visiting `/library/faculty`, `/library/subjects`, or `/library/rooms`.
+- [x] Switch tabs: URL changes, layout shell remains mounted, query params (`q`, `dept`, `archived`) are preserved, `page` resets to 1.
+- [x] Tab counts: Shows skeleton pill while loading; updates to exact counts reflecting department and archived filters.
+- [x] Search input: Typing debounces for 250ms and updates URL with `?q=...`.
+- [x] Active chips: Displays active search, department, and archived chips; clicking "×" clears specific filter; clicking "Clear filters" resets all.
+- [x] Empty states: Displays "No results for these filters" with "Clear filters" button when filters yield 0 rows; displays "Add <entity>" and "Import" buttons when zero items exist overall.
+- [x] Export dropdown: Click opens Excel and CSV options; disabled with tooltip when count is 0; downloads `<entity>-<YYYY-MM-DD>.<ext>`.
+- [x] Mobile responsiveness: On screens < 640px, header actions collapse into "⋯" overflow menu containing Import and Export.
+- [x] Modals: Add, Edit, Import, Elective Groups, and Delete confirmation dialogs open and persist across tab changes.
+
+---
+
 ## Next Steps
 - **Phase 10:** Studio Grid (Interactive timetable editor, drag-and-drop slot moves, live move validation, conflict highlighting, undo/redo).
+
 
 
 
