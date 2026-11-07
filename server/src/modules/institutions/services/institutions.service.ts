@@ -1,3 +1,4 @@
+// Domain service orchestrating institutions.service business logic.
 import {
   Injectable,
   Inject,
@@ -49,8 +50,10 @@ import type { CacheService } from '../../../common/cache/cache.interface';
 import { EventBus } from '../../../common/events/event-bus.service';
 import { AuditService } from '../../../common/audit/audit.service';
 
+/** Constant representing nstitutions service. */
 export const INSTITUTIONS_SERVICE = Symbol('INSTITUTIONS_SERVICE');
 
+/** Interface defining structure for institutions service. */
 export interface InstitutionsService {
   createInstitution(
     dto: CreateInstitutionDto,
@@ -144,6 +147,7 @@ export interface InstitutionsService {
   deleteHoliday(id: string, actorId: string): Promise<{ message: string }>;
 }
 
+/** Injectable service providing default institutions service logic. */
 @Injectable()
 export class DefaultInstitutionsService implements InstitutionsService {
   constructor(

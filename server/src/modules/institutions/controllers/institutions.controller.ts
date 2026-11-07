@@ -1,3 +1,4 @@
+// HTTP controller handling institutions.controller endpoints.
 import {
   Controller,
   Get,
@@ -59,6 +60,7 @@ import { PermissionsGuard } from '../../../common/rbac/permissions.guard';
 import { RequirePermissions } from '../../../common/rbac/roles.decorator';
 import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
 
+/** Controller handling institutions controller HTTP endpoints. */
 @Controller('institution')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class InstitutionsController {

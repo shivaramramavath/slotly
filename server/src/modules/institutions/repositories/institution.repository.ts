@@ -1,3 +1,4 @@
+// Database repository managing institution.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -11,13 +12,16 @@ import {
   InstitutionDocument,
 } from '../schemas/institution.schema';
 
+/** Constant representing nstitution repository. */
 export const INSTITUTION_REPOSITORY = Symbol('INSTITUTION_REPOSITORY');
 
+/** Interface defining structure for institution repository. */
 export interface InstitutionRepository extends BaseRepository<Institution> {
   findByCode(code: string): Promise<Institution | null>;
   softDelete(id: string): Promise<boolean>;
 }
 
+/** Injectable service providing mongo institution repository logic. */
 @Injectable()
 export class MongoInstitutionRepository
   extends MongoBaseRepository<Institution, InstitutionDocument>
@@ -45,6 +49,7 @@ export class MongoInstitutionRepository
   }
 }
 
+/** Injectable service providing cached institution repository logic. */
 @Injectable()
 export class CachedInstitutionRepository
   extends CachedRepository<Institution>

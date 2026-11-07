@@ -1,3 +1,4 @@
+// Database repository managing department.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,8 +9,10 @@ import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import { Department, DepartmentDocument } from '../schemas/department.schema';
 
+/** Constant representing department repository. */
 export const DEPARTMENT_REPOSITORY = Symbol('DEPARTMENT_REPOSITORY');
 
+/** Interface defining structure for department repository. */
 export interface DepartmentRepository extends BaseRepository<Department> {
   findByInstitution(institutionId: string): Promise<Department[]>;
   findByCode(institutionId: string, code: string): Promise<Department | null>;
@@ -17,6 +20,7 @@ export interface DepartmentRepository extends BaseRepository<Department> {
   countActiveByInstitution(institutionId: string): Promise<number>;
 }
 
+/** Injectable service providing mongo department repository logic. */
 @Injectable()
 export class MongoDepartmentRepository
   extends MongoBaseRepository<Department, DepartmentDocument>
@@ -63,6 +67,7 @@ export class MongoDepartmentRepository
   }
 }
 
+/** Injectable service providing cached department repository logic. */
 @Injectable()
 export class CachedDepartmentRepository
   extends CachedRepository<Department>

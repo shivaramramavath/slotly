@@ -1,3 +1,4 @@
+// Core implementation for institutions.module in server/src/modules/institutions.
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Institution, InstitutionSchema } from './schemas/institution.schema';
@@ -56,6 +57,7 @@ import { CACHE_SERVICE } from '../../common/cache/cache.interface';
 import type { CacheService } from '../../common/cache/cache.interface';
 import { AuditModule } from '../../common/audit/audit.module';
 
+/** Class implementing institutions module. */
 @Module({
   imports: [
     MongooseModule.forFeature([

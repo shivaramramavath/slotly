@@ -1,3 +1,4 @@
+// Database repository managing semester.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,8 +9,10 @@ import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import { Semester, SemesterDocument } from '../schemas/semester.schema';
 
+/** Constant representing semester repository. */
 export const SEMESTER_REPOSITORY = Symbol('SEMESTER_REPOSITORY');
 
+/** Interface defining structure for semester repository. */
 export interface SemesterRepository extends BaseRepository<Semester> {
   findByAcademicYear(academicYearId: string): Promise<Semester[]>;
   findByInstitution(institutionId: string): Promise<Semester[]>;
@@ -22,6 +25,7 @@ export interface SemesterRepository extends BaseRepository<Semester> {
   countActiveByInstitution(institutionId: string): Promise<number>;
 }
 
+/** Injectable service providing mongo semester repository logic. */
 @Injectable()
 export class MongoSemesterRepository
   extends MongoBaseRepository<Semester, SemesterDocument>
@@ -78,6 +82,7 @@ export class MongoSemesterRepository
   }
 }
 
+/** Injectable service providing cached semester repository logic. */
 @Injectable()
 export class CachedSemesterRepository
   extends CachedRepository<Semester>

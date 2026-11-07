@@ -1,3 +1,4 @@
+// Domain service orchestrating tree-builder.service business logic.
 import { Injectable } from '@nestjs/common';
 import type {
   InstitutionDto,
@@ -17,6 +18,7 @@ import type { Semester } from '../schemas/semester.schema';
 import type { Section } from '../schemas/section.schema';
 import type { Holiday } from '../schemas/holiday.schema';
 
+/** Injectable service providing tree builder service logic. */
 @Injectable()
 export class TreeBuilderService {
   private toId(entity: { id?: string | undefined; _id?: unknown }): string {

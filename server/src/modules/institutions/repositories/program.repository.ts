@@ -1,3 +1,4 @@
+// Database repository managing program.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,8 +9,10 @@ import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import { Program, ProgramDocument } from '../schemas/program.schema';
 
+/** Constant representing program repository. */
 export const PROGRAM_REPOSITORY = Symbol('PROGRAM_REPOSITORY');
 
+/** Interface defining structure for program repository. */
 export interface ProgramRepository extends BaseRepository<Program> {
   findByInstitution(institutionId: string): Promise<Program[]>;
   findByDepartment(departmentId: string): Promise<Program[]>;
@@ -19,6 +22,7 @@ export interface ProgramRepository extends BaseRepository<Program> {
   countActiveByInstitution(institutionId: string): Promise<number>;
 }
 
+/** Injectable service providing mongo program repository logic. */
 @Injectable()
 export class MongoProgramRepository
   extends MongoBaseRepository<Program, ProgramDocument>
@@ -77,6 +81,7 @@ export class MongoProgramRepository
   }
 }
 
+/** Injectable service providing cached program repository logic. */
 @Injectable()
 export class CachedProgramRepository
   extends CachedRepository<Program>

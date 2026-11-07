@@ -1,9 +1,12 @@
+// Data schema and persistence model for section.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import type { BatchDto } from '@slotly/contracts';
 
+/** Type alias for section document. */
 export type SectionDocument = Section & Document;
 
+/** Class implementing section. */
 @Schema({ timestamps: true, collection: 'sections' })
 export class Section {
   id?: string | undefined;
@@ -44,5 +47,6 @@ export class Section {
   deletedAt?: Date | undefined;
 }
 
+/** Zod schema validating section. */
 export const SectionSchema = SchemaFactory.createForClass(Section);
 SectionSchema.index({ semesterId: 1, name: 1, isDeleted: 1 });

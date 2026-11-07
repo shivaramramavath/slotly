@@ -1,8 +1,11 @@
+// Data schema and persistence model for academic-year.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
+/** Type alias for academic year document. */
 export type AcademicYearDocument = AcademicYear & Document;
 
+/** Class implementing academic year. */
 @Schema({ timestamps: true, collection: 'academic_years' })
 export class AcademicYear {
   id?: string | undefined;
@@ -32,5 +35,6 @@ export class AcademicYear {
   deletedAt?: Date | undefined;
 }
 
+/** Zod schema validating academic year. */
 export const AcademicYearSchema = SchemaFactory.createForClass(AcademicYear);
 AcademicYearSchema.index({ programId: 1, yearNumber: 1, isDeleted: 1 });
