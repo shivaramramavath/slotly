@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import type { UserDto } from '@slotly/contracts';
 import { setAccessToken } from '@/lib/api-client';
+import { executeLogoutCleanup } from '../services/logout-registry';
 
 /** Type alias for auth status. */
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
@@ -52,6 +53,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   clearAuth: () => {
     setAccessToken(null);
+    void executeLogoutCleanup();
     set({
       user: null,
       accessToken: null,

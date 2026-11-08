@@ -60,6 +60,25 @@
 - **Interface** `SecurityOverview` - Interface defining structure for security overview.
 - **Const** `authApi`: `{ register(dto: { email: string; name: string; ...` - Constant representing auth api.
 
+### `client/src/features/auth/services/cross-tab-sync.ts`
+*Cross-tab coordination utilizing Web Locks API and BroadcastChannel for serialized refresh and unified auth states.*
+
+- **Function** `broadcastAuthEvent(message: AuthChannelMessage)`: `void` - Broadcasts an authentication state event across all browser tabs.
+- **Function** `subscribeToAuthEvents(callback: (message: AuthChannelMessage) => void)`: `() => void` - Subscribes to cross-tab auth state events with an incoming message callback.
+- **Function** `withCrossTabLock(lockName: string, operation: () => Promise<T>)`: `Promise<T>` - Serializes a critical operation (such as token refresh) across browser tabs using Web Locks API with fallback.
+
+### `client/src/features/auth/services/logout-registry.ts`
+*Observer pattern registry for components and features to register cleanup handlers on user logout or session expiration.*
+
+- **Function** `registerLogoutCleanup(id: string, callback: CleanupCallback)`: `() => void` - Registers a cleanup callback to be executed when the user logs out or session expires.
+- **Function** `executeLogoutCleanup()`: `Promise<void>` - Executes all registered cleanup callbacks (stores, cache, sockets, timers).
+
+### `client/src/features/auth/services/token-refresher.ts`
+*Service managing proactive access token refresh scheduling, tab visibility listeners, and online reconnection checks.*
+
+- **Function** `scheduleProactiveRefresh(accessToken: string | null, refreshFn: () => Promise<void>)`: `void` - Schedules proactive refresh before token expiration, pausing while hidden.
+- **Function** `checkAndRefreshIfStale()`: `Promise<void>` - Checks whether the current token is close to expiry and triggers refresh if needed.
+
 ### `client/src/features/auth/store/auth.store.ts`
 *Zustand store managing application state for auth.store.*
 

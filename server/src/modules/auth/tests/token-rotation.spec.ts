@@ -1,4 +1,6 @@
+// Unit tests validating RedisSessionsService token rotation, grace window, and reuse detection.
 import { RedisSessionsService } from '../services/sessions.service';
+import type { SessionData } from '../services/sessions.service';
 import { InMemoryCacheService } from '../../../common/cache/in-memory-cache.service';
 import { UnauthorizedException } from '@nestjs/common';
 
@@ -53,6 +55,13 @@ describe('RedisSessionsService - Token Rotation & Reuse Detection', () => {
       session.sessionId,
       rt1,
     );
+
+    // Simulate elapsed grace window so replay is detected as reuse rather than concurrent grace recovery
+    const sessionObj = await cache.get<SessionData>(`slotly:session:${session.sessionId}`);
+    if (sessionObj) {
+      sessionObj.graceRotatedAt = Date.now() - 15000;
+      await cache.set(`slotly:session:${session.sessionId}`, sessionObj);
+    }
 
     // An attacker attempts to replay the already-used RT1!
     await expect(

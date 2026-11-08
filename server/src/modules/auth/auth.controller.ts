@@ -16,6 +16,7 @@ import {
   HttpStatus,
   UnauthorizedException,
   ForbiddenException,
+  Optional,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import {
@@ -51,6 +52,8 @@ import type { AuthService } from './auth.interface';
 import { SESSIONS_SERVICE } from './services/sessions.service';
 import type { SessionsService } from './services/sessions.service';
 import { OAuthService } from './services/oauth.service';
+import { THROTTLER_SERVICE } from './services/throttler.service';
+import type { ThrottlerService } from './services/throttler.service';
 import { AuthGuard } from './guards/auth.guard';
 import type { RequestUser } from './guards/auth.guard';
 import { Public } from './guards/public.decorator';
@@ -64,6 +67,9 @@ export class AuthController {
     @Inject(AUTH_SERVICE) private readonly authService: AuthService,
     @Inject(SESSIONS_SERVICE) private readonly sessionsService: SessionsService,
     private readonly oauthService: OAuthService,
+    @Optional()
+    @Inject(THROTTLER_SERVICE)
+    private readonly throttler?: ThrottlerService,
   ) {}
 
   private extractMeta(req: Request) {
@@ -82,13 +88,13 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/',
+      path: '/auth',
       maxAge: 7 * 24 * 3600 * 1000, // 7 days
     });
   }
 
   private clearRefreshCookie(res: Response) {
-    res.clearCookie('refreshToken', { path: '/' });
+    res.clearCookie('refreshToken', { path: '/auth' });
   }
 
   @Public()
@@ -143,6 +149,14 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const rawCookies = req.headers.cookie;
+    const clientIp =
+      (req.headers['x-forwarded-for'] as string) ||
+      req.socket.remoteAddress ||
+      '127.0.0.1';
+    if (this.throttler) {
+      await this.throttler.consume('refresh', clientIp, 30, 60);
+    }
+
     let refreshToken: string | undefined = (
       req as unknown as { cookies?: Record<string, string> }
     ).cookies?.['refreshToken'];
@@ -167,7 +181,7 @@ export class AuthController {
         message: 'Malformed refresh token.',
       });
     }
-    const sessionId = parts[1] as string;
+    const sessionId = parts.slice(1, -1).join('_');
 
     const {
       accessToken,
@@ -423,7 +437,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/',
+      path: '/auth',
       maxAge: 10 * 60 * 1000,
     });
 

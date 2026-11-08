@@ -1244,3 +1244,75 @@
 - [x] Verify monochrome B&W UI tokens in `OAuthButtons` and `ConnectedAccounts`.
 
 ---
+
+
+## Protected Routes & Verified Refresh Flow — Part A: Verify and Harden Refresh Flow
+
+### What Was Built (Part A)
+
+1. **Security & Flow Audit (`docs/AUTH_VERIFICATION.md`):**
+   - Mapped full lifecycle: login, refresh, token rotation, token family tracking, reuse detection, concurrent-refresh grace window, logout, logout-all, session validation, cookie attributes, CORS settings, rate limiting, and client-side handling.
+   - Audited cookie attributes (`HttpOnly`, `SameSite=Lax`, `Path=/auth`, `Secure`, `Max-Age=2592000`).
+   - Audited WebSocket gateways and remediated wildcard CORS (`origin: '*' -> CLIENT_URL`).
+
+2. **Server Hardening (`server`):**
+   - **Concurrent Refresh Grace Window (`RedisSessionsService`):**
+     - Implemented 10-second grace window (`graceTokenHash`, `graceRotatedAt`, `graceAccessToken`, `graceRefreshToken`).
+     - Multi-tab race conditions presenting the just-rotated token within 10 seconds receive identical new credentials without triggering false reuse detection.
+     - Token presentation after 10 seconds revokes the entire token family (`REFRESH_TOKEN_REUSE_DETECTED`) and logs a security warning.
+   - **Refresh Token Format & UUID Parsing (`auth.controller.ts`):**
+     - Standardized refresh token format: `s_${sessionId}_${randomBytes(32).toString('hex')}` across initial login and rotation.
+     - Fixed `sessionId` extraction to support underscored IDs (`ses_...`): `parts.slice(1, -1).join('_')`.
+   - **Cookie Scoping & Rate Limiting (`auth.controller.ts`):**
+     - Restricted cookie scope to `path: '/auth'` for both setting and clearing.
+     - Injected `THROTTLER_SERVICE` and added per-IP throttling (30 requests/min) to `POST /auth/refresh`.
+   - **Gateway CORS Hardening (`blueprint.gateway.ts`, `builds.gateway.ts`):**
+     - Replaced permissive `origin: '*'` with `process.env['CLIENT_URL'] || 'http://localhost:3000'`.
+   - **Server Integration Tests (`server/src/modules/auth/tests/refresh-flow.spec.ts`):**
+     - 10 automated test scenarios covering token rotation, 10 parallel concurrent requests within grace window, reuse detection after grace window revoking family, malformed/expired cookies, session revocation on password change, inactivity/maximum timeouts, MFA challenge restrictions, logout cookie clearing, throttling, and response header security.
+
+3. **Client Hardening (`client`):**
+   - **Single-Flight Refresh & Cross-Tab Coordination (`cross-tab-sync.ts`):**
+     - Wrapped refresh calls in Web Locks API (`navigator.locks.request('slotly_refresh_lock')`) to serialize multi-tab executions.
+     - BroadcastChannel (`slotly_auth_sync`) broadcasts `token_refreshed`, `login`, and `logout` across all open tabs.
+   - **Logout Cleanup Observer Registry (`logout-registry.ts`):**
+     - Observer pattern allowing components and feature stores to register cleanup callbacks.
+     - `auth.store.ts` executes registered handlers on logout or session expiration, resetting caches, sockets, and timers.
+   - **Proactive Token Refresher (`token-refresher.ts`):**
+     - Reads JWT `exp` and schedules refresh 60 seconds before expiration.
+     - Pauses while tab is hidden via `document.hidden`; triggers `checkAndRefreshIfStale()` on tab visibility changes and `window.online`.
+   - **API Client Loop Prevention & Error Resilience (`api-client.ts`):**
+     - Excluded `/auth/login`, `/auth/register`, and `/auth/refresh` from 401 refresh interceptors.
+     - Network errors and 5xx responses during refresh retain the access token and surface retryable errors rather than logging the user out.
+     - Replays original requests with the fresh token and validates replayed status.
+   - **WebSocket Dynamic Auth Handshake (`blueprint-socket.service.ts`):**
+     - Configured Socket.IO dynamic auth callback to supply current in-memory access token.
+     - Retries connection once after proactive refresh on handshake auth errors.
+     - Registered socket disconnection with `registerLogoutCleanup`.
+   - **Client Unit Tests (`api-client.spec.ts` & `token-storage.spec.ts`):**
+     - 5 unit tests verifying single-flight concurrency, loop prevention, 5xx handling, step-up 403 bypass, and definitive 401 cleanup.
+     - Token storage leak test verifying 0 occurrences of token persistence in `localStorage` or `sessionStorage` across client source files.
+
+### Decisions Made (Part A)
+
+- **10-Second Concurrent Grace Window:** Configured a 10,000ms grace period in `RedisSessionsService` allowing concurrent browser requests (such as initial dashboard loads in multiple tabs) to safely receive the new token pair without false-positive token family revocations.
+- **Strict Cookie Scoping:** Cookie path set to `/auth` prevents the browser from sending the `refreshToken` cookie on routine API calls, minimizing exposure.
+- **Web Locks API with BroadcastChannel Fallback:** Used `navigator.locks` when available to guarantee cross-tab mutual exclusion during token rotation, backed by BroadcastChannel to sync token state across tabs.
+
+### Automated Test Evidence (Part A)
+
+- **Server Tests:** 46 test suites passed (253 tests passed, 0 failed, 5 todo) including `refresh-flow.spec.ts` (10/10) and `token-rotation.spec.ts` (2/2).
+- **Client Tests:** 4 test suites passed (12/12 tests passed) including `api-client.spec.ts` (5/5) and `token-storage.spec.ts` (1/1).
+- **Typecheck:** Clean across contracts, server, and client (`tsc --noEmit` exited with code 0).
+- **Lint:** Clean across contracts, server, and client (`eslint` exited with code 0).
+- **Codemap:** All 342 source files mapped, 0 missing purpose headers, `pnpm codemap:check` passed.
+- **Build:** `pnpm build` succeeded across contracts, server, and client (all Next.js routes prerendered/compiled).
+
+### Manual Verification Checklist (Part A)
+
+- [x] Verify `docs/AUTH_VERIFICATION.md` covers architecture, cookie table, and threat model.
+- [x] Run `pnpm test` and verify 10 server refresh scenarios + 5 client refresh scenarios pass.
+- [x] Run `pnpm --filter client test src/lib/token-storage.spec.ts` to confirm no client token storage leaks.
+- [x] Verify cookie attributes in response (`Path=/auth`, `HttpOnly`, `SameSite=Lax`).
+- [x] Verify WebSocket gateways do not allow wildcard CORS with credentials.
+- [x] Verify `pnpm codemap:check` passes without errors.

@@ -9,3 +9,6 @@ export * from './components/oauth-buttons';
 export * from './components/oauth-icons';
 export * from './components/connected-accounts';
 export * from './utils/oauth-errors';
+export * from './services/logout-registry';
+export * from './services/cross-tab-sync';
+export * from './services/token-refresher';

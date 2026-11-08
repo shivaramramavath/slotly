@@ -25,6 +25,10 @@ export interface SessionData {
   tokenFamilyId: string;
   currentRefreshTokenHash: string;
   usedTokenHashes: string[]; // Track historical hashes in this family to detect reuse
+  graceTokenHash?: string | undefined;
+  graceRotatedAt?: number | undefined;
+  graceAccessToken?: string | undefined;
+  graceRefreshToken?: string | undefined;
   createdAt: number;
   lastActiveAt: number;
   expiresAt: number;
@@ -46,7 +50,7 @@ export interface SessionsService {
   createSession(
     userId: string,
     role: UserRole,
-    meta: {
+    meta?: {
       institutionId?: string | undefined;
       device?: string | undefined;
       browser?: string | undefined;
@@ -152,7 +156,7 @@ export class RedisSessionsService implements SessionsService {
   }> {
     const sessionId = `ses_${randomUUID().replace(/-/g, '')}`;
     const tokenFamilyId = `fam_${randomUUID().replace(/-/g, '')}`;
-    const rawRefreshToken = `rt_${randomBytes(32).toString('hex')}`;
+    const rawRefreshToken = `s_${sessionId}_${randomBytes(32).toString('hex')}`;
     const refreshTokenHash = this.hashToken(rawRefreshToken);
 
     const now = Date.now();
@@ -252,6 +256,35 @@ export class RedisSessionsService implements SessionsService {
     const session = await this.validateSession(sessionId);
     const presentedHash = this.hashToken(presentedRefreshToken);
 
+    // Grace Window Recovery: allow concurrent refresh requests within 10 seconds of rotation
+    if (session.graceTokenHash && session.graceTokenHash === presentedHash) {
+      const elapsed = Date.now() - (session.graceRotatedAt || 0);
+      if (
+        elapsed < 10000 &&
+        session.graceAccessToken &&
+        session.graceRefreshToken
+      ) {
+        this.logger.log(
+          `[SESSIONS_SERVICE] Grace recovery: concurrent refresh on session ${sessionId} (${elapsed}ms elapsed)`,
+        );
+        return {
+          accessToken: session.graceAccessToken,
+          refreshToken: session.graceRefreshToken,
+          session,
+        };
+      } else {
+        this.logger.warn(
+          `[SECURITY ALERT] Refresh token reuse after grace window for session ${sessionId} (family: ${session.tokenFamilyId}). Revoking session family!`,
+        );
+        await this.revokeSession(sessionId);
+        throw new UnauthorizedException({
+          code: 'REFRESH_TOKEN_REUSE_DETECTED',
+          message:
+            'A security anomaly occurred. All sessions in this family have been terminated for your protection.',
+        });
+      }
+    }
+
     // Reuse Detection: check if token was already used in this family!
     if (session.usedTokenHashes.includes(presentedHash)) {
       this.logger.warn(
@@ -276,10 +309,20 @@ export class RedisSessionsService implements SessionsService {
     }
 
     // Atomic rotation
-    const newRefreshToken = `rt_${randomBytes(32).toString('hex')}`;
+    const newRefreshToken = `s_${sessionId}_${randomBytes(32).toString('hex')}`;
     const newHash = this.hashToken(newRefreshToken);
 
+    const accessToken = this.generateAccessToken(
+      session.userId,
+      sessionId,
+      session.role,
+    );
+
     session.usedTokenHashes.push(presentedHash);
+    session.graceTokenHash = presentedHash;
+    session.graceRotatedAt = Date.now();
+    session.graceAccessToken = accessToken;
+    session.graceRefreshToken = newRefreshToken;
     session.currentRefreshTokenHash = newHash;
     session.lastActiveAt = Date.now();
     session.version += 1;
@@ -290,11 +333,6 @@ export class RedisSessionsService implements SessionsService {
       this.inactivityTtl,
     );
 
-    const accessToken = this.generateAccessToken(
-      session.userId,
-      sessionId,
-      session.role,
-    );
     return {
       accessToken,
       refreshToken: newRefreshToken,
