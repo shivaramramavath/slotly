@@ -250,6 +250,13 @@ export class DefaultAuthService implements AuthService {
       });
     }
 
+    if (!user.passwordHash) {
+      throw new UnauthorizedException({
+        code: 'INVALID_CREDENTIALS',
+        message: 'Invalid email or password.',
+      });
+    }
+
     const passwordValid = await this.passwordPolicy.verify(
       user.passwordHash,
       dto.password,
@@ -600,15 +607,17 @@ export class DefaultAuthService implements AuthService {
       throw new UnauthorizedException('User not found.');
     }
 
-    const currentMatches = await this.passwordPolicy.verify(
-      user.passwordHash,
-      dto.currentPassword,
-    );
-    if (!currentMatches) {
-      throw new BadRequestException({
-        code: 'INVALID_CURRENT_PASSWORD',
-        message: 'The current password provided is incorrect.',
-      });
+    if (user.passwordHash) {
+      const currentMatches = await this.passwordPolicy.verify(
+        user.passwordHash,
+        dto.currentPassword,
+      );
+      if (!currentMatches) {
+        throw new BadRequestException({
+          code: 'INVALID_CURRENT_PASSWORD',
+          message: 'The current password provided is incorrect.',
+        });
+      }
     }
 
     await this.passwordPolicy.validate(dto.newPassword);
@@ -833,7 +842,21 @@ export class DefaultAuthService implements AuthService {
     if (!user) throw new UnauthorizedException('User not found.');
 
     let verified = false;
-    if (dto.password) {
+    const stepUpPayload = dto as {
+      method?: 'password' | 'totp' | 'email_otp' | undefined;
+      password?: string | undefined;
+      code?: string | undefined;
+      otp?: string | undefined;
+    };
+    if (stepUpPayload.method === 'email_otp' || stepUpPayload.otp) {
+      const code = stepUpPayload.otp || stepUpPayload.code;
+      if (!code) {
+        throw new BadRequestException(
+          'OTP code is required for email_otp step-up',
+        );
+      }
+      verified = await this.otpService.verifyOtp(user.email, 'step_up', code);
+    } else if (dto.password && user.passwordHash) {
       verified = await this.passwordPolicy.verify(
         user.passwordHash,
         dto.password,
@@ -853,6 +876,21 @@ export class DefaultAuthService implements AuthService {
     const validUntil = new Date(Date.now() + 600000).toISOString();
 
     return { success: true, validUntil };
+  }
+
+  async sendStepUpEmailOtp(
+    userId: string,
+  ): Promise<{ success: boolean; resendAvailableAt: string }> {
+    const user = await this.userRepo.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found.');
+
+    const otp = await this.otpService.createOtp(user.email, 'step_up', 600, 60);
+    await this.emailAdapter.sendOtp(user.email, otp, 'verify');
+
+    return {
+      success: true,
+      resendAvailableAt: new Date(Date.now() + 60000).toISOString(),
+    };
   }
 
   async googleOAuth(
