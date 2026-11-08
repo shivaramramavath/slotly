@@ -43,7 +43,7 @@ export type AuthenticatedSocket = Socket<
 @WebSocketGateway({
   namespace: '/builds',
   cors: {
-    origin: '*',
+    origin: process.env['CLIENT_URL'] || 'http://localhost:3000',
     credentials: true,
   },
 })

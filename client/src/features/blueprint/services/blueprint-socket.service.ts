@@ -12,7 +12,8 @@ import {
   type NodeLockedPayload,
   type NodeUnlockedPayload,
 } from '@slotly/contracts';
-import { getAccessToken } from '@/lib/api-client';
+import { getAccessToken, silentRefresh } from '@/lib/api-client';
+import { registerLogoutCleanup } from '@/features/auth/services/logout-registry';
 
 /** Type alias for socket status. */
 export type SocketStatus = 'connected' | 'connecting' | 'disconnected' | 'reconnecting';
@@ -60,12 +61,17 @@ export class BlueprintSocketService {
     this.updateStatus('connecting');
 
     const token = getAccessToken();
+    if (!token) {
+      this.updateStatus('disconnected');
+      return;
+    }
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
     this.socket = io(`${apiUrl}/blueprint`, {
       transports: ['websocket', 'polling'],
-      auth: {
-        token: token ? `Bearer ${token}` : undefined,
+      auth: (cb: (data: { token?: string }) => void) => {
+        const currentToken = getAccessToken();
+        cb(currentToken ? { token: `Bearer ${currentToken}` } : {});
       },
       reconnection: true,
       reconnectionAttempts: 10,
@@ -84,7 +90,26 @@ export class BlueprintSocketService {
       this.updateStatus('disconnected');
     });
 
-    this.socket.on('connect_error', () => {
+    registerLogoutCleanup('blueprint_socket', () => {
+      this.disconnect();
+    });
+
+    let hasRefreshedForAuth = false;
+    this.socket.on('connect_error', async (err: Error) => {
+      if (
+        !hasRefreshedForAuth &&
+        (err?.message?.includes('auth') ||
+          err?.message?.includes('unauthorized') ||
+          err?.message?.includes('token'))
+      ) {
+        hasRefreshedForAuth = true;
+        try {
+          await silentRefresh();
+          this.socket?.connect();
+        } catch {
+          // Handled
+        }
+      }
       this.updateStatus('reconnecting');
     });
 

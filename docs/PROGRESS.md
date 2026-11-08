@@ -3,6 +3,7 @@
 ## Phase 0: Scaffolding, Monorepo Setup, Planning & Architecture
 
 ### What Was Built
+
 1. **Repository & Workspace Structure:**
    - Initialized a `pnpm` monorepo containing `client` (Next.js 16 App Router, TypeScript, Tailwind v4), `server` (NestJS 11, TypeScript), and `packages/contracts` (TypeScript package built with `tsup`).
    - Root workspace file `pnpm-workspace.yaml` with dependency approvals for native build scripts.
@@ -35,6 +36,7 @@
    - Risk assessment and architectural decisions.
 
 ### Decisions Made
+
 - **Package Manager:** Configured `pnpm` v12 with `onlyBuiltDependencies` in `pnpm-workspace.yaml` to ensure deterministic builds.
 - **Contracts Build:** Used `tsup` for `@slotly/contracts` generating ESM, CJS, and TypeScript declaration maps.
 - **MongoDB Transactions:** Configured Docker MongoDB container with `--replSet rs0` and automated single-node replica set initiation in healthcheck to support multi-document transactional writes required by critical operations.
@@ -42,6 +44,7 @@
 - **ESLint in Next.js 16:** Utilized native ESLint flat config with Next.js core web vitals and typescript configs.
 
 ### What Was Skipped
+
 - Features implementation intentionally deferred to Phase 1+ per Phase 0 instructions.
 
 ---
@@ -49,6 +52,7 @@
 ## Phase 1: Foundation (Contracts, Server Infrastructure, Client UI & Layouts)
 
 ### What Was Built
+
 1. **Contracts Package (`@slotly/contracts`):**
    - Base error response schema (`ApiErrorResponseSchema`) with `{ code, message, details? }`.
    - Pagination schemas and interfaces (`PaginationQuerySchema`, `PaginatedResult<T>`).
@@ -76,6 +80,7 @@
    - `app.controller.spec.ts`: Validates health status response.
 
 ### Decisions Made
+
 - **Strict B&W Design Tokens:** Defined semantic variables in `globals.css` with dark mode enforcement.
 - **Cache Single-Flight:** Implemented in-flight promise map per key in `CacheService` to prevent cache stampedes under high concurrency.
 - **Write-Behind Coalescing:** Used BullMQ deterministic jobIds `${entity}:${id}` combined with in-memory coalescing so rapid node movements or autosaves emit only the latest state to the database.
@@ -83,6 +88,7 @@
 - **API Client Bearer Injection:** Implemented memory access token storage with automatic 401 interceptor that queues concurrent calls while requesting `/auth/refresh`.
 
 ### What Was Skipped
+
 - Real business logic for authentication endpoints, graph nodes, and timetable solving (targeted for subsequent phases per roadmap).
 
 ---
@@ -90,6 +96,7 @@
 ## Phase 2: Identity & Access (Auth, Sessions, Users & Security)
 
 ### What Was Built
+
 1. **Contracts Package (`@slotly/contracts`):**
    - Authentication DTOs with Zod validation schemas and TypeScript types:
      - `RegisterDtoSchema`, `LoginDtoSchema`, `AuthResponseSchema`, `VerifyEmailDtoSchema`, `ResendEmailDtoSchema`, `ForgotPasswordDtoSchema`, `ResetPasswordDtoSchema`, `ChangePasswordDtoSchema`.
@@ -156,6 +163,7 @@
    - `src/modules/auth/tests/rbac.spec.ts`: Permission registry across all roles and multi-tenant resource isolation.
 
 ### Decisions Made
+
 - **Native RFC 6238 TOTP:** Built RFC 6238 HMAC-SHA1 TOTP using Node.js `crypto` to avoid ESM-bundling issues in Jest tests with `otplib`/`@scure/base`.
 - **Zero-Dependency UUID & Random Bytes:** Used Node `crypto.randomUUID()` and `crypto.randomBytes()` instead of external `uuid` v14 to maintain ESM/CJS compatibility across Jest and NestJS runtime.
 - **In-Memory Access Token + Redis Session Verification:** Kept access token in memory with short lifetime (15 mins), refresh token in httpOnly cookie with rotation. Every API request validates the server-side Redis session, ensuring immediate session revocation without waiting for access token expiration.
@@ -163,6 +171,7 @@
 - **Generic Responses on Auth Failures:** Forgot password, login, and registration use generic responses to prevent user enumeration attacks.
 
 ### What Was Skipped
+
 - Institution and Blueprint creation (scheduled for Phase 3: Institution and Academic Management).
 
 ---
@@ -170,6 +179,7 @@
 ## Phase 3: Institution & Academic Management
 
 ### What Was Built
+
 1. **Contracts Package (`@slotly/contracts`):**
    - Added Zod schemas and TypeScript types for academic entities:
      - `PeriodBreakSchema`, `PeriodConfigSchema`, `InstitutionDtoSchema`, `CreateInstitutionDtoSchema`, `UpdateInstitutionDtoSchema`.
@@ -208,12 +218,14 @@
    - **Strict Theme Compliance:** Strict black and white tokens with semantic accents (`#FACC15` primary, `#22C55E` success, `#EF4444` danger, `#3B82F6` links) under 5% of screen surface. React 19 render-phase prop synchronization.
 
 ### Decisions Made
+
 - **Referential Integrity Gates:** Applied strict parent existence verification (`G1` creation gate) and dependent children verification (`G4` delete gate) to enforce blueprint invariants at the academic root level.
 - **Cache Tags & Invalidation:** Tagged all cached entity records and hierarchical trees with `institution:${institutionId}` so that mutations to any child element trigger immediate tag invalidation, ensuring consistency across reads.
 - **Pure Domain Separation:** Isolated `DependencyCheckerService` and `TreeBuilderService` from database and framework dependencies, enabling zero-mock unit testing and reuse.
 - **Render-Phase State Synchronization:** Replaced `useEffect` prop-synchronization patterns in modal dialogs with React 19 render-phase state adjustment to satisfy strict ESLint rules and eliminate re-render cascades.
 
 ### What Was Skipped
+
 - Blueprint node drag-and-drop canvas and solver execution (scheduled for subsequent phases).
 
 ---
@@ -221,6 +233,7 @@
 ## Phase 4: Library (Faculty, Subjects, Elective Groups, Rooms, Import/Export)
 
 ### What Was Built
+
 1. **Contracts Package (`@slotly/contracts`):**
    - Added permissions: `'SUBJECT_READ'`, `'SUBJECT_MANAGE'` and updated `RolePermissions` registry.
    - Added Zod schemas and TypeScript types:
@@ -281,12 +294,14 @@
      - React 19 render-phase prop synchronization in all modals.
 
 ### Decisions Made
+
 - **Strategy Pattern for Room Matching & Faculty Qualification:** Decoupled matching algorithms (`StandardRoomMatcher`, `StandardFacultyQualifier`) into swappable strategies to allow the Blueprint verification gates and the Phase 7 Constraint Solver engine to reuse identical matching logic.
 - **Dual-Engine File Parsing (CSV & Excel):** Standardized CSV and XLSX file parsing through a unified `FileParser` interface, returning identical typed record structures and error diagnostics.
 - **Tag-Based Cache Invalidation:** Resources are tagged by institution (`library:${institutionId}`). Any addition, update, or archive invalidates the entire library cache for that institution, ensuring zero stale reads in repeat queries.
 - **Render-Phase State Synchronization:** Followed React 19 rules in all library modal dialogs, synchronizing form state during render phase rather than using cascading `useEffect` hooks.
 
 ### What Was Skipped
+
 - Blueprint canvas node placement and solver scheduling (scheduled for Phase 5: Blueprint Graph & Creation Gates and Phase 7: Constraint Solver).
 
 ---
@@ -294,6 +309,7 @@
 ## Phase 5: Projects & The Blueprint Domain (Server Domain, No Canvas Yet)
 
 ### What Was Built
+
 1. **Shared Contracts (`packages/contracts`):**
    - **Projects:**
      - `ProjectLifecycleStatusSchema`: State pattern values (`draft`, `building`, `ready`, `pending_approval`, `published`, `archived`).
@@ -394,12 +410,14 @@
    - `impact-analyzer.spec.ts`: Tests G4 impact cascade reporting for deletion and updates.
 
 ### Decisions Made
+
 - **Pure Server Domain First (No Canvas Yet):** Kept Phase 5 strictly focused on the core graph data structures, completion rules, gate chains, batch operation engine, and project lifecycle state machines on the server, paired with project management UI on the client, reserving the interactive React Flow visual canvas for Phase 6.
 - **Topological Operation Reordering:** When applying a batch of operations, additions are dynamically sorted by hierarchy depth so parent nodes are evaluated and persisted before child nodes, avoiding false parent-missing rejections during template applications.
 - **G6 Skip Cascade:** When an operation in a batch fails a gate check, subsequent operations that reference or target that node are automatically skipped with `PARENT_INCOMPLETE` without aborting the entire batch, returning a detailed `{ applied, skipped }` response.
 - **Optimistic Concurrency Revision Control:** Blueprint writes must match current revision. A revision conflict returns HTTP 409 carrying both the rejected and current revision alongside the complete current graph state so the client can resolve or overwrite.
 
 ### What Was Skipped
+
 - Interactive React Flow / @xyflow canvas, custom node components, and visual drag-and-drop connections (scheduled for Phase 6: Blueprint Canvas).
 - Constraint solver engine and automated schedule generation (scheduled for Phase 7).
 
@@ -408,6 +426,7 @@
 ## Phase 6: Blueprint Canvas Core
 
 ### What Was Built
+
 1. **Contracts Package (`@slotly/contracts`):**
    - Added socket event constants and Zod schemas:
      - Events: `PROJECT_JOIN`, `PROJECT_LEAVE`, `CURSOR_UPDATE`, `LOCK_NODE`, `UNLOCK_NODE`, `NODE_ADD`, `NODE_UPDATE`, `NODE_MOVE`, `NODE_DELETE`, `EDGE_ADD`, `EDGE_DELETE`, `PRESENCE_CHANGED`, `NODE_STATUS_CHANGED`, `OPS_APPLIED`, `NODE_LOCKED`, `NODE_UNLOCKED`, `REVISION_CONFLICT`.
@@ -422,8 +441,8 @@
      - Ephemeral multi-user presence (`presence:changed`) with avatar color allocation and real-time cursor broadcasting.
      - Collaborative node locking (`node:lock`, `node:unlock`, `node:locked`, `node:unlocked`) preventing concurrent edits on the same node.
      - **Routing by Criticality:**
-       - *Critical Operations* (`node:add`, `node:delete`, `edge:add`, `edge:delete`): Evaluated synchronously through the server `GateChain` (`BlueprintService.applyOperations`), committed directly to MongoDB, cache invalidated, acknowledging with stable reason codes (`PARENT_MISSING`, `PARENT_INCOMPLETE`, `DUPLICATE_NAME`, `CAPACITY_EXCEEDED`, `CYCLE`, etc.) and `fixHint`, and broadcasting `ops:applied`.
-       - *Non-Critical Operations* (`node:move`, `node:update` autosave): Persisted immediately to Redis cache-aside for zero-latency peer updates, acknowledged instantly, enqueued to BullMQ write-behind queue with deterministic coalescing `jobId = node:${nodeId}`, recomputing completion status and broadcasting `node:status-changed` to all project collaborators.
+       - _Critical Operations_ (`node:add`, `node:delete`, `edge:add`, `edge:delete`): Evaluated synchronously through the server `GateChain` (`BlueprintService.applyOperations`), committed directly to MongoDB, cache invalidated, acknowledging with stable reason codes (`PARENT_MISSING`, `PARENT_INCOMPLETE`, `DUPLICATE_NAME`, `CAPACITY_EXCEEDED`, `CYCLE`, etc.) and `fixHint`, and broadcasting `ops:applied`.
+       - _Non-Critical Operations_ (`node:move`, `node:update` autosave): Persisted immediately to Redis cache-aside for zero-latency peer updates, acknowledged instantly, enqueued to BullMQ write-behind queue with deterministic coalescing `jobId = node:${nodeId}`, recomputing completion status and broadcasting `node:status-changed` to all project collaborators.
    - **`BlueprintWriteProcessor`:**
      - Consumes BullMQ `sync-node` write-behind jobs, idempotently persisting coalesced node coordinates and configuration to MongoDB while decrementing the pending-writes consistency barrier counter.
    - **Gateway Unit Tests (`blueprint-gateway.spec.ts` - 11 tests, monorepo total 108 tests passing):**
@@ -465,12 +484,14 @@
      - Node selection state reset handled cleanly via keying (`key={selectedNode.id}`).
 
 ### Decisions Made
+
 - **Pinning Socket Dependencies on NestJS 11:** Maintained `@nestjs/websockets@^11.0.1` and `@nestjs/platform-socket.io@^11.0.1` to align with the root NestJS 11 monorepo framework and preserve CommonJS Jest compatibility.
 - **Strict Generic Socket Data Typing:** Typed the server socket with `DefaultEventsMap` and `SocketData` to enforce strict TypeScript typing on authenticated user attributes (`client.data.user`), eliminating unsafe `any` assignments under ESLint.
 - **Key-Based Form Reset in React 19:** Utilized React 19 key-based remounting (`<NodeConfigForm key={selectedNode.id} ... />`) instead of `useEffect` setState synchronization for the node configuration form, preventing cascading render issues.
 - **Vertical Hierarchy Default with Animated Transitions:** Graph layout defaults to Dagre top-to-bottom (`TB`) ranking per `BLUEPRINT_RULES.md`, with animated `fitView` transitions upon switching to `LR`, `BT`, or `RL`.
 
 ### What Was Skipped
+
 - Advanced designer tools, bulk generation, templates, snapshots, visual diff, align/distribute, containers/sub-flows, smart help recommendations, search/filter, and export/import (scheduled for Phase 7).
 - Timetable constraint solving engine execution and conflict detection (scheduled for Phase 8).
 
@@ -479,6 +500,7 @@
 ## Phase 7: Advanced Designer Features
 
 ### What Was Built
+
 1. **Canvas & Editing Enhancements:**
    - **Box Selection & Multi-Drag:** Enabled box drag selection (`selectionOnDrag`), multi-drag, and `Ctrl+A` select-all.
    - **Smart Snapping & Align/Distribute:** Added `BlueprintFloatingAlignBar` activating whenever $\ge 2$ nodes are selected, providing alignment (Left, Center, Right, Top, Middle, Bottom), distribution (Horizontal, Vertical with equidistant spacing), and adjustable grid snapping (10px, 15px, 20px, 25px).
@@ -526,11 +548,13 @@
    - Real-time multi-user cursor tracking, presence avatars, and edit lock badges.
 
 ### Decisions Made
+
 - **Pure Functional Layout Engine:** Structured the layout calculations (`calculateHierarchicalOrCompact`, `calculateDepartmentLayout`, `avoidOverlapsHelper`, `getLayoutedElements`) as pure functions outside React hooks to eliminate cyclic closures and avoid React 19 compiler hoisting issues.
 - **Client-Side Gate Simulation for Import:** Implemented a simulation phase in the Import dialog that verifies parent existence and completion before committing, presenting a clear summary table of valid vs skipped operations.
 - **Strict B&W Design Token Compliance:** Maintained monochrome `#0A0A0A` / `#111111` / `#232323` / `#FAFAFA` palette with accent indicators strictly constrained under 5% (`#22C55E` complete/valid, `#FACC15` warning/selected, `#EF4444` conflict/destructive, `#3B82F6` vector/info).
 
 ### What Was Skipped
+
 - Timetable constraint solving engine, hard/soft constraint strategies, and worker solvers (scheduled for Phase 8).
 - Studio Grid timetable slot placement and drag-and-drop schedule editing (scheduled for Phase 9).
 
@@ -539,6 +563,7 @@
 ## Phase 8: Constraint Engine (Pure TypeScript Core)
 
 ### What Was Built
+
 1. **Shared Contracts (`@slotly/contracts`):**
    - Added complete schemas and DTO types for constraints and timetable validation:
      - `SlotTypeSchema`: `theory`, `lab`, `tutorial`, `seminar`, `break`, `free`, `exam`, `event`, `empty`.
@@ -630,18 +655,21 @@
    - Added `validateProject` and `validateVersion` to `blueprintApi`.
 
 ### Decisions Made
+
 - **Strict Decoupling of Engine Core:** Isolated `server/src/modules/engine/core/` completely from NestJS, Mongoose, and third-party libraries. All types, constraints, state trackers, suggestion generators, and pre-build validators operate exclusively on pure TypeScript primitives for maximum speed, reusability in web workers, and zero-mock testing.
 - **Hypothetical State Move Evaluation:** Optimized move evaluations in `ScheduleState.cloneWithMove` using shallow clones of slot index tables, providing sub-millisecond constraint evaluation.
 - **SHA-256 Input Caching:** Cached validation results in Redis keyed by `slotly:validation:${hash}` where hash encapsulates project revision, input settings, and slot configurations, avoiding expensive recomputations on repeated requests.
 - **Accents Under 5%:** Adhered strictly to the black-and-white design system with semantic accents reserved for status (`#EF4444` for hard conflict errors, `#FACC15` for soft warnings, `#22C55E` for suggestions).
 
 ### What Was Skipped
+
 - Timetable generation solver worker with BullMQ and constraint optimization algorithms (scheduled for Phase 9).
 - Studio Grid timetable interactive slot editor and drag-and-drop schedule editing (scheduled for Phase 10).
 
 ---
 
 ## Next Steps
+
 - **Phase 9:** Timetable Generation (Constraint satisfaction solver, BullMQ worker, progress streaming over WebSockets, conflict explanation).
 
 ---
@@ -649,6 +677,7 @@
 ## Phase 9: Generation
 
 ### What Was Built
+
 1. **Contracts Package (`@slotly/contracts`):**
    - Added DTO schemas, enum types, and socket payloads:
      - `ScheduleVersionKindSchema` (`auto`, `regenerate`, `manual`).
@@ -743,6 +772,7 @@
      - Connected "Build Schedule" button in Blueprint header toolbar directly to `/projects/[projectId]/build`.
 
 ### Decisions Made
+
 - **Simultaneous Elective Strength Splitting:** For elective groups where `mustBeSimultaneous = true`, each parallel elective subject divides the section strength (`Math.ceil(sectionStrength / electiveCount)`). `RoomCapacityFitsSectionConstraint` and `SectionNoDoubleBookingConstraint` allow parallel streams of the same simultaneous elective group to run concurrently without triggering double-booking or room under-capacity violations.
 - **Elective Bundle Grouping by Block Index:** `TaskBuilder` groups elective tasks by block index `b` (`bundle:${group.id}:${b}`) rather than bundling all weekly hours into a single slot, ensuring each hour of the elective runs at a separate day/period.
 - **Section Safety in Swaps:** `TimetableSolver.runSwapImprovementPass` verifies `!this.isSectionOrBatchBusy()` for both swapped slots to prevent inter-section slot swaps from inadvertently double-booking a section.
@@ -750,6 +780,7 @@
 - **Gate G5 Enforcement in Facade:** BuildFacade verifies Gate G5 (`isReadyForBuild`) and rejects unready blueprints with `400 BadRequestException` prior to solver invocation.
 
 ### What Was Skipped
+
 - Studio Grid interactive timetable slot editor, drag-and-drop moves, live conflict highlighting on grid cells, and manual slot adjustments (scheduled for Phase 10: Interactive Studio Grid Editor).
 
 ---
@@ -757,6 +788,7 @@
 ## Infrastructure & Service Integration: Brevo Email Integration & System Runtime Verification
 
 ### What Was Built
+
 1. **Brevo Transactional Email Integration (`server/src/common/email/`):**
    - **`IEmailSender` Interface & Token:** Clean abstraction (`EMAIL_SENDER` injection token) decoupling business logic and adapters from third-party email providers (SOLID Dependency Inversion).
    - **`BrevoEmailSender`:** Concrete implementation communicating with Brevo REST API v3 (`https://api.brevo.com/v3/smtp/email`) via native `fetch`:
@@ -787,6 +819,7 @@
      - Server running on `http://localhost:4000` (NestJS 11 with MongoDB, Redis, and BullMQ).
 
 ### Decisions Made
+
 - **Brevo REST API v3 vs SMTP:** Used Brevo REST API v3 over SMTP to avoid external Node SMTP/nodemailer dependencies, providing faster HTTP/2 execution, precise JSON error payloads, and seamless serverless compatibility.
 - **Safe Development Simulation:** If `BREVO_API_KEY` is unset or blank in `.env`, `BrevoEmailSender` logs formatted mock dispatches rather than failing, enabling smooth local development without requiring live credentials.
 - **Write-Behind Delivery with Fallback:** Routine emails are sent asynchronously through BullMQ on the `'notifications'` queue to keep HTTP response times fast; if Redis/BullMQ is down or if `immediate: true` is requested, `EmailService` falls back to direct HTTP delivery.
@@ -794,6 +827,7 @@
 ---
 
 ## Next Steps
+
 - **Phase 10:** Studio Grid (Interactive timetable editor, drag-and-drop slot moves, live move validation, conflict highlighting, undo/redo).
 
 ---
@@ -801,6 +835,7 @@
 ## Task: Code Map for Fast Navigation and Reuse
 
 ### What Was Built
+
 1. **Central Code Map Index (`docs/CODEMAP.md`):**
    - High-level directory overview with one-line descriptions for all workspaces, app paths, module directories, and feature folders.
    - Verified "Reuse First" table mapping common development tasks to verified reusable singletons, repositories, services, decorators, components, and hooks.
@@ -841,26 +876,31 @@
    - CI check command `pnpm codemap:check` ready for Phase 15 pipeline integration.
 
 ### Decisions Made
+
 - **Markdown Tables Format:** Tables in `docs/CODEMAP.md` separated with `<!-- MANUAL:START -->` and `<!-- MANUAL:END -->` to allow developer customization while keeping generated tables strictly synchronized via `<!-- GENERATED:START -->`.
 - **Prettier & Line Ending Normalization:** Formatted all generated and annotated source files to ensure clean compliance with project ESLint and Prettier rules.
 - **AST Parsing with ts-morph:** Selected `ts-morph` for AST extraction to accurately resolve decorators, types, parameters, and JSDoc tags without executing runtime code.
 
 ### Possible Duplicates / Cleanup Candidates
+
 - **Date / Time Formatting:** Identified multiple formatters in `client/src/features/institution/` and `client/src/features/library/` (e.g. `formatTime`, `formatDateRange`) that can be consolidated into `client/src/lib/formatters.ts` in a future refactor.
 - **Dialog Shell Wrappers:** Modal wrapper structures in `client/src/features/blueprint/components/dialogs/` share common header/footer boilerplate that could benefit from a unified `ResponsiveDialog` component.
 
 ### Manual Verification Checklist
+
 - [x] Run `pnpm codemap`: 316 files parsed, 903 symbols extracted, 0 broken links, 0 broken symbols.
 - [x] Run `pnpm codemap:check`: In-memory regeneration matches on-disk maps cleanly.
 - [x] Run `pnpm test`: 32 Jest test suites (166 tests) + generator golden test pass.
 - [x] Run `pnpm typecheck`: Contracts, server, and client all typecheck with zero errors.
 - [x] Run `pnpm lint`: Contracts, server, and client lint with zero errors or warnings.
 - [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Next.js build all complete successfully.
+
 ---
 
 ## Fix: Institution Context Auto-Healing, Master Dev OTP & Runtime Error Resolution
 
 ### What Was Built
+
 1. **Auto-Healing Institution Context:**
    - Updated `AuthGuard`: If `session.institutionId` is unset, it attempts to resolve `user.institutionId` from Mongo. If the user still lacks an institution, it looks up the first active institution or creates default `"Main Campus"` (code: `MAIN`), updates the user record, synchronizes the Redis session, and attaches `request.user.institutionId`.
    - Updated `InstitutionsController.resolveInstitutionId` and `LibraryController.resolveInstitutionId`: Made asynchronous with fallback to the active institution repository, resolving 400 Bad Request responses on `/institution/structure`, `/institution/departments`, and all `/library/*` resource endpoints.
@@ -877,22 +917,24 @@
    - Updated `.gitignore`: Added `!client/src/lib/` exception under `**/lib/` to ensure client utilities (`api-client.ts`, `query-provider.tsx`, `utils.ts`) are properly tracked in version control.
 
 ### Decisions Made
+
 - **Zero-Friction Single-Tenant / First-Run Initialization:** When a user registers or logs in without an institution specified and the database has no institutions yet, the server auto-seeds a default institution (`Main Campus`, `MAIN`) so navigation to library, institutions, or projects is immediately functional.
 - **Master Dev OTP Environment Check:** Restricted development bypass code strictly to `NODE_ENV === 'development'` and non-test environments to prevent any impact on security in production or test assertions in CI.
 
 ### Manual Verification Checklist
+
 - [x] Run `pnpm typecheck`: Contracts, server, and client all pass with 0 errors.
 - [x] Run `pnpm lint`: Contracts, server, and client pass with 0 errors.
 - [x] Run `pnpm test`: All 32 Jest test suites (166 tests) + codemap golden test pass.
 - [x] Run `pnpm codemap:check`: All maps and symbol references verified cleanly.
 - [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Turbopack production build pass.
 
-
 ---
 
 ## Phase 9: Generation & Timetable Engine
 
 ### What Was Built
+
 1. **Pure TypeScript Engine & Constraint Solver (`server/src/modules/engine/core`):**
    - Implemented hardest-first backtracking timetable solver across all sections, shared faculty, and rooms simultaneously.
    - Built swap-based soft constraint optimizer and `AlternativesGenerator` producing diverse candidate schedules using seeded RNG and different objective profiles (workload-balanced, preference-first, room-efficient).
@@ -911,10 +953,12 @@
    - `POST /projects/:projectId/builds/cancel`: Gracefully aborts running solver jobs.
 
 ### Decisions Made
+
 - **Pure Framework-Agnostic Core:** Constraint solver logic is kept pure TypeScript without NestJS or Mongoose dependencies, allowing fast deterministic unit testing.
 - **Deduplication of Generated Alternatives:** Alternatives generator calculates schedule signatures based on slot placements to ensure distinct, ranked options.
 
 ### Manual Verification Checklist
+
 - [x] Run `pnpm test`: Engine solver, constraints, alternatives generator, pre-build checker, and build facade tests pass (172 tests total).
 - [x] Socket gateway broadcasts progress events and handles disconnects cleanly.
 - [x] Pre-build validation halts solver with structured error reports if requirements are unsatisfied.
@@ -924,6 +968,7 @@
 ## Phase 09 Stabilized: Integration Audit Fixes (AUD-001 through AUD-009)
 
 ### What Was Built
+
 1. **AUD-001 (S1) - Background Queue, Pending Writes & Redis Resilience:**
    - Switched `WriteBehindService` pending counter from scalar to idempotent `Set<string>` in memory and Redis sets (`pending_jobs:{projectId}`).
    - Created `AuditProcessor` to consume BullMQ `audit` queue and persist logs to MongoDB.
@@ -965,10 +1010,12 @@
    - Aligned `docs/ROUTES.md`, `docs/AUDIT_REPORT.md`, `docs/PROGRESS.md`, and refreshed `docs/CODEMAP.md`.
 
 ### Decisions Made
+
 - **Availability Matrix Normalization Strategy:** Rather than destructive DB wipes, matrices are dynamically normalized during ingestion and retrieval, padding smaller matrices with `true` and truncating oversized ones.
 - **Idempotent Pending Job Set:** Set-based tracking eliminates counter leakage when BullMQ rapidly coalesces writes with identical job IDs.
 
 ### Manual Verification Checklist
+
 - [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Turbopack production build pass.
 - [x] Run `pnpm lint`: Contracts, server, and client lint with zero errors or warnings.
 - [x] Run `pnpm typecheck`: Contracts, server, and client all typecheck with zero errors.
@@ -980,6 +1027,7 @@
 ## Integration Audit (Phases 0 to 9)
 
 ### What Was Built
+
 - **Baseline Verification:** Tagged `pre-audit-baseline` on `main`/`fix/integration-audit`. Verified clean install, clean temporary clone build, MongoDB replica set `rs0`, and Redis health.
 - **Static Analysis:**
   - Circular dependencies: identified 2 cycles in server via `madge` (`auth.module` -> `institutions.module` -> `users.module`, `blueprint.module` -> `projects.module`); 0 in client.
@@ -1003,10 +1051,12 @@
   - Compiled comprehensive `docs/AUDIT_REPORT.md` with findings categorized S1 through S4, impact analysis, reproduction commands, and test gap tables.
 
 ### Decisions Made
+
 - **Zero Production Code Changes:** Strictly adhered to audit task requirements. Discovered discrepancies and bugs are documented with evidence and `.todo` tests rather than patched in-place.
 - **Dedicated Audit Tooling in `scripts/`:** Preserved audit analysis scripts (`audit-routes.js`, `audit-mongo-indexes.js`, `audit-socket-load.js`, etc.) for reproducible verification.
 
 ### Manual Verification Checklist
+
 - [x] Pre-audit baseline tagged and pushed (`pre-audit-baseline`).
 - [x] Clean clone build passes cleanly.
 - [x] Static checks completed (madge, jscpd, pnpm audit, code smell metrics).
@@ -1014,7 +1064,6 @@
 - [x] WebSocket load test (50 concurrent clients, 500 events) executed with 0 dropped events.
 - [x] Full workspace verification passes: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
 - [x] Comprehensive `docs/AUDIT_REPORT.md` generated.
-
 
 ---
 
@@ -1075,3 +1124,256 @@
 - [x] Run `pnpm test`: All 41 server Jest test suites (221 tests) + codemap golden test pass.
 - [x] Run `pnpm env:migrate scripts/__fixtures__/legacy.env`: Correctly renames legacy keys and flags deprecated keys without leaking values.
 - [x] Run `pnpm codemap` & `pnpm codemap:check`: Architecture map and symbol indices generated and verified.
+
+---
+
+## Feature: Social Login with Google and GitHub (Pass 1 - Completed)
+
+### Existing Auth Architecture Analysis (Read First)
+
+1. **Registration Flow:**
+   - Validates email format and password strength via `StandardPasswordPolicy`.
+   - Hashes password using Argon2id.
+   - Assigns role: First user of an institution becomes `ADMIN`, otherwise `DESIGNER`.
+   - Institution handling: If `institutionName` is supplied, creates a new institution with standard 5-day schedule config (`isComplete: true`); if omitted, falls back to the first existing institution or creates a default `${name}'s Institution`.
+   - Creates `User` document with `isEmailVerified: false, mfaEnabled: false, status: 'active'`.
+   - Sends a 6-digit email OTP (TTL 600s, cooldown 60s).
+   - Issues Redis session via `SessionsService.createSession`, issuing Bearer `accessToken` and setting httpOnly `refreshToken` cookie.
+   - Logs `AUTH_SESSION_CREATED` in audit log.
+
+2. **Login & MFA Flow:**
+   - Throttled per IP + email (5 attempts / 300s).
+   - Verifies user status is `active` and checks password hash.
+   - Auto-associates default institution if missing.
+   - If `mfaEnabled` is true, requires TOTP/recovery code: if missing code, returns signed temporary token `{ mfaRequired: true, mfaToken }` for the `/mfa` screen.
+   - Upon successful credentials/MFA, calls `SessionsService.createSession`, sets `refreshToken` cookie, logs `AUTH_LOGIN_SUCCESS`.
+
+3. **Session Issuance & Refresh:**
+   - `createSession(userId, role, meta)` establishes a Redis session hash with 7-day TTL, generates stateless SHA256-signed Bearer access token (15m) and cryptographically random refresh token family in Redis.
+   - `POST /auth/refresh` rotates the refresh token with family reuse detection.
+
+4. **Step-Up Authentication:**
+   - Sensitive endpoints are guarded by `StepUpGuard` verifying `isStepUpValid(sessionId)` in Redis (valid for 600s).
+   - `POST /auth/step-up` currently verifies password or TOTP code. For passwordless social login accounts, step-up must be extended to support email OTP verification.
+
+5. **Existing Google OAuth Endpoint:**
+   - `POST /auth/oauth/google` exists taking `{ idToken }` and using `GoogleOAuthVerifier.verifyGoogleToken(idToken)`.
+   - It only decodes the unverified base64 payload, bypasses MFA (`mfaVerified: true`), creates a dummy password hash, lacks OAuth identity linking, and auto-associates institutions immediately.
+   - This endpoint will be deprecated/refactored to route through the unified `AccountLinkingService` and `OAuthService`.
+
+### What Was Built (Pass 1: Contracts and Server)
+
+1. **Shared Contracts (`packages/contracts`):**
+   - Added `OAuthProviderKeySchema` (`'google' | 'github'`), `OAuthProviderInfoSchema` (including `enabled: boolean`), and `OAuthProvidersResponseSchema`.
+   - Added `ConnectedAccountDtoSchema` (`provider`, `email`, `createdAt`, `avatarUrl?`).
+   - Added `OAuthErrorCodeSchema`: `'oauth_denied' | 'oauth_state_invalid' | 'oauth_email_unverified' | 'oauth_account_conflict' | 'oauth_provider_error' | 'oauth_disabled' | 'account_suspended' | 'link_conflict'`.
+   - Extended `StepUpDtoSchema` to support passwordless accounts with `{ method: 'email_otp', otp: string }`.
+   - Added `OnboardingDtoSchema` (`institutionName?`, `institutionCode?`, `joinCode?`, `displayName?`).
+   - Updated `UserDtoSchema` status enum to include `'pending_onboarding'`.
+   - Added audit event names: `AUTH_OAUTH_SIGNUP`, `AUTH_OAUTH_LOGIN_SUCCESS`, `AUTH_OAUTH_LOGIN_FAILED`, `AUTH_OAUTH_LINKED`, `AUTH_OAUTH_UNLINKED`.
+
+2. **Decoupled Architecture & SOLID Strategies:**
+   - **Adapters:** `HttpClient` interface with `FetchHttpClient` for network abstraction and easy test mocking.
+   - **Provider Strategies:** `OAuthProvider` interface implemented by `GoogleProvider` (PKCE S256 + nonce) and `GithubProvider` (code exchange + userinfo/emails primary verified email resolution), managed by `OAuthProviderRegistry`.
+   - **State Pattern & Binding:** `OAuthStateService` storing state in Redis (`slotly:oauth:state:${state}`, 10m TTL, single-use `del`) coupled with httpOnly `oauth_binding` cookie.
+   - **Redirect Sanitizer:** Pure `RedirectSanitizer` restricting `next` URLs strictly to in-app relative paths.
+   - **Account Linking State Machine:** Pure `AccountLinkingService` evaluating decision table for login and link modes (conflict prevention, pre-hijack takeover of unverified accounts, suspended/deactivated account rejection).
+   - **Shared Session Service:** Extracted `AuthSessionService` handling session creation, device tracking, and unrecognized device alerts.
+   - **OAuth Identity Persistence:** `OAuthIdentity` collection (`oauth_identities`) with compound unique index `{ provider: 1, providerUserId: 1 }` and `{ userId: 1 }`, backed by `OAuthIdentityRepository`.
+
+3. **Endpoints & Security:**
+   - `GET /auth/oauth/providers`: Public list of available/enabled OAuth providers.
+   - `GET /auth/oauth/:provider/start`: Supports `login` mode (public) and `link` mode (requires auth + step-up). Sets `oauth_binding` cookie and redirects to provider.
+   - `GET /auth/oauth/:provider/callback`: Validates single-use state & binding cookie, resolves account linking, sets refresh token cookie, and redirects to destination or `/onboarding`.
+   - `POST /auth/onboarding`: Allows `pending_onboarding` users to create or join an institution.
+   - `POST /auth/step-up/email/send` & `POST /auth/step-up`: 6-digit email OTP step-up for passwordless users.
+   - `GET /users/me/security/connections`: Returns connected OAuth accounts.
+   - `DELETE /users/me/security/connections/:provider`: Unlinks OAuth provider; guarded by `StepUpGuard` and enforces last sign-in method security.
+
+4. **Tooling & Config Validation:**
+   - Mutual configuration validation in `env.config.ts` (fails fast if only ID or secret is provided).
+   - Script `scripts/print-oauth-urls.ts` and `pnpm oauth:urls` printing exact callback URLs.
+   - Updated root `README.md` and `server/.env.example`.
+
+### Decisions Made
+
+- **Decoupled Config from Strategies:** To avoid Jest CommonJS/ESM conflicts with NestJS v12 config packages, strategy configurations are injected as plain objects via factories in `auth.module.ts`.
+- **Pre-hijack Defense:** Unverified local accounts matched by a verified OAuth email have their dummy password removed, active sessions revoked, and account converted to OAuth-verified identity with email notification.
+- **Last Sign-in Method Invariant:** A user cannot disconnect their last OAuth provider unless they have an active password hash set.
+
+### Automated Test Evidence
+
+- **Unit Tests:**
+  - `account-linking.service.spec.ts`: Pure decision matrix coverage (10 scenarios).
+  - `auth-session.service.spec.ts`: Session issuance, device tracking, and security alerts (4 tests).
+  - `google.provider.spec.ts`: PKCE URL generation, token exchange, and ID token payload parsing (4 tests).
+  - `github.provider.spec.ts`: Token exchange and email resolution (4 tests).
+  - `oauth-state.service.spec.ts`: State creation, TTL, and single-use consumption (4 tests).
+  - `redirect-sanitizer.spec.ts`: Relative path validation, evil path rejection (16 tests).
+  - `oauth.service.spec.ts`: Full orchestration of start, callback, onboarding, and connection lifecycles (10 tests).
+- **Integration Test:**
+  - `oauth-flow.spec.ts`: End-to-end integration flow using a real local HTTP server mocking Google & GitHub token and userinfo endpoints (4 tests).
+- **Overall Suite:**
+  - Server: 45 test suites, 243 tests passed, 0 failures.
+  - Typecheck: 0 errors in server, contracts, and client.
+  - Lint: 0 errors in server, contracts, and client.
+
+### Manual Verification Checklist (Pass 1)
+
+- [x] Run `pnpm oauth:urls` and verify callback URL formatting.
+- [x] Run all server tests: `pnpm --filter server test`.
+- [x] Verify strict typing: zero `any` in new code and test suites.
+- [x] Verify zero secrets in code, logs, and git diff.
+- [x] Build contracts: `pnpm --filter @slotly/contracts build`.
+- [x] Build server: `pnpm --filter server build`.
+- [x] Run `pnpm codemap` and verify sync.
+
+---
+
+
+### What Was Built (Pass 2: Client UI, Callback, Onboarding & Security Settings)
+
+1. **OAuth Buttons & Monochrome Visual Tokens:**
+   - Created `OAuthButtons` (`client/src/features/auth/components/oauth-buttons.tsx`):
+     - Renders outline monochrome buttons with accessible `aria-label`s ("Continue with Google", "Continue with GitHub").
+     - Renders native `<a>` links directly to backend `/auth/oauth/:provider/start` endpoint for full-page navigation.
+     - Dynamically checks enabled providers using `authApi.getOAuthProviders()`, renders skeleton while loading, and renders nothing if no providers are enabled.
+     - Reusable across login, registration, and account linking.
+   - Created `GoogleMonochromeIcon` and `GitHubIcon` (`client/src/features/auth/components/oauth-icons.tsx`) strictly adhering to black-and-white theme without brand color fills.
+
+2. **Login & Register Integration with Error Banners:**
+   - Created `getOAuthErrorMessage()` (`client/src/features/auth/utils/oauth-errors.ts`) mapping `OAuthErrorCode` strings to user-friendly plain-language messages.
+   - Integrated `OAuthErrorBanner` in `client/src/app/(auth)/login/page.tsx` and `client/src/app/(auth)/register/page.tsx`:
+     - Reads `?error=` search parameter.
+     - Renders alert banner with error message.
+     - Cleans URL parameter via `window.history.replaceState` without triggering reload or cascading renders.
+   - Embedded `<OAuthButtons mode="login" />` above credentials form with "or continue with" divider.
+
+3. **OAuth Callback Handler (`/auth/callback`):**
+   - Created `client/src/app/(auth)/auth/callback/page.tsx`:
+     - Renders "Signing you in..." skeleton within `AuthLayout`.
+     - Calls `authApi.refresh()` to fetch current session and set in-memory access token from httpOnly cookie.
+     - Checks user status: redirects `pending_onboarding` users to `/onboarding`, redirects MFA challenges to `/mfa`, or redirects to sanitized relative `next` URL (defaults to `/dashboard`).
+     - Error handling redirects cleanly to `/login?error=oauth_state_invalid`.
+
+4. **Single-step Onboarding (`/onboarding`):**
+   - Created `client/src/app/(auth)/onboarding/page.tsx`:
+     - Dedicated onboarding page for users authenticated via OAuth without institution assignment.
+     - Stepper-free UI providing options to create a new institution (name + optional code) or join an existing institution via join code.
+     - Terms of Service agreement checkbox.
+     - Submits `authApi.onboardOAuth(dto)` and redirects directly to `/dashboard`.
+
+5. **Connected Accounts & Security Management (`/users/me/security`):**
+   - Created `ConnectedAccounts` component (`client/src/features/auth/components/connected-accounts.tsx`):
+     - Card in Security settings listing Google and GitHub connection statuses, email addresses, and linked dates.
+     - Connect action initiates `/auth/oauth/:provider/start?mode=link`.
+     - Disconnect action triggers confirmation dialog before calling `DELETE /users/me/security/connections/:provider`.
+     - Security safeguard: Disconnect button is disabled with an explanatory tooltip if OAuth is the user's only sign-in method (`!hasPassword && accounts.length <= 1`).
+   - Integrated `<ConnectedAccounts />` into `client/src/app/users/me/security/page.tsx`.
+
+6. **Email OTP Step-Up Support:**
+   - Updated `StepUpDialog` (`client/src/features/auth/components/step-up-dialog.tsx`) to support `email_otp` verification alongside password and TOTP for passwordless accounts.
+
+7. **Client Tests:**
+   - Added `client/src/features/auth/utils/oauth-errors.spec.ts`: Unit tests verifying error code mappings and fallback messages.
+   - Added `client/src/features/auth/services/auth.api.spec.ts`: Unit tests verifying OAuth start URL formatting for login, link, and next parameters.
+   - Configured `client/package.json` test script to run Node test runner with `tsx`.
+
+### Decisions Made (Pass 2)
+
+- **Pure Query Parameter Reading:** To prevent React Compiler cascading render warnings, `OAuthErrorBanner` computes error message directly from search parameters during render and executes `window.history.replaceState` inside `useEffect` without component re-renders.
+- **Strict Black & White Styling:** Adhered strictly to the 5% accent rule by rendering third-party brand logos in monochrome outlines (`#FAFAFA` on `#111` surface with `#232323` borders) without brand-colored fills.
+- **Account Disconnect Prevention:** Prevented user lockouts by checking whether the account has a password or alternative login method before allowing provider unlinking.
+
+### Automated Test Evidence (Pass 2)
+
+- **Client Tests:** 6/6 tests passed (`authApi.getOAuthStartUrl`, `getOAuthErrorMessage`).
+- **Server Tests:** 45 test suites passed, 243 tests passed, 0 failures.
+- **Typecheck:** 0 errors across `@slotly/contracts`, `server`, and `client`.
+- **Lint:** 0 errors across `@slotly/contracts`, `server`, and `client`.
+- **Build:** Next.js production build succeeded with all static auth and onboarding routes prerendered.
+- **Codemap:** All 339 files mapped, 0 missing purpose headers, `pnpm codemap:check` passed.
+
+### Manual Verification Checklist (Pass 2)
+
+- [x] Run `pnpm test` and verify client and server tests pass.
+- [x] Run `pnpm lint` and verify zero errors/warnings.
+- [x] Run `pnpm typecheck` and verify clean TypeScript output.
+- [x] Run `pnpm build` and verify successful compilation of client and server.
+- [x] Run `pnpm codemap:check` and confirm codemap is in sync.
+- [x] Verify monochrome B&W UI tokens in `OAuthButtons` and `ConnectedAccounts`.
+
+---
+
+
+## Protected Routes & Verified Refresh Flow — Part A: Verify and Harden Refresh Flow
+
+### What Was Built (Part A)
+
+1. **Security & Flow Audit (`docs/AUTH_VERIFICATION.md`):**
+   - Mapped full lifecycle: login, refresh, token rotation, token family tracking, reuse detection, concurrent-refresh grace window, logout, logout-all, session validation, cookie attributes, CORS settings, rate limiting, and client-side handling.
+   - Audited cookie attributes (`HttpOnly`, `SameSite=Lax`, `Path=/auth`, `Secure`, `Max-Age=2592000`).
+   - Audited WebSocket gateways and remediated wildcard CORS (`origin: '*' -> CLIENT_URL`).
+
+2. **Server Hardening (`server`):**
+   - **Concurrent Refresh Grace Window (`RedisSessionsService`):**
+     - Implemented 10-second grace window (`graceTokenHash`, `graceRotatedAt`, `graceAccessToken`, `graceRefreshToken`).
+     - Multi-tab race conditions presenting the just-rotated token within 10 seconds receive identical new credentials without triggering false reuse detection.
+     - Token presentation after 10 seconds revokes the entire token family (`REFRESH_TOKEN_REUSE_DETECTED`) and logs a security warning.
+   - **Refresh Token Format & UUID Parsing (`auth.controller.ts`):**
+     - Standardized refresh token format: `s_${sessionId}_${randomBytes(32).toString('hex')}` across initial login and rotation.
+     - Fixed `sessionId` extraction to support underscored IDs (`ses_...`): `parts.slice(1, -1).join('_')`.
+   - **Cookie Scoping & Rate Limiting (`auth.controller.ts`):**
+     - Restricted cookie scope to `path: '/auth'` for both setting and clearing.
+     - Injected `THROTTLER_SERVICE` and added per-IP throttling (30 requests/min) to `POST /auth/refresh`.
+   - **Gateway CORS Hardening (`blueprint.gateway.ts`, `builds.gateway.ts`):**
+     - Replaced permissive `origin: '*'` with `process.env['CLIENT_URL'] || 'http://localhost:3000'`.
+   - **Server Integration Tests (`server/src/modules/auth/tests/refresh-flow.spec.ts`):**
+     - 10 automated test scenarios covering token rotation, 10 parallel concurrent requests within grace window, reuse detection after grace window revoking family, malformed/expired cookies, session revocation on password change, inactivity/maximum timeouts, MFA challenge restrictions, logout cookie clearing, throttling, and response header security.
+
+3. **Client Hardening (`client`):**
+   - **Single-Flight Refresh & Cross-Tab Coordination (`cross-tab-sync.ts`):**
+     - Wrapped refresh calls in Web Locks API (`navigator.locks.request('slotly_refresh_lock')`) to serialize multi-tab executions.
+     - BroadcastChannel (`slotly_auth_sync`) broadcasts `token_refreshed`, `login`, and `logout` across all open tabs.
+   - **Logout Cleanup Observer Registry (`logout-registry.ts`):**
+     - Observer pattern allowing components and feature stores to register cleanup callbacks.
+     - `auth.store.ts` executes registered handlers on logout or session expiration, resetting caches, sockets, and timers.
+   - **Proactive Token Refresher (`token-refresher.ts`):**
+     - Reads JWT `exp` and schedules refresh 60 seconds before expiration.
+     - Pauses while tab is hidden via `document.hidden`; triggers `checkAndRefreshIfStale()` on tab visibility changes and `window.online`.
+   - **API Client Loop Prevention & Error Resilience (`api-client.ts`):**
+     - Excluded `/auth/login`, `/auth/register`, and `/auth/refresh` from 401 refresh interceptors.
+     - Network errors and 5xx responses during refresh retain the access token and surface retryable errors rather than logging the user out.
+     - Replays original requests with the fresh token and validates replayed status.
+   - **WebSocket Dynamic Auth Handshake (`blueprint-socket.service.ts`):**
+     - Configured Socket.IO dynamic auth callback to supply current in-memory access token.
+     - Retries connection once after proactive refresh on handshake auth errors.
+     - Registered socket disconnection with `registerLogoutCleanup`.
+   - **Client Unit Tests (`api-client.spec.ts` & `token-storage.spec.ts`):**
+     - 5 unit tests verifying single-flight concurrency, loop prevention, 5xx handling, step-up 403 bypass, and definitive 401 cleanup.
+     - Token storage leak test verifying 0 occurrences of token persistence in `localStorage` or `sessionStorage` across client source files.
+
+### Decisions Made (Part A)
+
+- **10-Second Concurrent Grace Window:** Configured a 10,000ms grace period in `RedisSessionsService` allowing concurrent browser requests (such as initial dashboard loads in multiple tabs) to safely receive the new token pair without false-positive token family revocations.
+- **Strict Cookie Scoping:** Cookie path set to `/auth` prevents the browser from sending the `refreshToken` cookie on routine API calls, minimizing exposure.
+- **Web Locks API with BroadcastChannel Fallback:** Used `navigator.locks` when available to guarantee cross-tab mutual exclusion during token rotation, backed by BroadcastChannel to sync token state across tabs.
+
+### Automated Test Evidence (Part A)
+
+- **Server Tests:** 46 test suites passed (253 tests passed, 0 failed, 5 todo) including `refresh-flow.spec.ts` (10/10) and `token-rotation.spec.ts` (2/2).
+- **Client Tests:** 4 test suites passed (12/12 tests passed) including `api-client.spec.ts` (5/5) and `token-storage.spec.ts` (1/1).
+- **Typecheck:** Clean across contracts, server, and client (`tsc --noEmit` exited with code 0).
+- **Lint:** Clean across contracts, server, and client (`eslint` exited with code 0).
+- **Codemap:** All 342 source files mapped, 0 missing purpose headers, `pnpm codemap:check` passed.
+- **Build:** `pnpm build` succeeded across contracts, server, and client (all Next.js routes prerendered/compiled).
+
+### Manual Verification Checklist (Part A)
+
+- [x] Verify `docs/AUTH_VERIFICATION.md` covers architecture, cookie table, and threat model.
+- [x] Run `pnpm test` and verify 10 server refresh scenarios + 5 client refresh scenarios pass.
+- [x] Run `pnpm --filter client test src/lib/token-storage.spec.ts` to confirm no client token storage leaks.
+- [x] Verify cookie attributes in response (`Path=/auth`, `HttpOnly`, `SameSite=Lax`).
+- [x] Verify WebSocket gateways do not allow wildcard CORS with credentials.
+- [x] Verify `pnpm codemap:check` passes without errors.
+

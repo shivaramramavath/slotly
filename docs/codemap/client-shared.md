@@ -188,11 +188,12 @@
 - **Component** `Tooltip({ content, children, className }: import("E:/Shiva Ram/Projects/slotly/client/src/components/ui/tooltip").TooltipProps)` - React component rendering tooltip.
 
 ### `client/src/lib/api-client.ts`
-*Core implementation for api-client in client/src/lib.*
+*Core implementation for api-client with single-flight refresh, cross-tab locks, replay validation, and cleanup.*
 
-- **Function** `setAccessToken(token: string | null)`: `void` - Function performing set access token.
-- **Function** `getAccessToken()`: `string | null` - Function performing get access token.
-- **Function** `apiClient(endpoint: string, options: RequestInit)`: `Promise<T>` - Function performing api client.
+- **Function** `setAccessToken(token: string | null)`: `void` - Sets the active in-memory access token and resets proactive refresh scheduling.
+- **Function** `getAccessToken()`: `string | null` - Returns the active in-memory access token.
+- **Function** `silentRefresh()`: `Promise<string>` - Silently refreshes the access token using the httpOnly cookie.
+- **Function** `apiClient(endpoint: string, options: RequestInit)`: `Promise<T>` - Dispatches HTTP requests with automatic auth headers, single-flight refresh on 401, and safe retry.
 
 ### `client/src/lib/query-provider.tsx`
 *Core implementation for query-provider in client/src/lib.*

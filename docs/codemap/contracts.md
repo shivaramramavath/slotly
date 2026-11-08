@@ -28,6 +28,12 @@
 - **Type** `MfaVerifyDto` - TypeScript type inferred from mfa verify dto Zod schema.
 - **Type** `MfaRecoveryDto` - TypeScript type inferred from mfa recovery dto Zod schema.
 - **Type** `StepUpDto` - TypeScript type inferred from step up dto Zod schema.
+- **Type** `OAuthProviderKey` - TypeScript type inferred from OAuth provider key Zod schema.
+- **Type** `OAuthProviderInfo` - TypeScript type inferred from OAuth provider information Zod schema.
+- **Type** `OAuthProvidersResponse` - TypeScript type inferred from OAuth providers response Zod schema.
+- **Type** `ConnectedAccountDto` - TypeScript type inferred from connected OAuth account Zod schema.
+- **Type** `OAuthErrorCode` - TypeScript type inferred from OAuth error code Zod schema.
+- **Type** `OnboardingDto` - TypeScript type inferred from onboarding dto Zod schema.
 - **Type** `SessionDto` - TypeScript type inferred from session dto Zod schema.
 - **Type** `DeviceDto` - TypeScript type inferred from device dto Zod schema.
 - **Type** `SecurityActivityDto` - TypeScript type inferred from security activity dto Zod schema.
@@ -184,6 +190,13 @@
 - **Zod Schema** `MfaVerifyDtoSchema` -> `MfaVerifyDto` - Zod schema validating mfa verify dto.
 - **Zod Schema** `MfaRecoveryDtoSchema` -> `MfaRecoveryDto` - Zod schema validating mfa recovery dto.
 - **Zod Schema** `StepUpDtoSchema` -> `StepUpDto` - Zod schema validating step up dto.
+- **Zod Schema** `OAuthProviderKeySchema` -> `OAuthProviderKey` - Zod schema validating OAuth provider key.
+- **Zod Schema** `OAuthProviderInfoSchema` -> `OAuthProviderInfo` - Zod schema validating single OAuth provider information for login/link.
+- **Zod Schema** `OAuthProvidersResponseSchema` -> `OAuthProvidersResponse` - Zod schema validating OAuth providers list response.
+- **Zod Schema** `ConnectedAccountDtoSchema` -> `ConnectedAccountDto` - Zod schema validating connected OAuth account item.
+- **Zod Schema** `OAuthErrorCodeSchema` -> `OAuthErrorCode` - Zod schema validating OAuth error code.
+- **Zod Schema** `OnboardingDtoSchema` -> `OnboardingDto` - Zod schema validating onboarding completion dto.
+- **Const** `AuditEventNames`: `{ readonly AUTH_OAUTH_SIGNUP: "AUTH_OAUTH_SIGNU...` - Audit event action names for authentication and OAuth lifecycle.
 - **Zod Schema** `SessionDtoSchema` -> `SessionDto` - Zod schema validating session dto.
 - **Zod Schema** `DeviceDtoSchema` -> `DeviceDto` - Zod schema validating device dto.
 - **Zod Schema** `SecurityActivityDtoSchema` -> `SecurityActivityDto` - Zod schema validating security activity dto.

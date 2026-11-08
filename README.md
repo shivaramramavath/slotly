@@ -84,3 +84,22 @@ pnpm dev:apps
   pnpm codemap
   pnpm codemap:check
   ```
+
+---
+
+## 6. Social Login Configuration (Google & GitHub)
+
+Slotly supports OAuth2 social login with Google (Authorization Code + PKCE + nonce) and GitHub.
+
+### 1. View Callback URLs
+
+Run the helper command to inspect the exact callback URLs to register:
+
+```bash
+pnpm oauth:urls
+```
+
+- **Google Cloud Console** (Authorized redirect URIs):  
+  `http://localhost:4000/auth/oauth/google/callback`
+- **GitHub Developer Settings** (Authorization callback URL):  
+  `http://localhost:4000/auth/oauth/github/callback`

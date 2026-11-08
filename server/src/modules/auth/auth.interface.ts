@@ -61,6 +61,9 @@ export interface AuthService {
     userId: string,
     dto: StepUpDto,
   ): Promise<{ success: boolean; validUntil: string }>;
+  sendStepUpEmailOtp(
+    userId: string,
+  ): Promise<{ success: boolean; resendAvailableAt: string }>;
   googleOAuth(
     idToken: string,
     meta: ClientMeta,

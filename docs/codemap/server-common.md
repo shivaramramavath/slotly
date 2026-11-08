@@ -409,6 +409,8 @@
   - `GET /users/me/security/activity` -> `getActivity()`
   - `GET /users/me/security/devices` -> `getDevices()`
   - `DELETE /users/me/security/devices/:deviceId` -> `removeDevice()`
+  - `GET /users/me/security/connections` -> `getConnections()`
+  - `DELETE /users/me/security/connections/:provider` -> `unlinkConnection()` [guards: StepUpGuard]
 
 ### `server/src/modules/users/users.module.ts`
 *Core implementation for users.module in server/src/modules/users.*

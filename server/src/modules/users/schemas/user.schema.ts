@@ -32,8 +32,8 @@ export class User {
   })
   email!: string;
 
-  @Prop({ required: true })
-  passwordHash!: string;
+  @Prop({ required: false, type: String })
+  passwordHash?: string | undefined;
 
   @Prop({ required: true, trim: true })
   name!: string;
@@ -69,11 +69,11 @@ export class User {
 
   @Prop({
     type: String,
-    enum: ['active', 'suspended', 'deactivated'],
+    enum: ['active', 'suspended', 'deactivated', 'pending_onboarding'],
     default: 'active',
     index: true,
   })
-  status!: 'active' | 'suspended' | 'deactivated';
+  status!: 'active' | 'suspended' | 'deactivated' | 'pending_onboarding';
 
   @Prop({ type: [Object], default: [] })
   devices!: DeviceRecord[];
