@@ -26,6 +26,11 @@ import { BuildsModule } from './modules/builds/builds.module';
 import { SchedulesModule } from './modules/schedules/schedules.module';
 import { VersionsModule } from './modules/versions/versions.module';
 import { PublishingModule } from './modules/publishing/publishing.module';
+import { ViewerModule } from './modules/viewer/viewer.module';
+import { ExportsModule } from './modules/exports/exports.module';
+import { CalendarFeedsModule } from './modules/calendar-feeds/calendar-feeds.module';
+import { SharesModule } from './modules/shares/shares.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 /** Class implementing app module. */
 @Module({
@@ -55,6 +60,11 @@ import { PublishingModule } from './modules/publishing/publishing.module';
     SchedulesModule,
     VersionsModule,
     PublishingModule,
+    ViewerModule,
+    ExportsModule,
+    CalendarFeedsModule,
+    SharesModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [
