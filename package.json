@@ -14,7 +14,8 @@
     "codemap": "tsx scripts/codemap/generate.ts",
     "codemap:check": "tsx scripts/codemap/generate.ts --check",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "env:migrate": "tsx scripts/env-migrate.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

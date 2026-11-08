@@ -1,7 +1,14 @@
 // Domain service orchestrating redis-cache.service business logic.
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  Inject,
+  Optional,
+} from '@nestjs/common';
 import Redis from 'ioredis';
-import { ConfigService } from '@nestjs/config';
+import { redisConfig, cacheConfig } from '../../config';
+import type { RedisConfig, CacheConfig } from '../../config';
 import { CacheService } from './cache.interface';
 import { InMemoryCacheService } from './in-memory-cache.service';
 
@@ -14,20 +21,28 @@ export class RedisCacheService implements CacheService, OnModuleDestroy {
   private readonly fallback = new InMemoryCacheService();
   private readonly inFlightLoads = new Map<string, Promise<unknown>>();
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    @Inject(redisConfig.KEY)
+    private readonly redisConf: RedisConfig,
+    @Optional()
+    @Inject(cacheConfig.KEY)
+    private readonly cacheConf?: CacheConfig,
+  ) {
     this.initRedis();
   }
 
   private initRedis(): void {
-    const host = this.configService.get<string>('REDIS_HOST', 'localhost');
-    const port = this.configService.get<number>('REDIS_PORT', 6379);
-    const password = this.configService.get<string>('REDIS_PASSWORD', '');
+    const host = this.redisConf.host;
+    const port = this.redisConf.port;
+    const password = this.redisConf.password;
 
     try {
       this.client = new Redis({
         host,
         port,
         password: password || undefined,
+        db: this.redisConf.db,
+        tls: this.redisConf.tls ? {} : undefined,
         lazyConnect: true,
         maxRetriesPerRequest: 1,
         enableOfflineQueue: false,
@@ -91,7 +106,10 @@ export class RedisCacheService implements CacheService, OnModuleDestroy {
     }
     try {
       const serialized = JSON.stringify(value);
-      const effectiveTtl = typeof ttlSeconds === 'number' ? ttlSeconds : 3600;
+      const effectiveTtl =
+        typeof ttlSeconds === 'number'
+          ? ttlSeconds
+          : (this.cacheConf?.defaultTtl ?? 3600);
       if (effectiveTtl > 0) {
         await this.client.set(key, serialized, 'EX', effectiveTtl);
       } else {

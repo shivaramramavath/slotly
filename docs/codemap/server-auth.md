@@ -85,7 +85,7 @@
 ### `server/src/modules/auth/guards/auth.guard.ts`
 *Route guard controlling access for auth.guard.*
 
-- **Injectable** `AuthGuard` implements `CanActivate` (deps: Reflector, @Inject(SESSIONS_SERVICE), @Inject(USER_REPOSITORY), @Inject(INSTITUTION_REPOSITORY)) - Injectable service providing auth guard logic.
+- **Injectable** `AuthGuard` implements `CanActivate` (deps: Reflector, @Inject(SESSIONS_SERVICE), @Inject(USER_REPOSITORY), @Inject(INSTITUTION_REPOSITORY), @Inject(jwtConfig.KEY)) - Injectable service providing auth guard logic.
 - **Interface** `RequestUser` - Interface defining structure for request user.
 
 ### `server/src/modules/auth/guards/public.decorator.ts`
@@ -103,7 +103,7 @@
 ### `server/src/modules/auth/services/otp.service.ts`
 *Domain service orchestrating otp.service business logic.*
 
-- **Injectable** `RedisOtpService` implements `OtpService` (deps: @Inject(CACHE_SERVICE)) - Injectable service providing redis otp service logic.
+- **Injectable** `RedisOtpService` implements `OtpService` (deps: @Inject(CACHE_SERVICE), @Inject(authConfig.KEY)) - Injectable service providing redis otp service logic.
 - **Interface** `OtpRecord` - Interface defining structure for otp record.
 - **Interface** `OtpService` - Interface defining structure for otp service.
 - **Const** `OTP_SERVICE`: `typeof import("E:/Shiva Ram/Projects/slotly/ser...` - Constant representing otp service.
@@ -111,7 +111,7 @@
 ### `server/src/modules/auth/services/sessions.service.ts`
 *Domain service orchestrating sessions.service business logic.*
 
-- **Injectable** `RedisSessionsService` implements `SessionsService` (deps: @Inject(CACHE_SERVICE)) - Injectable service providing redis sessions service logic.
+- **Injectable** `RedisSessionsService` implements `SessionsService` (deps: @Inject(CACHE_SERVICE), @Inject(jwtConfig.KEY), @Inject(sessionConfig.KEY)) - Injectable service providing redis sessions service logic.
 - **Interface** `SessionData` - Interface defining structure for session data.
 - **Interface** `RotatedTokens` - Interface defining structure for rotated tokens.
 - **Interface** `SessionsService` - Interface defining structure for sessions service.

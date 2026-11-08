@@ -18,6 +18,8 @@ import { INSTITUTION_REPOSITORY } from '../../institutions/repositories/institut
 import type { InstitutionRepository } from '../../institutions/repositories/institution.repository';
 import { Types } from 'mongoose';
 import type { UserRole } from '@slotly/contracts';
+import { jwtConfig } from '../../../config';
+import type { JwtConfig } from '../../../config';
 
 /** Interface defining structure for request user. */
 export interface RequestUser {
@@ -40,6 +42,9 @@ export class AuthGuard implements CanActivate {
     @Optional()
     @Inject(INSTITUTION_REPOSITORY)
     private readonly institutionRepo?: InstitutionRepository,
+    @Optional()
+    @Inject(jwtConfig.KEY)
+    private readonly jwtConf?: JwtConfig,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -77,7 +82,7 @@ export class AuthGuard implements CanActivate {
     // Verify signature
     const [header, payload, signature] = parts;
     const secret =
-      process.env['JWT_ACCESS_SECRET'] ||
+      this.jwtConf?.access.secret ||
       'slotly-dev-super-secure-access-token-secret-32-chars';
     const expectedSig = createHash('sha256')
       .update(`${header}.${payload}.${secret}`)

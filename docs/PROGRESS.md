@@ -1014,3 +1014,64 @@
 - [x] WebSocket load test (50 concurrent clients, 500 events) executed with 0 dropped events.
 - [x] Full workspace verification passes: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
 - [x] Comprehensive `docs/AUDIT_REPORT.md` generated.
+
+
+---
+
+## Refactor: Namespaced Server Configuration & Strict Validation
+
+### What Was Built
+1. **Core Configuration Namespaces (`server/src/config/`):**
+   - Implemented 11 typed namespaces using NestJS `registerAs`:
+     - `appConfig` (`app`): port, nodeEnv, clientUrl, corsOrigins, apiPrefix, logging.
+     - `databaseConfig` (`database`): MongoDB connection URI from `DATABASE_URL`, serverSelectionTimeoutMS, maxPoolSize.
+     - `redisConfig` (`redis`): host, port, password, db, tls.
+     - `jwtConfig` (`jwt`): access/refresh secrets (min 16 chars) and expiry durations.
+     - `sessionConfig` (`session`): Redis session TTL, max lifetime, httpOnly cookie settings.
+     - `authConfig` (`auth`): Argon2 parameters, OTP config, step-up window, throttles, password policy.
+     - `oauthConfig` (`oauth`): callback base URL, Google & GitHub client ID/secrets with derived `enabled` status.
+     - `emailConfig` (`email`): driver (`log` | `brevo`), Brevo API key, sender email/name, timeout, max retries.
+     - `cacheConfig` (`cache`): default TTL and entity-specific TTLs (blueprint, readiness, tree, slots, user profile).
+     - `queueConfig` (`queue`): BullMQ prefix, retry attempts, backoff delay, queue concurrency policies.
+     - `groqConfig` (`groq`): Groq API key, model, request token limits and temperature.
+   - `DEFAULT_CONFIG` (`defaults.ts`): Centralized, single source of truth for fallback values across all namespaces.
+   - `AppConfigModule` (`config.module.ts`): Global wrapper module with `isGlobal: true`, `cache: true`, `load: [...]`, Joi `validationSchema`, and `validate: (raw) => validateEnv(raw)`. In `NODE_ENV=test`, `ignoreEnvFile: true` ensures `.env` is never read.
+   - Barrel export `server/src/config/index.ts` exporting all configs, schemas, and types.
+
+2. **Strict Validation & Legacy Variable Trap (`env.validation.ts`):**
+   - Joi schema validating all environment variables at bootstrap, with `.required()` for critical secrets and URIs outside `NODE_ENV=test`.
+   - `checkLegacyVariables`: Traps legacy variables (`MONGODB_URI`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `GOOGLE_CALLBACK_URL`, `GITHUB_CALLBACK_URL`, `SMTP_*`) and halts bootstrap with descriptive error messages detailing renamed/removed keys.
+   - Never logs or exposes secret values in error messages or logs; errors report variable names only.
+
+3. **Typed Configuration Injection Across Server:**
+   - Refactored `AppModule`, `main.ts`, `QueueModule`, `CacheModule`, `RedisCacheService`, `EmailModule`, `BrevoEmailSender`, `EmailTemplateRenderer`, `AuthGuard`, `SessionsService`, `OtpService`, `AuthController`, `BlueprintGateway`, and `BuildsGateway` to inject typed namespaces (`@Inject(thatConfig.KEY)`).
+   - Replaced all direct `process.env` access and `ConfigService.get(...)` calls across production code.
+
+4. **Dynamic Email Driver Adapter:**
+   - Created `LogEmailSender` providing mock email delivery with masked OTP codes when `EMAIL_DRIVER=log`.
+   - Updated `EmailModule` to dynamically bind `EMAIL_SENDER` to `BrevoEmailSender` or `LogEmailSender` based on `config.driver`.
+
+5. **Linting & Tooling:**
+   - Configured ESLint rule `no-process-env: 'error'` across server with explicit override allowing `process.env` only in `src/config/**`, `src/main.ts`, `src/database/migrations/ensure-indexes.ts`, and test files.
+   - Created `scripts/env-migrate.ts` and root CLI script `pnpm env:migrate` to safely transform existing `.env` files to `.env.migrated` without printing or leaking secrets.
+   - Updated `server/.env.example` with grouped namespaces, comments, and clean placeholders.
+   - Created `README.md` documenting architecture, prerequisites, environment setup, and migration.
+   - Updated `docs/ARCHITECTURE.md` (Section 9) and `docs/CODEMAP.md`.
+
+6. **Comprehensive Unit & Integration Tests:**
+   - `env.validation.spec.ts`: Tests validation of valid env, default fallbacks, missing required variables, malformed URIs, short secrets, invalid ports, enum violations, legacy variable detection, and zero-leakage error messages.
+   - `config-factories.spec.ts`: Tests typed shape mappings and integer/boolean parsing for all 11 factories.
+   - `email-driver.spec.ts`: Tests dynamic driver resolution for `log` and `brevo`, and OTP masking.
+   - `config-boot.integration.spec.ts`: Tests application bootstrap and DI resolution of all typed configs.
+
+### Decisions Made
+- **CommonJS NestJS Ecosystem Alignment:** Standardized on `@nestjs/config@^4.0.4` for NestJS 11 CommonJS compatibility with ts-jest while fully providing typed `registerAs` and native Joi validation options (`abortEarly: false, allowUnknown: true`).
+- **Secret Redaction by Design:** `validateEnv` error extraction explicitly maps `details` to `context.key || path.join('.')`, preventing Joi from printing rejected secret values in application error traces.
+- **Worker Concurrency in Windows Jest:** Added `--maxWorkers=2` to server test script to prevent memory exhaustion during parallel test execution.
+
+### Manual Verification Checklist
+- [x] Run `pnpm typecheck`: Contracts, client, and server typecheck with zero errors.
+- [x] Run `pnpm lint`: Contracts, client, and server pass lint with zero errors or warnings (ESLint `no-process-env` strictly enforced).
+- [x] Run `pnpm test`: All 41 server Jest test suites (221 tests) + codemap golden test pass.
+- [x] Run `pnpm env:migrate scripts/__fixtures__/legacy.env`: Correctly renames legacy keys and flags deprecated keys without leaking values.
+- [x] Run `pnpm codemap` & `pnpm codemap:check`: Architecture map and symbol indices generated and verified.

@@ -1,5 +1,5 @@
 // Core implementation for brevo-email.sender in server/src/common/email.
-import { Injectable, Logger, Optional } from '@nestjs/common';
+import { Injectable, Logger, Optional, Inject } from '@nestjs/common';
 import type {
   IEmailSender,
   EmailMessage,
@@ -7,6 +7,8 @@ import type {
   EmailRecipient,
 } from './email.interface';
 import { EmailTemplateRenderer } from './email-template.renderer';
+import { emailConfig, DEFAULT_CONFIG } from '../../config';
+import type { EmailConfig } from '../../config';
 
 /** Interface defining structure for brevo config. */
 export interface BrevoConfig {
@@ -27,6 +29,10 @@ export class BrevoEmailSender implements IEmailSender {
   constructor(
     private readonly templateRenderer: EmailTemplateRenderer,
     @Optional()
+    @Inject(emailConfig.KEY)
+    private readonly emailConf?: EmailConfig | BrevoConfig,
+    @Optional()
+    @Inject(BREVO_CONFIG)
     private readonly customConfig?: BrevoConfig,
   ) {}
 
@@ -34,25 +40,47 @@ export class BrevoEmailSender implements IEmailSender {
     apiKey: string;
     fromEmail: string;
     fromName: string;
+    timeout: number;
+    maxRetries: number;
   } {
     const apiKey =
-      this.customConfig?.apiKey ?? process.env['BREVO_API_KEY'] ?? '';
+      this.customConfig?.apiKey ??
+      (this.emailConf && 'apiKey' in this.emailConf
+        ? this.emailConf.apiKey
+        : undefined) ??
+      DEFAULT_CONFIG.email.apiKey;
     const fromEmail =
       this.customConfig?.fromEmail ??
-      process.env['EMAIL_FROM'] ??
-      'noreply@slotly.local';
+      (this.emailConf && 'sender' in this.emailConf
+        ? this.emailConf.sender.email
+        : this.emailConf?.fromEmail) ??
+      DEFAULT_CONFIG.email.sender.email;
     const fromName =
-      this.customConfig?.fromName ?? process.env['EMAIL_FROM_NAME'] ?? 'Slotly';
+      this.customConfig?.fromName ??
+      (this.emailConf && 'sender' in this.emailConf
+        ? this.emailConf.sender.name
+        : this.emailConf?.fromName) ??
+      DEFAULT_CONFIG.email.sender.name;
+    const timeout =
+      (this.emailConf && 'timeout' in this.emailConf
+        ? this.emailConf.timeout
+        : DEFAULT_CONFIG.email.timeout) ?? DEFAULT_CONFIG.email.timeout;
+    const maxRetries =
+      (this.emailConf && 'maxRetries' in this.emailConf
+        ? this.emailConf.maxRetries
+        : undefined) ?? DEFAULT_CONFIG.email.maxRetries;
 
     return {
       apiKey: apiKey.trim(),
       fromEmail: fromEmail.trim(),
       fromName: fromName.trim(),
+      timeout,
+      maxRetries,
     };
   }
 
   async send(message: EmailMessage): Promise<EmailSendResult> {
-    const { apiKey, fromEmail, fromName } = this.getEffectiveConfig();
+    const { apiKey, fromEmail, fromName, timeout } = this.getEffectiveConfig();
 
     const recipients = this.normalizeRecipients(message.to);
     if (recipients.length === 0) {
@@ -89,6 +117,9 @@ export class BrevoEmailSender implements IEmailSender {
         textContent: text,
       };
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout * 1000);
+
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
@@ -97,7 +128,8 @@ export class BrevoEmailSender implements IEmailSender {
           Accept: 'application/json',
         },
         body: JSON.stringify(payload),
-      });
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeoutId));
 
       if (!response.ok) {
         const errorBody = await response.text();

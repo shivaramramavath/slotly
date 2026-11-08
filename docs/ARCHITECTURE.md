@@ -450,3 +450,32 @@ server/
 
 1. **Academic Calendar Recurrence:** Should holiday breaks and odd/even week alternations (bi-weekly labs) be modeled as distinct node types or period-level rules in Phase 8?
 2. **Student Elective Bidding:** Should student elective allocation happen within the timetable solver or as an upstream input to batch creation? (Default decision: Upstream input with section strength split).
+
+
+---
+
+## 9. Configuration Architecture (Namespaced `registerAs` & Strict Validation)
+
+### 9.1 Namespaces & Typed Factories
+All server configuration is strictly namespaced under `server/src/config/` using NestJS `registerAs`. Factories only map and parse `process.env` (integers, booleans, and fallbacks from `DEFAULT_CONFIG` in `defaults.ts`); no business logic.
+
+| Namespace | Injection Key | Environment Variables | Purpose |
+| :--- | :--- | :--- | :--- |
+| `app` | `appConfig.KEY` | `PORT`, `NODE_ENV`, `CLIENT_URL`, `CORS_ORIGINS`, `API_PREFIX`, `LOG_LEVEL` | HTTP/WS server and environment |
+| `database` | `databaseConfig.KEY` | `DATABASE_URL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_POOL_SIZE` | MongoDB connection & connection pooling |
+| `redis` | `redisConfig.KEY` | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DB`, `REDIS_TLS` | Redis client settings |
+| `jwt` | `jwtConfig.KEY` | `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN` | Token secrets and TTL durations |
+| `session` | `sessionConfig.KEY` | `SESSION_TTL`, `SESSION_MAX_LIFETIME`, `SESSION_COOKIE_*` | Session lifetimes and httpOnly cookies |
+| `auth` | `authConfig.KEY` | `ARGON2_*`, `OTP_*`, `STEP_UP_WINDOW`, `THROTTLE_*`, `PASSWORD_*` | Security parameters, hashing, rate limits |
+| `oauth` | `oauthConfig.KEY` | `OAUTH_CALLBACK_BASE_URL`, `GOOGLE_*`, `GITHUB_*` | Social login providers & callbacks |
+| `email` | `emailConfig.KEY` | `EMAIL_DRIVER`, `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` | Email driver (log \| brevo) & Brevo API |
+| `cache` | `cacheConfig.KEY` | `CACHE_DEFAULT_TTL`, `CACHE_*_TTL` | Cache-aside TTL policies |
+| `queue` | `queueConfig.KEY` | `QUEUE_PREFIX`, `QUEUE_ATTEMPTS`, `QUEUE_CONCURRENCY_*` | BullMQ worker & queue concurrency |
+| `groq` | `groqConfig.KEY` | `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_MAX_TOKENS`, `GROQ_TEMPERATURE` | AI assistant LLM settings |
+
+### 9.2 Validation & Legacy Variable Detection
+1. **Unified Joi Schema**: `envValidationSchema` validates all environment variables at bootstrap. Fails fast with a unified message enumerating invalid/missing variable names only (never secret values).
+2. **Legacy Variable Trap**: `checkLegacyVariables` detects historical variable names (`MONGODB_URI`, `JWT_ACCESS_EXPIRATION`, `EMAIL_FROM`, `SMTP_*`, `GOOGLE_CALLBACK_URL`, etc.) and halts bootstrapping with explicit migration guidance.
+3. **Test Isolation**: In `NODE_ENV=test`, `ignoreEnvFile: true` ensures `.env` files are not loaded, providing safe in-memory defaults.
+4. **Typed Injection**: Modules consume configs using `ConfigModule.forFeature(thatConfig)` and `@Inject(thatConfig.KEY) private readonly config: ConfigType<typeof thatConfig>`. Direct `process.env` access outside `src/config/` and `src/main.ts` is strictly prohibited and enforced via ESLint `no-process-env`.
+5. **Migration CLI**: `pnpm env:migrate [path]` safely updates existing `.env` files into `.env.migrated` without logging or leaking secret values.

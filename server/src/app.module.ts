@@ -1,8 +1,7 @@
 // Core implementation for app.module in Projects/slotly/server/src.
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { validateEnv } from './config/env.config';
+import { AppConfigModule, databaseConfig, DatabaseConfig } from './config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CacheModule } from './common/cache/cache.module';
@@ -28,18 +27,14 @@ import { BuildsModule } from './modules/builds/builds.module';
 /** Class implementing app module. */
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      validate: validateEnv,
-    }),
+    AppConfigModule,
     MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (config: ConfigService) => ({
-        uri:
-          config.get<string>('MONGODB_URI') ||
-          'mongodb://localhost:27017/slotly?replicaSet=rs0&directConnection=true',
+      inject: [databaseConfig.KEY],
+      useFactory: (dbConfig: DatabaseConfig) => ({
+        uri: dbConfig.uri,
+        serverSelectionTimeoutMS: dbConfig.options.serverSelectionTimeoutMS,
+        maxPoolSize: dbConfig.options.maxPoolSize,
       }),
-      inject: [ConfigService],
     }),
     CacheModule,
     AppQueueModule,

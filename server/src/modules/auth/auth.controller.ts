@@ -14,6 +14,7 @@ import {
   HttpCode,
   HttpStatus,
   UnauthorizedException,
+  Optional,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import {
@@ -50,6 +51,8 @@ import type { RequestUser } from './guards/auth.guard';
 import { Public } from './guards/public.decorator';
 import { StepUpGuard } from './guards/step-up.guard';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { sessionConfig } from '../../config';
+import type { SessionConfig } from '../../config';
 
 /** Controller handling auth controller HTTP endpoints. */
 @Controller('auth')
@@ -57,6 +60,9 @@ export class AuthController {
   constructor(
     @Inject(AUTH_SERVICE) private readonly authService: AuthService,
     @Inject(SESSIONS_SERVICE) private readonly sessionsService: SessionsService,
+    @Optional()
+    @Inject(sessionConfig.KEY)
+    private readonly sessionConf?: SessionConfig,
   ) {}
 
   private extractMeta(req: Request) {
@@ -73,7 +79,7 @@ export class AuthController {
   private setRefreshCookie(res: Response, token: string) {
     res.cookie('refreshToken', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.sessionConf?.cookie.secure ?? false,
       sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 3600 * 1000, // 7 days
