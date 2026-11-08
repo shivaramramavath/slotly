@@ -36,7 +36,7 @@
   - `audit: *` -> `AuditProcessor.process()`
 
 ### `server/src/common/audit/audit.service.ts`
-*Domain service orchestrating audit.service business logic.*
+*Domain service orchestrating audit logging, querying, and user security events.*
 
 - **Injectable** `AuditService` (deps: ConnectionOptions> | undefined, ObjectId; }> & { __v: number; }> | undefined) - Injectable service providing audit service logic.
 - **Interface** `AuditPayload` - Interface defining structure for audit payload.
@@ -224,7 +224,7 @@
 - **Const** `ROLES_KEY`: `"roles"` - Constant representing roles key.
 - **Component** `Roles(roles: ("SUPER_ADMIN" | "ADMIN" | "DESIGNER" | "FACULTY" | "STUDENT")[])` - React component rendering roles.
 - **Const** `PERMISSIONS_KEY`: `"permissions"` - Constant representing permissions key.
-- **Component** `RequirePermissions(permissions: ("INSTITUTION_READ" | "INSTITUTION_MANAGE" | "DEPARTMENT_READ" | "DEPARTMENT_MANAGE" | "STRUCTURE_READ" | "STRUCTURE_MANAGE" | "FACULTY_READ" | "FACULTY_MANAGE" | "ROOM_READ" | "ROOM_MANAGE" | "SUBJECT_READ" | "SUBJECT_MANAGE" | "PROJECT_CREATE" | "PROJECT_READ" | "PROJECT_MANAGE" | "PROJECT_DELETE" | "PROJECT_ARCHIVE" | "BLUEPRINT_READ" | "BLUEPRINT_EDIT" | "BLUEPRINT_BUILD" | "BLUEPRINT_TEMPLATE_MANAGE" | "TIMETABLE_READ" | "TIMETABLE_EDIT" | "TIMETABLE_APPROVE" | "TIMETABLE_PUBLISH" | "TIMETABLE_EXPORT" | "USER_MANAGE" | "AUDIT_READ" | "TIMETABLE_SHARE" | "ANNOUNCEMENT_CREATE")[])` - React component rendering require permissions.
+- **Component** `RequirePermissions(permissions: ("INSTITUTION_READ" | "INSTITUTION_MANAGE" | "DEPARTMENT_READ" | "DEPARTMENT_MANAGE" | "STRUCTURE_READ" | "STRUCTURE_MANAGE" | "FACULTY_READ" | "FACULTY_MANAGE" | "ROOM_READ" | "ROOM_MANAGE" | "SUBJECT_READ" | "SUBJECT_MANAGE" | "PROJECT_CREATE" | "PROJECT_READ" | "PROJECT_MANAGE" | "PROJECT_DELETE" | "PROJECT_ARCHIVE" | "BLUEPRINT_READ" | "BLUEPRINT_EDIT" | "BLUEPRINT_BUILD" | "BLUEPRINT_TEMPLATE_MANAGE" | "TIMETABLE_READ" | "TIMETABLE_EDIT" | "TIMETABLE_APPROVE" | "TIMETABLE_PUBLISH" | "TIMETABLE_EXPORT" | "USER_MANAGE" | "AUDIT_READ" | "TIMETABLE_SHARE" | "ANNOUNCEMENT_CREATE" | "ANALYTICS_READ" | "FEEDBACK_SUBMIT" | "FEEDBACK_MANAGE" | "SYSTEM_MONITOR")[])` - React component rendering require permissions.
 
 ### `server/src/common/rbac/roles.guard.ts`
 *Route guard controlling access for roles.guard.*
@@ -395,6 +395,7 @@
 *Database repository managing user.repository persistence.*
 
 - **Injectable** `MongoUserRepository` implements `UserRepository` (deps: ObjectId; }> & { __v: number; }>) - Injectable service providing mongo user repository logic.
+- **Interface** `UserQueryOptions` - Query filter options for administrative user searches.
 - **Interface** `UserRepository` extends `BaseRepository<User>` - Interface defining structure for user repository.
 - **Const** `USER_REPOSITORY`: `typeof import("E:/Shiva Ram/Projects/slotly/ser...` - Constant representing user repository.
 
