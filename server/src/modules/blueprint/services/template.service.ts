@@ -404,7 +404,10 @@ export class TemplateService implements OnModuleInit {
       throw new Error(`Project ${projectId} not found`);
     }
 
-    const currentGraph = await this.blueprintRepo.findByProject(projectId);
+    let currentGraph = await this.blueprintRepo.findByProject(projectId);
+    if (!currentGraph) {
+      currentGraph = await this.blueprintRepo.resetGraph(projectId);
+    }
     const existingNodes = currentGraph?.nodes || [];
     const existingEdges = currentGraph?.edges || [];
 

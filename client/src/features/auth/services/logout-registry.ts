@@ -17,6 +17,9 @@ export function registerLogoutCleanup(
 
 /** Executes all registered cleanup callbacks (stores, cache, sockets, timers). */
 export async function executeLogoutCleanup(): Promise<void> {
+  if (typeof document !== 'undefined') {
+    document.cookie = 'slotly_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+  }
   const handlers = Array.from(cleanupHandlers.entries());
   for (const [id, fn] of handlers) {
     try {

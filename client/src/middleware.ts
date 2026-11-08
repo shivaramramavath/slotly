@@ -23,7 +23,10 @@ const AUTH_PREFIXES = [
 /** Middleware function validating authentication cookies and redirecting unauthorized visitors. */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const refreshTokenCookie = request.cookies.get('slotly_rt')?.value;
+  const sessionCookie =
+    request.cookies.get('slotly_session')?.value ||
+    request.cookies.get('slotly_rt')?.value ||
+    request.cookies.get('refreshToken')?.value;
 
   const isProtected = PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
@@ -34,7 +37,7 @@ export function middleware(request: NextRequest) {
   );
 
   // If requesting a protected route without an auth cookie, redirect immediately to login
-  if (isProtected && !refreshTokenCookie) {
+  if (isProtected && !sessionCookie) {
     const loginUrl = new URL('/login', request.url);
     if (pathname && pathname !== '/') {
       loginUrl.searchParams.set('next', pathname);
@@ -43,7 +46,7 @@ export function middleware(request: NextRequest) {
   }
 
   // If already authenticated and navigating to login or register, redirect to dashboard
-  if (isAuthPage && refreshTokenCookie) {
+  if (isAuthPage && sessionCookie) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

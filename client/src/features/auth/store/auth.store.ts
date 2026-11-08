@@ -37,6 +37,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setAuth: (user, token) => {
     setAccessToken(token);
+    if (typeof document !== 'undefined') {
+      document.cookie = 'slotly_session=1; path=/; max-age=604800; SameSite=Lax';
+    }
     set({
       user,
       accessToken: token,
@@ -48,11 +51,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setUser: (user) => {
+    if (typeof document !== 'undefined' && user) {
+      document.cookie = 'slotly_session=1; path=/; max-age=604800; SameSite=Lax';
+    }
     set({ user });
   },
 
   clearAuth: () => {
     setAccessToken(null);
+    if (typeof document !== 'undefined') {
+      document.cookie = 'slotly_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+    }
     void executeLogoutCleanup();
     set({
       user: null,

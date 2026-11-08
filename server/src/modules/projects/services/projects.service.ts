@@ -126,6 +126,7 @@ export class ProjectsService {
           institution: tree.institution,
           departments: tree.departments,
         });
+        await this.blueprintRepo.resetGraph(projectId);
         await this.blueprintRepo.saveGraph(projectId, { nodes, edges }, 1);
       } catch {
         // Fallback to empty graph with institution node
@@ -151,6 +152,7 @@ export class ProjectsService {
     name: string,
   ): Promise<void> {
     const instNodeId = `node_inst_${institutionId}`;
+    await this.blueprintRepo.resetGraph(projectId);
     await this.blueprintRepo.saveGraph(
       projectId,
       {

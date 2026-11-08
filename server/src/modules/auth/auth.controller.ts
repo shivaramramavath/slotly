@@ -96,10 +96,18 @@ export class AuthController {
       path: '/auth',
       maxAge: 7 * 24 * 3600 * 1000, // 7 days
     });
+    res.cookie('slotly_session', '1', {
+      httpOnly: false,
+      secure: this.sessionConf?.cookie.secure ?? false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 3600 * 1000, // 7 days
+    });
   }
 
   private clearRefreshCookie(res: Response) {
     res.clearCookie('refreshToken', { path: '/auth' });
+    res.clearCookie('slotly_session', { path: '/' });
   }
 
   @Public()

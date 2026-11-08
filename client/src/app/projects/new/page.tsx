@@ -3,7 +3,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/components/ui/toast';
 import {
   Building2,
   Layout,
@@ -66,10 +67,17 @@ export default function NewProjectWizardPage() {
     queryFn: () => blueprintApi.listTemplates(),
   });
 
+  const queryClient = useQueryClient();
   const createMutation = useMutation({
     mutationFn: (dto: CreateProjectDto) => projectsApi.createProject(dto),
     onSuccess: (project) => {
-      router.push(`/projects/${project.id}/settings`);
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Project created', `"${project.name}" has been created successfully.`);
+      router.push(`/projects/${project.id}/blueprint`);
+    },
+    onError: (err: { message?: string } | unknown) => {
+      const msg = typeof err === 'object' && err && 'message' in err ? String((err as { message?: string }).message) : 'Failed to create project';
+      toast.error('Creation failed', msg);
     },
   });
 
@@ -503,8 +511,17 @@ export default function NewProjectWizardPage() {
                 onClick={handleFinish}
                 className="gap-1.5 font-mono text-xs"
               >
-                <Check className="w-3.5 h-3.5" />
-                <span>Create Project</span>
+                {createMutation.isPending ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Create Project</span>
+                  </>
+                )}
               </Button>
             </CardFooter>
           </Card>

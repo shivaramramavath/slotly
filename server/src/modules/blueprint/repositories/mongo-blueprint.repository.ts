@@ -40,10 +40,41 @@ export class MongoBlueprintRepository
     if (graph.nodes) $set['nodes'] = graph.nodes;
     if (graph.edges) $set['edges'] = graph.edges;
 
-    return this.model
+    const updated = await this.model
       .findOneAndUpdate(query, updateDoc, { new: true, upsert: false })
       .lean<Blueprint>()
       .exec();
+
+    if (
+      !updated &&
+      (expectedRevision === 1 || expectedRevision === undefined)
+    ) {
+      const existing = await this.model.findOne({ projectId }).lean().exec();
+      if (!existing) {
+        return this.model
+          .findOneAndUpdate(
+            { projectId },
+            {
+              $setOnInsert: {
+                projectId,
+                viewport: { x: 0, y: 0, zoom: 1 },
+                createdAt: new Date(),
+              },
+              $set: {
+                nodes: graph.nodes || [],
+                edges: graph.edges || [],
+                revision: 2,
+                updatedAt: new Date(),
+              },
+            },
+            { new: true, upsert: true },
+          )
+          .lean<Blueprint>()
+          .exec();
+      }
+    }
+
+    return updated;
   }
 
   async updateNode(
