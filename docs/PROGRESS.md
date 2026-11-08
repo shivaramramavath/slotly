@@ -887,3 +887,90 @@
 - [x] Run `pnpm codemap:check`: All maps and symbol references verified cleanly.
 - [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Turbopack production build pass.
 
+
+---
+
+## Phase 9: Generation & Timetable Engine
+
+### What Was Built
+1. **Pure TypeScript Engine & Constraint Solver (`server/src/modules/engine/core`):**
+   - Implemented hardest-first backtracking timetable solver across all sections, shared faculty, and rooms simultaneously.
+   - Built swap-based soft constraint optimizer and `AlternativesGenerator` producing diverse candidate schedules using seeded RNG and different objective profiles (workload-balanced, preference-first, room-efficient).
+   - Enforced 18 hard constraints (e.g. `FacultyNoDoubleBooking`, `RoomNoDoubleBooking`, `SectionNoDoubleBooking`, `RoomCapacityFitsSection`, `RoomTypeMatchesSubject`, `LabConsecutiveBlock`, `ElectiveSimultaneity`) and 6 soft constraints.
+   - Implemented `PreBuildChecker` validating graph completeness, lab capacities, allocations, and max faculty workloads before generation.
+
+2. **Builds Module & Facade (`server/src/modules/builds`):**
+   - `BuildFacade`: Consistency barrier awaiting pending write-behind operations before build starts, blueprint gate checks, graph-to-input mapping, and `ScheduleVersion` persistence with scores, conflicts, and statistics.
+   - Enqueued on BullMQ `builds` queue with per-project Redis mutual exclusion locks (`slotly:build:lock:{projectId}`).
+   - Progress and lifecycle updates emitted across WebSocket namespace `/builds` (`build:progress`, `build:completed`, `build:failed`).
+
+3. **HTTP & WebSocket Endpoints:**
+   - `POST /projects/:projectId/builds`: Enqueues fresh, regenerate, or repair timetable generation.
+   - `GET /projects/:projectId/builds`: Lists generated schedule versions.
+   - `GET /projects/:projectId/builds/:versionId`: Fetches full schedule version with slots, stats, and conflicts.
+   - `POST /projects/:projectId/builds/cancel`: Gracefully aborts running solver jobs.
+
+### Decisions Made
+- **Pure Framework-Agnostic Core:** Constraint solver logic is kept pure TypeScript without NestJS or Mongoose dependencies, allowing fast deterministic unit testing.
+- **Deduplication of Generated Alternatives:** Alternatives generator calculates schedule signatures based on slot placements to ensure distinct, ranked options.
+
+### Manual Verification Checklist
+- [x] Run `pnpm test`: Engine solver, constraints, alternatives generator, pre-build checker, and build facade tests pass (172 tests total).
+- [x] Socket gateway broadcasts progress events and handles disconnects cleanly.
+- [x] Pre-build validation halts solver with structured error reports if requirements are unsatisfied.
+
+---
+
+## Phase 09 Stabilized: Integration Audit Fixes (AUD-001 through AUD-009)
+
+### What Was Built
+1. **AUD-001 (S1) - Background Queue, Pending Writes & Redis Resilience:**
+   - Switched `WriteBehindService` pending counter from scalar to idempotent `Set<string>` in memory and Redis sets (`pending_jobs:{projectId}`).
+   - Created `AuditProcessor` to consume BullMQ `audit` queue and persist logs to MongoDB.
+   - Enforced 3600s TTL bounding on un-expiring cache entries in `RedisCacheService` and `InMemoryCacheService`.
+
+2. **AUD-002 (S1) - RBAC Route & Socket Permissions Enforcement:**
+   - Added `PermissionsGuard` and `@RequirePermissions` across security routes in `UsersSecurityController`.
+   - Added JWT handshake verification to `BuildsGateway` socket connections.
+   - Expanded `rbac.spec.ts` with complete matrix testing across all five user roles.
+
+3. **AUD-003 (S1) - Dynamic Availability Matrices:**
+   - Added canonical `normalizeAvailabilityMatrix(matrix?, daysCount, periodsCount)` in `@slotly/contracts`.
+   - Updated `LibraryService` and `NodeTypeRegistry` to normalize availability matrices on read and write.
+   - Updated client `AvailabilityGrid`, `FacultyDialog`, and `RoomDialog` to dynamically adapt to institution/project dimensions.
+
+4. **AUD-004 (S1) - MongoDB Indexes & Unique Constraints Migration:**
+   - Added compound unique indexes with `isDeleted: 1` on `departments`, `programs`, `academic_years`, `semesters`, `sections`, `faculties`, `rooms`, `subjects`.
+   - Added `{ ownerId: 1 }` index to `projects`.
+   - Created idempotent database migration `server/src/database/migrations/ensure-indexes.ts` supporting `--dry-run`.
+
+5. **AUD-005 (S2) - Reason Codes Canonicalization:**
+   - Canonicalized 17 reason codes in `ReasonCodeSchema`, added alias dictionary `REASON_CODE_ALIASES`, `normalizeReasonCode`, and human-friendly `REASON_CODE_MESSAGES`.
+   - Updated client `toast.fromErrorCode` to display canonical explanations for all reason codes.
+
+6. **AUD-006 (S2) - Contract Drift Across Workspaces:**
+   - Reconciled value vs type imports across server library services and migration tests.
+   - Aligned exact optional property types for mock DB interfaces.
+
+7. **AUD-007 (S2) - Institution State Management in Client:**
+   - Replaced manual `useState`/`useEffect` in `InstitutionsPage` with TanStack Query's `useInstitutionStructure`.
+   - Created `useInstitutionMutations` for automatic cache invalidation.
+   - Pruned `useInstitutionStore` in Zustand to manage only client UI selection and tab state.
+
+8. **AUD-008 (S3) - Blueprint API Service Location:**
+   - Relocated `blueprint.api.ts` into `client/src/features/blueprint/services/blueprint.api.ts`.
+   - Provided a backward-compatibility re-export at `client/src/features/projects/services/blueprint.api.ts`.
+
+9. **AUD-009 (S3) - Documentation & Codemap Alignment:**
+   - Aligned `docs/ROUTES.md`, `docs/AUDIT_REPORT.md`, `docs/PROGRESS.md`, and refreshed `docs/CODEMAP.md`.
+
+### Decisions Made
+- **Availability Matrix Normalization Strategy:** Rather than destructive DB wipes, matrices are dynamically normalized during ingestion and retrieval, padding smaller matrices with `true` and truncating oversized ones.
+- **Idempotent Pending Job Set:** Set-based tracking eliminates counter leakage when BullMQ rapidly coalesces writes with identical job IDs.
+
+### Manual Verification Checklist
+- [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Turbopack production build pass.
+- [x] Run `pnpm lint`: Contracts, server, and client lint with zero errors or warnings.
+- [x] Run `pnpm typecheck`: Contracts, server, and client all typecheck with zero errors.
+- [x] Run `pnpm test`: All 36 Jest test suites (178 tests) + codemap golden test pass.
+- [x] Run `pnpm codemap:check`: All maps and symbol references verified cleanly.
