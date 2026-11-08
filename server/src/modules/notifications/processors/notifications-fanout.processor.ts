@@ -35,7 +35,10 @@ export class NotificationsFanoutProcessor implements OnModuleInit {
 
         // Invalidate viewer cache tag for this project
         try {
-          await this.cache.invalidateTag(`project:${payload.projectId}:viewer`);
+          await Promise.all([
+            this.cache.invalidateTag(`project:${payload.projectId}:viewer`),
+            this.cache.invalidateTag(`project:${payload.projectId}:analytics`),
+          ]);
         } catch (err) {
           this.logger.warn(
             `Failed to invalidate viewer cache for project ${payload.projectId}: ${err}`,

@@ -36,6 +36,7 @@ import { WriteBehindService, WRITE_BEHIND_QUEUE } from './write-behind.service';
       { name: 'audit' },
       { name: 'notifications' },
       { name: 'exports' },
+      { name: 'analytics' },
     ),
   ],
   providers: [WriteBehindService],
