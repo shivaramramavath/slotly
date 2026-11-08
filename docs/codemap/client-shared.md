@@ -42,14 +42,20 @@
 - **Component** `Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)` - React component rendering card.
 - **Component** `CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)` - React component rendering card header.
 - **Component** `CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>)` - React component rendering card title.
-- **Component** `CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>)` - React component rendering card description.
+- **Component** `CardDescription({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement>)` - React component rendering card description.
 - **Component** `CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)` - React component rendering card content.
 - **Component** `CardFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)` - React component rendering card footer.
 
 ### `client/src/components/ui/checkbox.tsx`
 *React component for checkbox.*
 
-- **Interface** `CheckboxProps` extends `Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>` - Interface defining structure for checkbox props.
+- **Interface** `CheckboxProps` extends `Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'onChange'
+>` - Interface defining structure for checkbox props.
 - **Const** `Checkbox`: `React.ForwardRefExoticComponent<import("E:/Shiv...` - Constant representing checkbox.
 
 ### `client/src/components/ui/combobox.tsx`
@@ -149,7 +155,10 @@
 *React component for table.*
 
 - **Component** `Table({ className, ...props }: React.HTMLAttributes<HTMLTableElement>)` - React component rendering table.
-- **Component** `TableHeader({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>)` - React component rendering table header.
+- **Component** `TableHeader({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLTableSectionElement>)` - React component rendering table header.
 - **Component** `TableBody({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>)` - React component rendering table body.
 - **Component** `TableRow({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>)` - React component rendering table row.
 - **Component** `TableHead({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>)` - React component rendering table head.

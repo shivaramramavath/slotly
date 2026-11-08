@@ -226,7 +226,7 @@
 *Core implementation for env.config in server/src/config.*
 
 - **Type** `EnvConfig` - TypeScript type inferred from env config Zod schema.
-- **Function** `validateEnv(config: Record<string, unknown>)`: `{ PORT: number; NODE_ENV: "development" | "production" | "test"; CLIENT_URL: string; MONGODB_URI: string; REDIS_HOST: string; REDIS_PORT: number; REDIS_PASSWORD: string; JWT_ACCESS_SECRET: string; JWT_REFRESH_SECRET: string; JWT_ACCESS_EXPIRATION: string; JWT_REFRESH_EXPIRATION: string; GROQ_API_KEY: string; BREVO_API_KEY: string; EMAIL_FROM: string; EMAIL_FROM_NAME: string; SMTP_HOST: string; SMTP_PORT: number; SMTP_USER: string; SMTP_PASS: string; }` - Function performing validate env.
+- **Function** `validateEnv(config: Record<string, unknown>)`: `{ PORT: number; NODE_ENV: "development" | "production" | "test"; CLIENT_URL: string; MONGODB_URI: string; REDIS_HOST: string; REDIS_PORT: number; REDIS_PASSWORD: string; JWT_ACCESS_SECRET: string; JWT_REFRESH_SECRET: string; JWT_ACCESS_EXPIRATION: string; JWT_REFRESH_EXPIRATION: string; GROQ_API_KEY: string; BREVO_API_KEY: string; EMAIL_FROM: string; EMAIL_FROM_NAME: string; SMTP_HOST: string; SMTP_PORT: number; SMTP_USER: string; SMTP_PASS: string; OAUTH_CALLBACK_BASE_URL: string; GOOGLE_CLIENT_ID: string; GOOGLE_CLIENT_SECRET: string; GITHUB_CLIENT_ID: string; GITHUB_CLIENT_SECRET: string; }` - Function performing validate env.
 - **Zod Schema** `EnvSchema` -> `Env` - Zod schema validating env.
 
 ### `server/src/main.ts`
@@ -323,6 +323,8 @@
   - `GET /users/me/security/activity` -> `getActivity()`
   - `GET /users/me/security/devices` -> `getDevices()`
   - `DELETE /users/me/security/devices/:deviceId` -> `removeDevice()`
+  - `GET /users/me/security/connections` -> `getConnections()`
+  - `DELETE /users/me/security/connections/:provider` -> `unlinkConnection()` [guards: StepUpGuard]
 
 ### `server/src/modules/users/users.module.ts`
 *Core implementation for users.module in server/src/modules/users.*

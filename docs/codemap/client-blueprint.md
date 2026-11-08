@@ -138,11 +138,7 @@
 ### `client/src/features/blueprint/components/validation/conflict-card.tsx`
 *React component for conflict-card.*
 
-- **Component** `ConflictCard({
-  violation,
-  onApplySuggestion,
-  className = '',
-}: ConflictCardProps)` - React component rendering conflict card.
+- **Component** `ConflictCard({ violation, onApplySuggestion, className = '' }: ConflictCardProps)` - React component rendering conflict card.
 
 ### `client/src/features/blueprint/hooks/use-blueprint-commands.ts`
 *Custom React hook for use-blueprint-commands.*
