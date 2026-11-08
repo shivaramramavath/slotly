@@ -23,7 +23,9 @@ export interface MoveValidationContext {
 /** Interface defining structure for move validator. */
 export interface IMoveValidator {
   setNext(validator: IMoveValidator): IMoveValidator;
-  validate(context: MoveValidationContext): Promise<MoveValidationResultDto | null>;
+  validate(
+    context: MoveValidationContext,
+  ): Promise<MoveValidationResultDto | null>;
 }
 
 /** Abstract base class implementing chain-of-responsibility validator. */
@@ -35,7 +37,9 @@ export abstract class BaseMoveValidator implements IMoveValidator {
     return validator;
   }
 
-  validate(context: MoveValidationContext): Promise<MoveValidationResultDto | null> {
+  validate(
+    context: MoveValidationContext,
+  ): Promise<MoveValidationResultDto | null> {
     const error = this.check(context);
     if (error) {
       return Promise.resolve(error);
@@ -46,5 +50,7 @@ export abstract class BaseMoveValidator implements IMoveValidator {
     return Promise.resolve({ valid: true, suggestions: [] });
   }
 
-  protected abstract check(context: MoveValidationContext): MoveValidationResultDto | null;
+  protected abstract check(
+    context: MoveValidationContext,
+  ): MoveValidationResultDto | null;
 }

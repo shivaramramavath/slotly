@@ -1,5 +1,5 @@
 // Database repository managing schedule-entry.repository persistence.
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ClientSession } from 'mongoose';
 import { MongoBaseRepository } from '../../../common/database/mongo-base.repository';
@@ -7,6 +7,10 @@ import {
   ScheduleEntry,
   ScheduleEntryDocument,
 } from '../schemas/schedule-entry.schema';
+import {
+  ScheduleVersion,
+  ScheduleVersionDocument,
+} from '../../builds/schemas/schedule-version.schema';
 
 /** Interface defining query filter for schedule entries. */
 export interface ScheduleEntryFilter {
@@ -39,8 +43,25 @@ export class ScheduleEntryRepository
   constructor(
     @InjectModel(ScheduleEntry.name)
     model: Model<ScheduleEntryDocument>,
+    @Optional()
+    @InjectModel(ScheduleVersion.name)
+    private readonly versionModel?: Model<ScheduleVersionDocument>,
   ) {
     super(model);
+  }
+
+  private async assertVersionEditable(versionId?: string): Promise<void> {
+    if (!versionId || !this.versionModel) return;
+    const version = await this.versionModel.findById(versionId).lean().exec();
+    if (
+      version &&
+      (version.status === 'published' || version.status === 'archived')
+    ) {
+      throw new ConflictException({
+        message: 'Published or archived schedule versions are immutable.',
+        code: 'VERSION_IMMUTABLE',
+      });
+    }
   }
 
   async findByVersion(versionId: string): Promise<ScheduleEntry[]> {
@@ -63,6 +84,10 @@ export class ScheduleEntryRepository
     entries: Array<Partial<ScheduleEntry>>,
     session?: ClientSession,
   ): Promise<ScheduleEntry[]> {
+    if (entries.length > 0 && entries[0]?.versionId) {
+      await this.assertVersionEditable(entries[0].versionId);
+    }
+
     const created = session
       ? await this.model.insertMany(entries as ScheduleEntryDocument[], {
           session,
@@ -83,6 +108,7 @@ export class ScheduleEntryRepository
     entry: Partial<ScheduleEntry>,
     session?: ClientSession,
   ): Promise<ScheduleEntry> {
+    await this.assertVersionEditable(entry.versionId);
     if (session) {
       const created = await this.model.create(
         [entry as ScheduleEntryDocument],
@@ -102,6 +128,9 @@ export class ScheduleEntryRepository
     update: Partial<ScheduleEntry>,
     session?: ClientSession,
   ): Promise<ScheduleEntry | null> {
+    if (update.versionId) {
+      await this.assertVersionEditable(update.versionId);
+    }
     const options = session
       ? { new: true as const, session }
       : { new: true as const };
@@ -116,6 +145,10 @@ export class ScheduleEntryRepository
   }
 
   override async delete(id: string, session?: ClientSession): Promise<boolean> {
+    const existing = await this.model.findById(id).lean<ScheduleEntry>().exec();
+    if (existing) {
+      await this.assertVersionEditable(existing.versionId);
+    }
     const options = session ? { session } : undefined;
     const res = await this.model.findByIdAndDelete(id, options).exec();
     return res !== null;
@@ -125,6 +158,7 @@ export class ScheduleEntryRepository
     versionId: string,
     session?: ClientSession,
   ): Promise<number> {
+    await this.assertVersionEditable(versionId);
     const options = session ? { session } : undefined;
     const res = await this.model.deleteMany({ versionId }, options).exec();
     return res.deletedCount || 0;

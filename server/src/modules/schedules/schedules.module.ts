@@ -13,6 +13,10 @@ import {
   ScheduleOperation,
   ScheduleOperationSchema,
 } from './schemas/schedule-operation.schema';
+import {
+  ScheduleVersion,
+  ScheduleVersionSchema,
+} from '../builds/schemas/schedule-version.schema';
 import { ScheduleEntryRepository } from './repositories/schedule-entry.repository';
 import { ScheduleOccupancyRepository } from './repositories/schedule-occupancy.repository';
 import { ScheduleOperationRepository } from './repositories/schedule-operation.repository';
@@ -49,6 +53,7 @@ import { AuditModule } from '../../common/audit/audit.module';
       { name: ScheduleEntry.name, schema: ScheduleEntrySchema },
       { name: ScheduleOccupancy.name, schema: ScheduleOccupancySchema },
       { name: ScheduleOperation.name, schema: ScheduleOperationSchema },
+      { name: ScheduleVersion.name, schema: ScheduleVersionSchema },
     ]),
     DatabaseModule,
     CacheModule,

@@ -1,4 +1,5 @@
 // Database repository managing schedule-version.repository.interface persistence.
+import type { ClientSession } from 'mongoose';
 import type { ScheduleVersionDto } from '@slotly/contracts';
 
 /** Constant representing schedule version repository. */
@@ -16,6 +17,7 @@ export interface IScheduleVersionRepository {
   update(
     id: string,
     data: Partial<ScheduleVersionDto>,
+    session?: ClientSession,
   ): Promise<ScheduleVersionDto | null>;
   delete(id: string): Promise<boolean>;
 }

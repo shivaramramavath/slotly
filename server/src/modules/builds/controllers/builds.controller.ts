@@ -1,10 +1,9 @@
-// HTTP controller handling builds.controller endpoints.
+// HTTP controller handling timetable builds execution, polling, and cancellation.
 import {
   Body,
   Controller,
   Delete,
   Get,
-  NotFoundException,
   Param,
   Post,
   Request,
@@ -41,6 +40,18 @@ export class BuildsController {
   }
 
   /**
+   * Returns generated schedule versions for a project.
+   * GET /projects/:projectId/builds
+   */
+  @Get('projects/:projectId/builds')
+  @RequirePermissions('PROJECT_READ')
+  async getProjectBuilds(
+    @Param('projectId') projectId: string,
+  ): Promise<ScheduleVersionDto[]> {
+    return this.buildsService.getVersions(projectId);
+  }
+
+  /**
    * Checks current build running status.
    * GET /projects/:projectId/builds/current
    */
@@ -66,33 +77,5 @@ export class BuildsController {
   async cancelBuildDelete(@Param('projectId') projectId: string) {
     const cancelled = await this.buildsService.cancelBuild(projectId);
     return { success: cancelled };
-  }
-
-  /**
-   * Returns all schedule versions for a project.
-   * GET /projects/:projectId/versions
-   */
-  @Get('projects/:projectId/versions')
-  @RequirePermissions('PROJECT_READ')
-  async getProjectVersions(
-    @Param('projectId') projectId: string,
-  ): Promise<ScheduleVersionDto[]> {
-    return this.buildsService.getVersions(projectId);
-  }
-
-  /**
-   * Returns a specific schedule version.
-   * GET /versions/:versionId
-   */
-  @Get('versions/:versionId')
-  @RequirePermissions('PROJECT_READ')
-  async getVersion(
-    @Param('versionId') versionId: string,
-  ): Promise<ScheduleVersionDto> {
-    const version = await this.buildsService.getVersion(versionId);
-    if (!version) {
-      throw new NotFoundException(`ScheduleVersion "${versionId}" not found`);
-    }
-    return version;
   }
 }

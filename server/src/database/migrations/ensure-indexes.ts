@@ -118,6 +118,24 @@ export function getIndexDefinitions(): IndexDefinition[] {
       fields: { versionId: 1, seq: 1 },
       options: { unique: true },
     },
+    // Publish Requests
+    {
+      collection: 'publish_requests',
+      fields: { projectId: 1, status: 1 },
+    },
+    {
+      collection: 'publish_requests',
+      fields: { versionId: 1 },
+    },
+    // Timetable Ratings
+    {
+      collection: 'timetable_ratings',
+      fields: { versionId: 1 },
+    },
+    {
+      collection: 'timetable_ratings',
+      fields: { projectId: 1 },
+    },
     // Faculties
     {
       collection: 'faculties',

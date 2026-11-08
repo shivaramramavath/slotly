@@ -6,15 +6,14 @@
 - **Class** `BuildsModule` - Class implementing builds module.
 
 ### `server/src/modules/builds/controllers/builds.controller.ts`
-*HTTP controller handling builds.controller endpoints.*
+*HTTP controller handling timetable builds execution, polling, and cancellation.*
 
 - **Controller** `BuildsController` (base: `/`) - Controller handling builds controller HTTP endpoints.
   - `POST /projects/:projectId/builds` -> `createBuild()` [perm: 'PROJECT_MANAGE']
+  - `GET /projects/:projectId/builds` -> `getProjectBuilds()` [perm: 'PROJECT_READ']
   - `GET /projects/:projectId/builds/current` -> `getCurrentBuild()` [perm: 'PROJECT_READ']
   - `POST /projects/:projectId/builds/cancel` -> `cancelBuildPost()` [perm: 'PROJECT_MANAGE']
   - `DELETE /projects/:projectId/builds/current` -> `cancelBuildDelete()` [perm: 'PROJECT_MANAGE']
-  - `GET /projects/:projectId/versions` -> `getProjectVersions()` [perm: 'PROJECT_READ']
-  - `GET /versions/:versionId` -> `getVersion()` [perm: 'PROJECT_READ']
 
 ### `server/src/modules/builds/gateways/builds.gateway.ts`
 *WebSocket gateway managing real-time events for builds.gateway.*
