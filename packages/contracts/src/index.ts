@@ -1916,7 +1916,16 @@ export const ScheduleVersionKindSchema = z.enum(['auto', 'regenerate', 'manual']
 export type ScheduleVersionKind = z.infer<typeof ScheduleVersionKindSchema>;
 
 /** Zod schema validating schedule version status. */
-export const ScheduleVersionStatusSchema = z.enum(['draft', 'ready', 'published', 'archived']);
+export const ScheduleVersionStatusSchema = z.enum([
+  'draft',
+  'editing',
+  'ready',
+  'validated',
+  'pending_approval',
+  'approved',
+  'published',
+  'archived',
+]);
 /** TypeScript type inferred from schedule version status Zod schema. */
 export type ScheduleVersionStatus = z.infer<typeof ScheduleVersionStatusSchema>;
 
@@ -2200,3 +2209,148 @@ export const ScheduleSocketEvents = {
   REVISION_CONFLICT: 'revision:conflict',
   PRESENCE_CHANGED: 'presence:changed',
 } as const;
+
+// ==========================================
+// Phase 11: Versions, Comparison & Publishing
+// ==========================================
+
+/** Zod schema validating publish request status. */
+export const PublishRequestStatusSchema = z.enum(['pending', 'approved', 'rejected']);
+/** TypeScript type inferred from publish request status Zod schema. */
+export type PublishRequestStatus = z.infer<typeof PublishRequestStatusSchema>;
+
+/** Zod schema validating publish request DTO. */
+export const PublishRequestDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  versionId: z.string(),
+  requestedBy: z.string(),
+  status: PublishRequestStatusSchema,
+  reviewer: z.string().optional(),
+  comment: z.string().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+/** TypeScript type inferred from publish request DTO Zod schema. */
+export type PublishRequestDto = z.infer<typeof PublishRequestDtoSchema>;
+
+/** Zod schema validating request publish DTO. */
+export const RequestPublishDtoSchema = z.object({
+  comment: z.string().max(1000).optional(),
+});
+/** TypeScript type inferred from request publish DTO Zod schema. */
+export type RequestPublishDto = z.infer<typeof RequestPublishDtoSchema>;
+
+/** Zod schema validating review publish DTO. */
+export const ReviewPublishDtoSchema = z.object({
+  approved: z.boolean(),
+  comment: z.string().min(1, 'Review comment is required when reviewing publication').max(1000),
+});
+/** TypeScript type inferred from review publish DTO Zod schema. */
+export type ReviewPublishDto = z.infer<typeof ReviewPublishDtoSchema>;
+
+/** Zod schema validating update version label DTO. */
+export const UpdateVersionLabelDtoSchema = z.object({
+  label: z.string().min(1, 'Label cannot be empty').max(100),
+});
+/** TypeScript type inferred from update version label DTO Zod schema. */
+export type UpdateVersionLabelDto = z.infer<typeof UpdateVersionLabelDtoSchema>;
+
+/** Zod schema validating duplicate version DTO. */
+export const DuplicateVersionDtoSchema = z.object({
+  label: z.string().min(1).max(100).optional(),
+});
+/** TypeScript type inferred from duplicate version DTO Zod schema. */
+export type DuplicateVersionDto = z.infer<typeof DuplicateVersionDtoSchema>;
+
+/** Zod schema validating slot change detail. */
+export const SlotChangeDetailSchema = z.object({
+  field: z.enum(['subject', 'faculty', 'room', 'time', 'span', 'type']),
+  from: z.any(),
+  to: z.any(),
+});
+/** TypeScript type inferred from slot change detail Zod schema. */
+export type SlotChangeDetail = z.infer<typeof SlotChangeDetailSchema>;
+
+/** Zod schema validating slot diff item. */
+export const SlotDiffItemSchema = z.object({
+  slotId: z.string().optional(),
+  sectionId: z.string(),
+  subjectId: z.string().optional(),
+  facultyId: z.string().optional(),
+  roomId: z.string().optional(),
+  day: z.number().int(),
+  startPeriod: z.number().int(),
+  span: z.number().int().optional(),
+  type: z.string().optional(),
+  changes: z.array(SlotChangeDetailSchema).optional(),
+});
+/** TypeScript type inferred from slot diff item Zod schema. */
+export type SlotDiffItem = z.infer<typeof SlotDiffItemSchema>;
+
+/** Zod schema validating faculty workload delta. */
+export const FacultyWorkloadDeltaSchema = z.object({
+  facultyId: z.string(),
+  facultyName: z.string().optional(),
+  fromPeriods: z.number().int(),
+  toPeriods: z.number().int(),
+  delta: z.number().int(),
+});
+/** TypeScript type inferred from faculty workload delta Zod schema. */
+export type FacultyWorkloadDelta = z.infer<typeof FacultyWorkloadDeltaSchema>;
+
+/** Zod schema validating conflict delta. */
+export const ConflictDeltaSchema = z.object({
+  fromCount: z.number().int(),
+  toCount: z.number().int(),
+  delta: z.number().int(),
+});
+/** TypeScript type inferred from conflict delta Zod schema. */
+export type ConflictDelta = z.infer<typeof ConflictDeltaSchema>;
+
+/** Zod schema validating score delta. */
+export const ScoreDeltaSchema = z.object({
+  fromScore: z.number(),
+  toScore: z.number(),
+  delta: z.number(),
+});
+/** TypeScript type inferred from score delta Zod schema. */
+export type ScoreDelta = z.infer<typeof ScoreDeltaSchema>;
+
+/** Zod schema validating version comparison diff DTO. */
+export const VersionDiffDtoSchema = z.object({
+  leftVersionId: z.string(),
+  rightVersionId: z.string(),
+  added: z.array(SlotDiffItemSchema),
+  removed: z.array(SlotDiffItemSchema),
+  changed: z.array(SlotDiffItemSchema),
+  workloadDeltas: z.array(FacultyWorkloadDeltaSchema),
+  conflictDelta: ConflictDeltaSchema,
+  scoreDelta: ScoreDeltaSchema,
+  summaries: z.array(z.string()),
+});
+/** TypeScript type inferred from version comparison diff DTO Zod schema. */
+export type VersionDiffDto = z.infer<typeof VersionDiffDtoSchema>;
+
+/** Zod schema validating timetable rating DTO. */
+export const TimetableRatingDtoSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().max(500).optional(),
+  categories: z.record(z.number()).optional(),
+});
+/** TypeScript type inferred from timetable rating DTO Zod schema. */
+export type TimetableRatingDto = z.infer<typeof TimetableRatingDtoSchema>;
+
+/** Zod schema validating timetable rating response DTO. */
+export const TimetableRatingResponseDtoSchema = z.object({
+  id: z.string(),
+  versionId: z.string(),
+  projectId: z.string(),
+  userId: z.string(),
+  rating: z.number().int(),
+  comment: z.string().optional(),
+  categories: z.record(z.number()).optional(),
+  createdAt: z.string(),
+});
+/** TypeScript type inferred from timetable rating response DTO Zod schema. */
+export type TimetableRatingResponseDto = z.infer<typeof TimetableRatingResponseDtoSchema>;

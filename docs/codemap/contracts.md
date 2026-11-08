@@ -179,6 +179,20 @@
 - **Type** `UpdatePeriodsDto` - TypeScript type inferred from update periods dto Zod schema.
 - **Type** `PeriodsChangeResultDto` - TypeScript type inferred from periods change result dto Zod schema.
 - **Type** `MoveValidationResultDto` - TypeScript type inferred from move validation result dto Zod schema.
+- **Type** `PublishRequestStatus` - TypeScript type inferred from publish request status Zod schema.
+- **Type** `PublishRequestDto` - TypeScript type inferred from publish request DTO Zod schema.
+- **Type** `RequestPublishDto` - TypeScript type inferred from request publish DTO Zod schema.
+- **Type** `ReviewPublishDto` - TypeScript type inferred from review publish DTO Zod schema.
+- **Type** `UpdateVersionLabelDto` - TypeScript type inferred from update version label DTO Zod schema.
+- **Type** `DuplicateVersionDto` - TypeScript type inferred from duplicate version DTO Zod schema.
+- **Type** `SlotChangeDetail` - TypeScript type inferred from slot change detail Zod schema.
+- **Type** `SlotDiffItem` - TypeScript type inferred from slot diff item Zod schema.
+- **Type** `FacultyWorkloadDelta` - TypeScript type inferred from faculty workload delta Zod schema.
+- **Type** `ConflictDelta` - TypeScript type inferred from conflict delta Zod schema.
+- **Type** `ScoreDelta` - TypeScript type inferred from score delta Zod schema.
+- **Type** `VersionDiffDto` - TypeScript type inferred from version comparison diff DTO Zod schema.
+- **Type** `TimetableRatingDto` - TypeScript type inferred from timetable rating DTO Zod schema.
+- **Type** `TimetableRatingResponseDto` - TypeScript type inferred from timetable rating response DTO Zod schema.
 - **Function** `normalizeReasonCode(code: string)`: `"REVISION_CONFLICT" | "PARENT_MISSING" | "PARENT_INCOMPLETE" | "PARENT_TYPE_NOT_ALLOWED" | "DUPLICATE_NAME" | "CAPACITY_EXCEEDED" | "CYCLE" | "ENDPOINT_INCOMPLETE" | "NOT_QUALIFIED" | "PROJECT_LOCKED" | "PERMISSION_DENIED" | "SINGLE_PARENT_VIOLATION" | "INVALID_OPERATION" | "INSUFFICIENT_LAB_CAPACITY" | "MISSING_ALLOCATION" | "FACULTY_OVERLOAD" | "INVALID_GRAPH"` - Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation.
 - **Function** `normalizeAvailabilityMatrix(matrix: boolean[][] | null | undefined, daysCount: number, periodsCount: number)`: `boolean[][]` - Function normalizing availability matrix dimensions according to days and periods per day.
 - **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse` - Zod schema validating api error response.
@@ -355,4 +369,18 @@
 - **Zod Schema** `PeriodsChangeResultDtoSchema` -> `PeriodsChangeResultDto` - Zod schema validating periods change result dto.
 - **Zod Schema** `MoveValidationResultDtoSchema` -> `MoveValidationResultDto` - Zod schema validating move validation result dto.
 - **Const** `ScheduleSocketEvents`: `{ readonly JOIN_SCHEDULE: "schedule:join"; read...` - Constant socket events for schedule namespace.
+- **Zod Schema** `PublishRequestStatusSchema` -> `PublishRequestStatus` - Zod schema validating publish request status.
+- **Zod Schema** `PublishRequestDtoSchema` -> `PublishRequestDto` - Zod schema validating publish request DTO.
+- **Zod Schema** `RequestPublishDtoSchema` -> `RequestPublishDto` - Zod schema validating request publish DTO.
+- **Zod Schema** `ReviewPublishDtoSchema` -> `ReviewPublishDto` - Zod schema validating review publish DTO.
+- **Zod Schema** `UpdateVersionLabelDtoSchema` -> `UpdateVersionLabelDto` - Zod schema validating update version label DTO.
+- **Zod Schema** `DuplicateVersionDtoSchema` -> `DuplicateVersionDto` - Zod schema validating duplicate version DTO.
+- **Zod Schema** `SlotChangeDetailSchema` -> `SlotChangeDetail` - Zod schema validating slot change detail.
+- **Zod Schema** `SlotDiffItemSchema` -> `SlotDiffItem` - Zod schema validating slot diff item.
+- **Zod Schema** `FacultyWorkloadDeltaSchema` -> `FacultyWorkloadDelta` - Zod schema validating faculty workload delta.
+- **Zod Schema** `ConflictDeltaSchema` -> `ConflictDelta` - Zod schema validating conflict delta.
+- **Zod Schema** `ScoreDeltaSchema` -> `ScoreDelta` - Zod schema validating score delta.
+- **Zod Schema** `VersionDiffDtoSchema` -> `VersionDiffDto` - Zod schema validating version comparison diff DTO.
+- **Zod Schema** `TimetableRatingDtoSchema` -> `TimetableRatingDto` - Zod schema validating timetable rating DTO.
+- **Zod Schema** `TimetableRatingResponseDtoSchema` -> `TimetableRatingResponseDto` - Zod schema validating timetable rating response DTO.
 
