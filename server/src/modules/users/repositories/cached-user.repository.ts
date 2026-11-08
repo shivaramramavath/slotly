@@ -4,7 +4,7 @@ import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import { CachedRepository } from '../../../common/database/cached.repository';
 import type { User } from '../schemas/user.schema';
-import type { UserRepository } from './user.repository';
+import type { UserRepository, UserQueryOptions } from './user.repository';
 
 /** Injectable service providing cached user repository logic. */
 @Injectable()
@@ -31,6 +31,14 @@ export class CachedUserRepository
 
   async countByInstitution(institutionId?: string): Promise<number> {
     return this.userRepo.countByInstitution(institutionId);
+  }
+
+  async findWithFilter(options: UserQueryOptions): Promise<User[]> {
+    return this.userRepo.findWithFilter(options);
+  }
+
+  async countWithFilter(options: UserQueryOptions): Promise<number> {
+    return this.userRepo.countWithFilter(options);
   }
 
   override async update(
