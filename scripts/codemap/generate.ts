@@ -66,9 +66,11 @@ const GROUPS: GroupConfig[] = [
   },
   {
     id: 'server-engine',
-    title: 'Server Engine Module',
+    title: 'Engine Module & Library',
     filename: 'server-engine.md',
-    filter: (p) => p.startsWith('server/src/modules/engine/'),
+    filter: (p) =>
+      p.startsWith('server/src/modules/engine/') ||
+      p.startsWith('packages/engine/src/'),
   },
   {
     id: 'server-institutions',
@@ -481,6 +483,7 @@ export async function generateCodeMaps(isCheckMode: boolean = false): Promise<vo
 
   const globs = [
     'packages/contracts/src/**/*.ts',
+    'packages/engine/src/**/*.ts',
     'server/src/**/*.ts',
     'client/src/**/*.ts',
     'client/src/**/*.tsx',

@@ -6,7 +6,7 @@ import type {
   EngineRoom,
   EngineSection,
   Slot,
-} from '../types';
+} from '@slotly/engine';
 import type {
   SolverOptions,
   SolverResult,
@@ -15,7 +15,7 @@ import type {
 } from './types';
 import { SeededRng } from './rng';
 import { TaskBuilder } from './task-builder';
-import { ValidationService } from '../validation.service';
+import { ValidationService } from '@slotly/engine';
 import type { ScheduleVersionStats } from '@slotly/contracts';
 
 interface CandidatePlacement {
@@ -255,7 +255,7 @@ export class TimetableSolver {
         task.requirements?.equipment &&
         task.requirements.equipment.length > 0
       ) {
-        const hasAll = task.requirements.equipment.every((eq) =>
+        const hasAll = task.requirements.equipment.every((eq: string) =>
           r.equipment?.includes(eq),
         );
         if (!hasAll) return false;

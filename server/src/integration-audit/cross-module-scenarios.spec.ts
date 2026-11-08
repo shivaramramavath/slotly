@@ -1,8 +1,8 @@
 // Integration audit tests verifying cross-module scenarios 1 through 15 across auth, institution, library, blueprint, engine, builds, and RBAC.
 import { normalizeAvailabilityMatrix } from '@slotly/contracts';
-import { FacultyAvailabilityConstraint } from '../modules/engine/core/constraints/hard/faculty-availability.constraint';
-import { ScheduleState } from '../modules/engine/core/schedule-state';
-import type { EngineInput, Slot } from '../modules/engine/core/types';
+import { FacultyAvailabilityConstraint, ScheduleState } from '@slotly/engine';
+
+import type { EngineInput, Slot } from '@slotly/engine';
 import { getIndexDefinitions } from '../database/migrations/ensure-indexes';
 import { ReasonCodeSchema } from '@slotly/contracts';
 

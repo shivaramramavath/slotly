@@ -1,5 +1,5 @@
 // Core implementation for types in server/src/modules/engine/core/solver.
-import type { EngineSubject, Slot, SlotType, Violation } from '../types';
+import type { EngineSubject, Slot, SlotType, Violation } from '@slotly/engine';
 import type {
   BuildProfile,
   ScheduleVersionKind,

@@ -1,5 +1,5 @@
 // Core implementation for task-builder in server/src/modules/engine/core/solver.
-import type { EngineInput, EngineSection } from '../types';
+import type { EngineInput, EngineSection } from '@slotly/engine';
 import type { SolveTask, ElectiveTaskBundle } from './types';
 
 /** Class implementing task builder. */

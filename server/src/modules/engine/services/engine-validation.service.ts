@@ -15,7 +15,7 @@ import type {
   HardConstraintsConfig,
   SoftConstraintsConfig,
 } from '@slotly/contracts';
-import { ValidationService } from '../core/validation.service';
+import { ValidationService } from '@slotly/engine';
 import type {
   EngineInput,
   EngineSection,
@@ -26,7 +26,7 @@ import type {
   EngineElectiveGroup,
   EngineSettings,
   Slot,
-} from '../core/types';
+} from '@slotly/engine';
 import type { ValidationReportDto } from '@slotly/contracts';
 
 interface ProjectLike {

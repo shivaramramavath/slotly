@@ -32,6 +32,7 @@
     "@nestjs/platform-socket.io": "^11.2.8",
     "@nestjs/websockets": "^11.2.8",
     "@slotly/contracts": "workspace:*",
+    "@slotly/engine": "workspace:*",
     "argon2": "^0.45.2",
     "bullmq": "^6.7.0",
     "cookie-parser": "^1.4.7",

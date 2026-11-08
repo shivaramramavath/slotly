@@ -13,7 +13,7 @@ import { BlueprintService } from '../../blueprint/services/blueprint.service';
 import { ReadinessService } from '../../blueprint/services/readiness.service';
 import { ProjectsService } from '../../projects/services/projects.service';
 import { EngineValidationService } from '../../engine/services/engine-validation.service';
-import { PreBuildChecker } from '../../engine/core/pre-build.checker';
+import { PreBuildChecker } from '@slotly/engine';
 import { generateAlternatives } from '../../engine/core/solver/alternatives-generator';
 import { SCHEDULE_VERSION_REPOSITORY } from '../repositories/schedule-version.repository.interface';
 import type { IScheduleVersionRepository } from '../repositories/schedule-version.repository.interface';

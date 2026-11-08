@@ -9,7 +9,7 @@ import type { IScheduleVersionRepository } from '../repositories/schedule-versio
 import type { EventBus } from '../../../common/events/event-bus.service';
 import type { AuditService } from '../../../common/audit/audit.service';
 import type { BlueprintNodeDto, ScheduleVersionDto } from '@slotly/contracts';
-import type { EngineInput } from '../../engine/core/types';
+import type { EngineInput } from '@slotly/engine';
 
 describe('BuildFacade', () => {
   let facade: BuildFacade;

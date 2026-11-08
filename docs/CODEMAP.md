@@ -59,9 +59,9 @@
 | Batch topological graph mutations | `OperationService` | `server/src/modules/blueprint/services/operation.service.ts` |
 | Downstream deletion ripple impact | `ImpactAnalyzerService` | `server/src/modules/blueprint/services/impact-analyzer.service.ts` |
 | Hierarchical constraint inheritance | `ConstraintResolverService` | `server/src/modules/blueprint/services/constraint-resolver.service.ts` |
-| Timetable schedule validation | `ValidationService` | `server/src/modules/engine/core/validation.service.ts` |
-| Constraint registry for engine | `ConstraintRegistry` | `server/src/modules/engine/core/constraint.registry.ts` |
-| Conflict resolution suggestion rules | `SuggestionStrategy` | `server/src/modules/engine/core/suggestion.strategy.ts` |
+| Timetable schedule validation | `ValidationService` | `packages/engine/src/validation.service.ts` |
+| Constraint registry for engine | `ConstraintRegistry` | `packages/engine/src/constraint.registry.ts` |
+| Conflict resolution suggestion rules | `SuggestionStrategy` | `packages/engine/src/suggestion.strategy.ts` |
 | Timetable solver build orchestration | `BuildFacade` | `server/src/modules/builds/services/build.facade.ts` |
 | Typed client HTTP API client | `apiClient` | `client/src/lib/api-client.ts` |
 | Toast feedback notifications | `toast` | `client/src/components/ui/toast.tsx` |
@@ -82,7 +82,7 @@
 | Node Types | `server/src/modules/blueprint/model/node-type.registry.ts` | `NodeTypeDefinition` | `server/src/modules/blueprint/tests/completion-rules.spec.ts` |
 | Node Completion Rules | `server/src/modules/blueprint/model/rules/blueprint-completion.rules.ts` | `CompletionRuleStrategy` | `server/src/modules/blueprint/tests/completion-rules.spec.ts` |
 | Blueprint Creation Gates | `server/src/modules/blueprint/gates/blueprint-gates.ts` | `IGate` | `server/src/modules/blueprint/tests/gates.spec.ts` |
-| Scheduling Constraints | `server/src/modules/engine/core/constraints/` | `IConstraint` | `server/src/modules/engine/tests/constraints-hard.spec.ts` |
+| Scheduling Constraints | `packages/engine/src/constraints/` | `IConstraint` | `server/src/modules/engine/tests/constraints-hard.spec.ts` |
 | Blueprint Recommenders | `server/src/modules/blueprint/services/recommendations.service.ts` | `IRecommenderStrategy` | `server/src/modules/blueprint/tests/gates.spec.ts` |
 | File Parsers | `server/src/modules/library/strategies/file-parser.strategy.ts` | `IFileParser` | `server/src/modules/library/tests/file-parser.spec.ts` |
 | Room Matchers | `server/src/modules/library/strategies/room-matcher.strategy.ts` | `IRoomMatcher` | `server/src/modules/library/tests/room-matcher.spec.ts` |
@@ -114,7 +114,7 @@
 | [server-auth.md](docs/codemap/server-auth.md) | Server Auth Module | 127 lines |
 | [server-blueprint.md](docs/codemap/server-blueprint.md) | Server Blueprint Module | 233 lines |
 | [server-builds.md](docs/codemap/server-builds.md) | Server Builds Module | 63 lines |
-| [server-engine.md](docs/codemap/server-engine.md) | Server Engine Module | 251 lines |
+| [server-engine.md](docs/codemap/server-engine.md) | Engine Module & Library | 256 lines |
 | [server-institutions.md](docs/codemap/server-institutions.md) | Server Institutions Module | 163 lines |
 | [server-library.md](docs/codemap/server-library.md) | Server Library Module | 140 lines |
 | [client-app.md](docs/codemap/client-app.md) | Client App Routes | 188 lines |

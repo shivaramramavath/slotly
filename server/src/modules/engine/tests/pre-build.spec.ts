@@ -1,5 +1,6 @@
-import { PreBuildChecker } from '../core/pre-build.checker';
-import type { EngineInput } from '../core/types';
+// Unit tests validating PreBuildChecker rules in @slotly/engine.
+import { PreBuildChecker } from '@slotly/engine';
+import type { EngineInput } from '@slotly/engine';
 
 describe('PreBuildChecker', () => {
   const checker = new PreBuildChecker();
