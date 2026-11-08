@@ -92,7 +92,7 @@ describe('MongoDB Schema Indexes & Migration (AUD-004)', () => {
 
     const createdCalls: Array<{
       fields: Record<string, 1 | -1>;
-      options?: Record<string, unknown>;
+      options?: Record<string, unknown> | undefined;
     }> = [];
 
     const mockDb: MongoDatabaseLike = {

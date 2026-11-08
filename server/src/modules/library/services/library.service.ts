@@ -21,8 +21,8 @@ import type {
   FacultyWorkloadDto,
   ImportEntity,
   ImportValidationReport,
-  normalizeAvailabilityMatrix,
 } from '@slotly/contracts';
+import { normalizeAvailabilityMatrix } from '@slotly/contracts';
 import { EventBus } from '../../../common/events/event-bus.service';
 import { AuditService } from '../../../common/audit/audit.service';
 import { FACULTY_REPOSITORY } from '../repositories/faculty.repository';
