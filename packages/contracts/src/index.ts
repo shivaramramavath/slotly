@@ -95,6 +95,8 @@ export const PermissionSchema = z.enum([
   // Admin & Audit
   'USER_MANAGE',
   'AUDIT_READ',
+  'TIMETABLE_SHARE',
+  'ANNOUNCEMENT_CREATE',
 ]);
 /** TypeScript type inferred from permission Zod schema. */
 export type Permission = z.infer<typeof PermissionSchema>;
@@ -103,6 +105,8 @@ export type Permission = z.infer<typeof PermissionSchema>;
 export const RolePermissions: Record<UserRole, Permission[]> = {
   SUPER_ADMIN: Object.values(PermissionSchema.enum),
   ADMIN: [
+    'TIMETABLE_SHARE',
+    'ANNOUNCEMENT_CREATE',
     'INSTITUTION_READ',
     'INSTITUTION_MANAGE',
     'DEPARTMENT_READ',
@@ -133,6 +137,7 @@ export const RolePermissions: Record<UserRole, Permission[]> = {
     'AUDIT_READ',
   ],
   DESIGNER: [
+    'TIMETABLE_SHARE',
     'INSTITUTION_READ',
     'DEPARTMENT_READ',
     'STRUCTURE_READ',
@@ -2476,7 +2481,7 @@ export type CurrentPeriodStatus = z.infer<typeof CurrentPeriodStatusSchema>;
 /** Zod schema validating viewer timetable query DTO. */
 export const ViewerTimetableQueryDtoSchema = z.object({
   type: ViewerEntityTypeSchema,
-  targetId: z.string(),
+  targetId: z.string().optional(),
   day: z.coerce.number().int().min(0).max(6).optional(),
 });
 /** TypeScript type inferred from viewer timetable query DTO Zod schema. */

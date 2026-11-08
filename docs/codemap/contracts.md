@@ -199,6 +199,26 @@
 - **Type** `VersionDiffDto` - TypeScript type inferred from version comparison diff DTO Zod schema.
 - **Type** `TimetableRatingDto` - TypeScript type inferred from timetable rating DTO Zod schema.
 - **Type** `TimetableRatingResponseDto` - TypeScript type inferred from timetable rating response DTO Zod schema.
+- **Type** `ViewerEntityType` - TypeScript type inferred from viewer entity type Zod schema.
+- **Type** `CurrentPeriodStatusType` - TypeScript type inferred from current period status type Zod schema.
+- **Type** `CurrentPeriodStatus` - TypeScript type inferred from current period status Zod schema.
+- **Type** `ViewerTimetableQueryDto` - TypeScript type inferred from viewer timetable query DTO Zod schema.
+- **Type** `ViewerTimetableDto` - TypeScript type inferred from viewer timetable DTO Zod schema.
+- **Type** `ExportFormat` - TypeScript type inferred from export format Zod schema.
+- **Type** `CreateExportDto` - TypeScript type inferred from create export DTO Zod schema.
+- **Type** `ExportJobStatus` - TypeScript type inferred from export job status Zod schema.
+- **Type** `ExportJobDto` - TypeScript type inferred from export job DTO Zod schema.
+- **Type** `CreateCalendarFeedDto` - TypeScript type inferred from create calendar feed DTO Zod schema.
+- **Type** `CalendarFeedDto` - TypeScript type inferred from calendar feed DTO Zod schema.
+- **Type** `ShareScope` - TypeScript type inferred from share scope Zod schema.
+- **Type** `CreateShareDto` - TypeScript type inferred from create share link DTO Zod schema.
+- **Type** `ShareDto` - TypeScript type inferred from share DTO Zod schema.
+- **Type** `PublicShareViewDto` - TypeScript type inferred from public share view DTO Zod schema.
+- **Type** `NotificationChannel` - TypeScript type inferred from notification channel Zod schema.
+- **Type** `NotificationType` - TypeScript type inferred from notification type Zod schema.
+- **Type** `NotificationDto` - TypeScript type inferred from notification DTO Zod schema.
+- **Type** `NotificationPreferencesDto` - TypeScript type inferred from notification preferences DTO Zod schema.
+- **Type** `CreateAnnouncementDto` - TypeScript type inferred from create announcement DTO Zod schema.
 - **Function** `normalizeReasonCode(code: string)`: `"REVISION_CONFLICT" | "PARENT_MISSING" | "PARENT_INCOMPLETE" | "PARENT_TYPE_NOT_ALLOWED" | "DUPLICATE_NAME" | "CAPACITY_EXCEEDED" | "CYCLE" | "ENDPOINT_INCOMPLETE" | "NOT_QUALIFIED" | "PROJECT_LOCKED" | "PERMISSION_DENIED" | "SINGLE_PARENT_VIOLATION" | "INVALID_OPERATION" | "INSUFFICIENT_LAB_CAPACITY" | "MISSING_ALLOCATION" | "FACULTY_OVERLOAD" | "INVALID_GRAPH"` - Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation.
 - **Function** `normalizeAvailabilityMatrix(matrix: boolean[][] | null | undefined, daysCount: number, periodsCount: number)`: `boolean[][]` - Function normalizing availability matrix dimensions according to days and periods per day.
 - **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse` - Zod schema validating api error response.
@@ -396,4 +416,25 @@
 - **Zod Schema** `VersionDiffDtoSchema` -> `VersionDiffDto` - Zod schema validating version comparison diff DTO.
 - **Zod Schema** `TimetableRatingDtoSchema` -> `TimetableRatingDto` - Zod schema validating timetable rating DTO.
 - **Zod Schema** `TimetableRatingResponseDtoSchema` -> `TimetableRatingResponseDto` - Zod schema validating timetable rating response DTO.
+- **Zod Schema** `ViewerEntityTypeSchema` -> `ViewerEntityType` - Zod schema validating viewer entity type.
+- **Zod Schema** `CurrentPeriodStatusTypeSchema` -> `CurrentPeriodStatusType` - Zod schema validating current period status type.
+- **Zod Schema** `CurrentPeriodStatusSchema` -> `CurrentPeriodStatus` - Zod schema validating current period status.
+- **Zod Schema** `ViewerTimetableQueryDtoSchema` -> `ViewerTimetableQueryDto` - Zod schema validating viewer timetable query DTO.
+- **Zod Schema** `ViewerTimetableDtoSchema` -> `ViewerTimetableDto` - Zod schema validating viewer timetable DTO.
+- **Zod Schema** `ExportFormatSchema` -> `ExportFormat` - Zod schema validating export format.
+- **Zod Schema** `CreateExportDtoSchema` -> `CreateExportDto` - Zod schema validating create export DTO.
+- **Zod Schema** `ExportJobStatusSchema` -> `ExportJobStatus` - Zod schema validating export job status.
+- **Zod Schema** `ExportJobDtoSchema` -> `ExportJobDto` - Zod schema validating export job DTO.
+- **Zod Schema** `CreateCalendarFeedDtoSchema` -> `CreateCalendarFeedDto` - Zod schema validating create calendar feed DTO.
+- **Zod Schema** `CalendarFeedDtoSchema` -> `CalendarFeedDto` - Zod schema validating calendar feed DTO.
+- **Zod Schema** `ShareScopeSchema` -> `ShareScope` - Zod schema validating share scope.
+- **Zod Schema** `CreateShareDtoSchema` -> `CreateShareDto` - Zod schema validating create share link DTO.
+- **Zod Schema** `ShareDtoSchema` -> `ShareDto` - Zod schema validating share DTO.
+- **Zod Schema** `PublicShareViewDtoSchema` -> `PublicShareViewDto` - Zod schema validating public share view DTO.
+- **Zod Schema** `NotificationChannelSchema` -> `NotificationChannel` - Zod schema validating notification channel.
+- **Zod Schema** `NotificationTypeSchema` -> `NotificationType` - Zod schema validating notification type.
+- **Zod Schema** `NotificationDtoSchema` -> `NotificationDto` - Zod schema validating notification DTO.
+- **Zod Schema** `NotificationPreferencesDtoSchema` -> `NotificationPreferencesDto` - Zod schema validating notification preferences DTO.
+- **Zod Schema** `CreateAnnouncementDtoSchema` -> `CreateAnnouncementDto` - Zod schema validating create announcement DTO.
+- **Const** `NotificationSocketEvents`: `{ readonly SUBSCRIBE: "subscribe"; readonly MAR...` - Constant socket events for notifications namespace.
 
