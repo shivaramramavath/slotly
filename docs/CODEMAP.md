@@ -75,6 +75,7 @@
 | Blueprint undo / redo commands | `useBlueprintCommands` | `client/src/features/blueprint/hooks/use-blueprint-commands.ts` |
 | Automatic Dagre graph auto-layout | `useBlueprintLayout` | `client/src/features/blueprint/hooks/use-blueprint-layout.ts` |
 | Real-time build progress socket | `BuildsSocketService` | `client/src/features/builds/services/builds-socket.service.ts` |
+| Namespaced environment configuration | `AppConfigModule`, `appConfig` | `server/src/config/index.ts` |
 
 ## Extension Points
 | Registry / Strategy family | Where it lives | Interface to implement | Test to copy |
@@ -87,6 +88,7 @@
 | File Parsers | `server/src/modules/library/strategies/file-parser.strategy.ts` | `IFileParser` | `server/src/modules/library/tests/file-parser.spec.ts` |
 | Room Matchers | `server/src/modules/library/strategies/room-matcher.strategy.ts` | `IRoomMatcher` | `server/src/modules/library/tests/room-matcher.spec.ts` |
 | Faculty Qualifiers | `server/src/modules/library/strategies/faculty-qualifier.strategy.ts` | `IFacultyQualifier` | `server/src/modules/library/tests/faculty-qualifier.spec.ts` |
+| Configuration Namespaces | `server/src/config/` | `validateEnv` | `server/src/config/tests/config-factories.spec.ts` |
 
 ## Conventions
 - **File Names:** Kebab-case matching entity or role (for example `faculty.repository.ts`, `use-library-filters.ts`).
@@ -103,6 +105,7 @@
 4. **React 19 Render-Phase State Sync:** Never invoke `setState` directly inside a `useEffect` to sync props/URL; adjust state during render.
 5. **MongoDB Transactions:** Multi-document ACID transactions require MongoDB replica sets; dev standalone clusters use direct commits.
 6. **Optimistic Revision Check:** Blueprint and schedule writes require a revision counter; stale writes return HTTP 409 conflict.
+7. **Environment Variables:** Never access `process.env` directly outside `server/src/config/` and `server/src/main.ts`. Inject `@Inject(thatConfig.KEY) config: ConfigType<typeof thatConfig>` or use `ConfigModule.forFeature(thatConfig)`. Run `pnpm env:migrate` to update legacy `.env` files.
 <!-- MANUAL:END -->
 
 ## Generated Module Maps
@@ -110,7 +113,7 @@
 | Module Map | Area | Line count |
 | :--- | :--- | :--- |
 | [contracts.md](docs/codemap/contracts.md) | Shared Contracts | 326 lines |
-| [server-common.md](docs/codemap/server-common.md) | Server Common & Infrastructure | 339 lines |
+| [server-common.md](docs/codemap/server-common.md) | Server Common & Infrastructure | 425 lines |
 | [server-auth.md](docs/codemap/server-auth.md) | Server Auth Module | 127 lines |
 | [server-blueprint.md](docs/codemap/server-blueprint.md) | Server Blueprint Module | 233 lines |
 | [server-builds.md](docs/codemap/server-builds.md) | Server Builds Module | 63 lines |

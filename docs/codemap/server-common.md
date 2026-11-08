@@ -65,7 +65,7 @@
 ### `server/src/common/cache/redis-cache.service.ts`
 *Domain service orchestrating redis-cache.service business logic.*
 
-- **Injectable** `RedisCacheService` implements `CacheService, OnModuleDestroy` (deps: ConfigService<Record<string | symbol, unknown>, false>) - Injectable service providing redis cache service logic.
+- **Injectable** `RedisCacheService` implements `CacheService, OnModuleDestroy` (deps: @Inject(redisConfig.KEY), @Inject(cacheConfig.KEY)) - Injectable service providing redis cache service logic.
 
 ### `server/src/common/concurrency/revision.helper.ts`
 *Core implementation for revision.helper in server/src/common/concurrency.*
@@ -96,14 +96,14 @@
 ### `server/src/common/email/brevo-email.sender.ts`
 *Core implementation for brevo-email.sender in server/src/common/email.*
 
-- **Injectable** `BrevoEmailSender` implements `IEmailSender` (deps: EmailTemplateRenderer, BrevoConfig | undefined) - Injectable service providing brevo email sender logic.
+- **Injectable** `BrevoEmailSender` implements `IEmailSender` (deps: EmailTemplateRenderer, @Inject(emailConfig.KEY), @Inject(BREVO_CONFIG)) - Injectable service providing brevo email sender logic.
 - **Interface** `BrevoConfig` - Interface defining structure for brevo config.
 - **Const** `BREVO_CONFIG`: `typeof import("E:/Shiva Ram/Projects/slotly/ser...` - Constant representing brevo config.
 
 ### `server/src/common/email/email-template.renderer.ts`
 *Core implementation for email-template.renderer in server/src/common/email.*
 
-- **Injectable** `EmailTemplateRenderer` - Injectable service providing email template renderer logic.
+- **Injectable** `EmailTemplateRenderer` (deps: @Inject(appConfig.KEY)) - Injectable service providing email template renderer logic.
 - **Interface** `RenderedEmail` - Interface defining structure for rendered email.
 
 ### `server/src/common/email/email.interface.ts`
@@ -136,6 +136,11 @@
 *Core implementation for index in server/src/common/email.*
 
 *(No public exports)*
+
+### `server/src/common/email/log-email.sender.ts`
+*Log-based email sender implementation for development and testing environments.*
+
+- **Injectable** `LogEmailSender` implements `IEmailSender` - Injectable email sender logging sanitized email messages without secrets.
 
 ### `server/src/common/events/event-bus.service.ts`
 *Domain service orchestrating event-bus.service business logic.*
@@ -222,15 +227,96 @@
 - **Injectable** `RolesGuard` implements `CanActivate` (deps: Reflector) - Injectable service providing roles guard logic.
 - **Interface** `AuthenticatedUser` - Interface defining structure for authenticated user.
 
-### `server/src/config/env.config.ts`
-*Core implementation for env.config in server/src/config.*
+### `server/src/config/app.config.ts`
+*Configuration factory for application-level settings.*
 
-- **Type** `EnvConfig` - TypeScript type inferred from env config Zod schema.
-- **Function** `validateEnv(config: Record<string, unknown>)`: `{ PORT: number; NODE_ENV: "development" | "production" | "test"; CLIENT_URL: string; MONGODB_URI: string; REDIS_HOST: string; REDIS_PORT: number; REDIS_PASSWORD: string; JWT_ACCESS_SECRET: string; JWT_REFRESH_SECRET: string; JWT_ACCESS_EXPIRATION: string; JWT_REFRESH_EXPIRATION: string; GROQ_API_KEY: string; BREVO_API_KEY: string; EMAIL_FROM: string; EMAIL_FROM_NAME: string; SMTP_HOST: string; SMTP_PORT: number; SMTP_USER: string; SMTP_PASS: string; }` - Function performing validate env.
-- **Zod Schema** `EnvSchema` -> `Env` - Zod schema validating env.
+- **Type** `AppConfig` - Inferred TypeScript type for app namespace configuration.
+- **Const** `appConfig`: `(() => { port: number; nodeEnv: "development" |...` - Application namespace configuration factory.
+
+### `server/src/config/auth.config.ts`
+*Configuration factory for authentication policies, throttling, OTP, and Argon2 parameters.*
+
+- **Type** `AuthConfig` - Inferred TypeScript type for auth namespace configuration.
+- **Const** `authConfig`: `(() => { nodeEnv: "development" | "production" ...` - Authentication namespace configuration factory.
+
+### `server/src/config/cache.config.ts`
+*Configuration factory for cache TTLs and eviction policies.*
+
+- **Type** `CacheConfig` - Inferred TypeScript type for cache namespace configuration.
+- **Const** `cacheConfig`: `(() => { defaultTtl: number; blueprintTtl: numb...` - Cache namespace configuration factory.
+
+### `server/src/config/config.module.ts`
+*Core configuration module wrapping NestJS ConfigModule with all namespaces and validation schema.*
+
+- **Class** `AppConfigModule` - Global application configuration module wrapping NestJS ConfigModule.
+
+### `server/src/config/database.config.ts`
+*Configuration factory for MongoDB database settings. Transactions require a replica set (e.g. rs0).*
+
+- **Type** `DatabaseConfig` - Inferred TypeScript type for database namespace configuration.
+- **Const** `databaseConfig`: `(() => { uri: string; options: { serverSelectio...` - Database namespace configuration factory. Note: Transactions require MongoDB replica set.
+
+### `server/src/config/defaults.ts`
+*Central default configuration constants used across Joi validation and config factories.*
+
+- **Const** `DEFAULT_CONFIG`: `{ app: { port: number; nodeEnv: "development"; ...` - Default application configuration constants.
+
+### `server/src/config/email.config.ts`
+*Configuration factory for email delivery (Brevo or Log driver).*
+
+- **Type** `EmailConfig` - Inferred TypeScript type for email namespace configuration.
+- **Const** `emailConfig`: `(() => { driver: "log" | "brevo"; apiKey: strin...` - Email namespace configuration factory. Supports 'brevo' and 'log' drivers.
+
+### `server/src/config/env.validation.ts`
+*Joi validation schema and legacy environment variable validation logic.*
+
+- **Function** `checkLegacyVariables(env: Record<string, unknown>)`: `void` - Function checking for legacy environment variables and failing with descriptive messages.
+- **Function** `validateEnv(config: Record<string, unknown>)`: `Record<string, unknown>` - Function performing validation of raw environment objects.
+- **Zod Schema** `envValidationSchema` -> `envValidation` - Joi schema defining environment variable validation constraints.
+
+### `server/src/config/groq.config.ts`
+*Configuration factory for Groq AI LLM integration.*
+
+- **Type** `GroqConfig` - Inferred TypeScript type for groq namespace configuration.
+- **Const** `groqConfig`: `(() => { apiKey: string; model: string; request...` - Groq AI namespace configuration factory.
+
+### `server/src/config/index.ts`
+*Barrel export file for all configuration factories, types, modules, and validation schemas.*
+
+*(No public exports)*
+
+### `server/src/config/jwt.config.ts`
+*Configuration factory for JWT authentication token settings.*
+
+- **Type** `JwtConfig` - Inferred TypeScript type for jwt namespace configuration.
+- **Const** `jwtConfig`: `(() => { access: { secret: string; expiresIn: s...` - JWT namespace configuration factory. Note: Password reset tokens are one-time tokens stored in Redis.
+
+### `server/src/config/oauth.config.ts`
+*Configuration factory for OAuth social login providers (Google, GitHub).*
+
+- **Type** `OAuthConfig` - Inferred TypeScript type for oauth namespace configuration.
+- **Const** `oauthConfig`: `(() => { callbackBaseUrl: string; google: { cli...` - OAuth namespace configuration factory. Providers are enabled only when both clientId and clientSecret are set.
+
+### `server/src/config/queue.config.ts`
+*Configuration factory for BullMQ job queue parameters and worker concurrency.*
+
+- **Type** `QueueConfig` - Inferred TypeScript type for queue namespace configuration.
+- **Const** `queueConfig`: `(() => { prefix: string; attempts: number; back...` - Queue namespace configuration factory.
+
+### `server/src/config/redis.config.ts`
+*Configuration factory for Redis connection settings.*
+
+- **Type** `RedisConfig` - Inferred TypeScript type for redis namespace configuration.
+- **Const** `redisConfig`: `(() => { host: string; port: number; password: ...` - Redis namespace configuration factory.
+
+### `server/src/config/session.config.ts`
+*Configuration factory for user sessions and refresh token cookie settings.*
+
+- **Type** `SessionConfig` - Inferred TypeScript type for session namespace configuration.
+- **Const** `sessionConfig`: `(() => { ttl: number; maxLifetime: number; cook...` - Session namespace configuration factory.
 
 ### `server/src/main.ts`
-*Core implementation for main in Projects/slotly/server/src.*
+*Core bootstrap implementation for the Slotly backend server.*
 
 *(No public exports)*
 
