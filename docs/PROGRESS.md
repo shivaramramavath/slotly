@@ -1377,3 +1377,136 @@
 - [x] Verify WebSocket gateways do not allow wildcard CORS with credentials.
 - [x] Verify `pnpm codemap:check` passes without errors.
 
+## Phase 10: Board and Studio (In Progress)
+
+### What Was Built
+- **Pass 0: Engine Extraction (Committed `3e21568`)**:
+  - Extracted pure constraint engine core (`types`, `ScheduleState`, constraints, `SuggestionStrategy`, `PreBuildChecker`, `ValidationService`) into framework-free package `@slotly/engine`.
+  - Built with `tsup` supporting ESM, CJS, and DTS.
+  - Server and client import from `@slotly/engine`.
+- **Pass 1: Contracts and Server Schedules Implementation**:
+  - **Contracts (`packages/contracts`)**:
+    - Added `ScheduleResourceTypeSchema` (`faculty`, `room`, `section`, `batch`).
+    - Added DTOs: `ScheduleEntryDto`, `ScheduleOccupancyDto`, `ScheduleOperationDto`, `MoveSlotDto`, `SwapSlotsDto`, `EditSlotDto`, `BulkSlotsDto`, `MergeSlotDto`, `SplitSlotDto`, `LockSlotDto`, `UpdatePeriodsDto`, `PeriodsChangeResultDto`, `MoveValidationResultDto`.
+    - Added `ScheduleSocketEvents` contract for `/schedule` gateway.
+  - **Storage & Indexes (`server/src/modules/schedules`)**:
+    - `ScheduleEntry`: models granular timetable slot cells with sectionId, batchId, facultyId, roomId, subjectId, day, startPeriod, span, type, locked, revision.
+    - `ScheduleOccupancy`: unique compound index on `(versionId, resourceType, resourceId, day, period)` guaranteeing zero double-booking at DB level.
+    - `ScheduleOperation`: audit log sequence storing forward and inverse payloads for undo/redo.
+    - Updated index migration `ensure-indexes.ts` with compound unique index specifications.
+  - **MoveValidator Chain of Responsibility (`server/src/modules/schedules/validators`)**:
+    - 10 handlers: `VersionEditableValidator`, `LockValidator`, `BreakValidator`, `LabBlockValidator`, `TargetFreeValidator`, `FacultyFreeValidator`, `RoomFreeValidator`, `FacultyAvailabilityValidator`, `RoomAvailabilityValidator`, `WorkloadValidator`.
+    - `MoveValidatorChain`: coordinates sequential validation and returns structured failure codes with resolution suggestions.
+  - **Operations Command Registry (`server/src/modules/schedules/operations`)**:
+    - Implemented `IScheduleCommand` with `apply()` and `revert()` for: `edit`, `move`, `swap`, `bulk` (atomic batch), `clear`, `merge`, `split`, `lock`, `applySuggestion`, `changePeriodConfig`, `copyPaste`.
+    - `ScheduleOperationRegistry`: injectable registry managing command dispatch.
+  - **Transactional Execution & Copy-on-Write (`server/src/modules/schedules/services`)**:
+    - `SchedulesService`: coordinates execution inside MongoDB replica set transactions via `TransactionHelper`.
+    - Optimistic concurrency: verifies `If-Match` revision header, throwing 409 `RevisionConflictException` on mismatch.
+    - Conflict Catching: catches MongoDB 11000 duplicate key errors on unique occupancy index and maps to 409 `OCCUPANCY_CONFLICT` with structured swap/reschedule suggestions.
+    - Copy-on-Write: editing a published version creates a new draft version, clones entries and occupancies, remaps slot ID references, and applies changes to the fork.
+    - Redis Cache-aside: reads cached under tag `project:{id}:schedule` with immediate invalidation on mutation.
+    - Undo/Redo: reverts most recent operation from `ScheduleOperation` log and syncs occupancies.
+  - **WebSocket Gateway (`server/src/modules/schedules/gateways/schedule.gateway.ts`)**:
+    - Namespace `/schedule` with JWT handshake auth and Redis session verification.
+    - Room presence tracking: `join:schedule`, `leave:schedule`, `presence:changed`.
+    - Real-time event broadcasts: `slot:moved`, `slot:updated`, `slot:locked`, `slot:cleared`, `revision:conflict`.
+  - **Migration Service (`server/src/modules/schedules/migrations/schedule-migration.service.ts`)**:
+    - Idempotent migration from legacy `ScheduleVersion.slots` embedded arrays to `ScheduleEntry` and `ScheduleOccupancy` collections.
+    - Full support for `--dry-run`.
+  - **BuildFacade Integration (`server/src/modules/builds/services/build.facade.ts`)**:
+    - Automatically persists generated alternatives into `ScheduleEntry` and `ScheduleOccupancy` collections within transactions.
+
+### Decisions
+1. **Synchronous Chain Validation**: Validator handlers evaluate pure in-memory business rules over `MoveValidationContext`, eliminating unnecessary async overhead while returning standard Promises from the root coordinator.
+2. **Copy-on-Write Slot Remapping**: When published schedules fork to a new draft revision, cloned entries receive new UUIDs and input parameter slot IDs are automatically remapped to the fork's cloned entries so operations complete without requiring client re-query.
+3. **Double-Booking Prevention at Database Level**: Compound unique index on `(versionId, resourceType, resourceId, day, period)` guarantees zero double bookings even under concurrent race conditions. Collisions are intercepted and converted to structured 409 `OCCUPANCY_CONFLICT` responses with alternative slot suggestions.
+
+### Test Evidence
+- 9 dedicated test suites in `server/src/modules/schedules/tests/`:
+  - `move-validators.spec.ts` (18 tests): validates all 10 rules and chain short-circuiting.
+  - `unique-occupancy-concurrency.spec.ts` (2 tests): tests concurrent moves and 11000 duplicate key catch to `OCCUPANCY_CONFLICT`.
+  - `merge-split.spec.ts` (4 tests): tests multi-period merge and split round-trip.
+  - `bulk-atomic.spec.ts` (4 tests): tests atomic batch operations and rollback on error.
+  - `swap-operation.spec.ts` (3 tests): tests atomic slot swaps across days/periods and revert.
+  - `undo-redo.spec.ts` (2 tests): tests undo and redo from audit log.
+  - `revision-conflict.spec.ts` (2 tests): tests `If-Match` revision check throwing 409.
+  - `published-copy-on-write.spec.ts` (1 test): tests published immutability and draft fork.
+  - `migration-idempotency.spec.ts` (3 tests): tests legacy slot migration accuracy and idempotency.
+- All 46 server test suites pass (232 tests passing, 5 todo).
+- Monorepo verification: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm codemap:check` all pass with 0 errors.
+
+### Next Steps (Pass 2: Client)
+- Timetable Board & Studio UI (FEATURES §9, CLIENT_UX §5.7 & §5.8).
+- Interactive drag-and-drop timetable grid using `@dnd-kit/core` with instant client-side validation using `@slotly/engine`.
+- Undo/redo shortcuts, bulk selection, period timing manager modal, conflict inspector panel.
+
+
+## Phase 11: Versions, Comparison, Publishing (Pass 1: Contracts & Server)
+
+### What Was Built
+- **Contracts (`packages/contracts`)**:
+  - Reason codes: `VERSION_IMMUTABLE`, `INVALID_STATE_TRANSITION`, `HARD_CONFLICTS_EXIST`.
+  - Extended `ScheduleVersionStatus`: `['draft', 'editing', 'ready', 'validated', 'pending_approval', 'approved', 'published', 'archived']`.
+  - Added Zod schemas and TypeScript types: `PublishRequestStatusSchema`, `PublishRequestDtoSchema`, `RequestPublishDtoSchema`, `ReviewPublishDtoSchema`, `UpdateVersionLabelDtoSchema`, `DuplicateVersionDtoSchema`, `SlotChangeDetailSchema`, `SlotDiffItemSchema`, `FacultyWorkloadDeltaSchema`, `ConflictDeltaSchema`, `ScoreDeltaSchema`, `VersionDiffDtoSchema`, `TimetableRatingDtoSchema`, `TimetableRatingResponseDtoSchema`.
+- **Pure State Machine (`server/src/modules/publishing/state-machine`)**:
+  - Implemented `PublishStateMachine` with State pattern (`BasePublishState`, `DraftState`, `EditingState`, `ValidatedState`, `PendingApprovalState`, `ApprovedState`, `PublishedState`, `ArchivedState`).
+  - Guards: `validated` strictly requires zero hard conflicts and a complete blueprint graph.
+  - Reviewer rejection automatically returns the lifecycle to `editing` with a mandatory reviewer comment.
+- **Pure Diff and Change Summary Services (`server/src/modules/versions/services`)**:
+  - `DiffService`: Computes slot deltas (added, removed, modified faculty/room/subject/time), faculty workload deltas, conflict deltas, and score metric deltas between any two versions.
+  - `ChangeSummaryService`: Deterministic sentence builder converting slot diffs into readable, human-friendly summaries ("Data Structures moved from Mon P1 to Wed P3") without AI.
+- **Repositories & Immutability (`server/src/modules/versions`, `server/src/modules/publishing`, `server/src/modules/builds`)**:
+  - Enforced `VERSION_IMMUTABLE` at the repository layer: `MongoScheduleVersionRepository.update`, `delete`, and `ScheduleEntryRepository.create`, `createMany`, `update`, `delete`, `deleteByVersion` throw 409 `ConflictException('VERSION_IMMUTABLE')` if the version status is `published` or `archived`.
+  - Created `PublishRequest` schema and repository (`publish_requests` collection).
+  - Created `TimetableRating` schema and repository (`timetable_ratings` collection).
+  - Updated index migration `ensure-indexes.ts` with compound indexes for publish requests and timetable ratings.
+- **Transactional Publishing (`server/src/modules/publishing/services/publishing.service.ts`)**:
+  - `executePublishTransaction`: One atomic MongoDB replica set transaction (`TransactionHelper.withTransaction`) sealing the target version as `published`, archiving the previously published version, updating project status to `published`, marking the publish request approved, recording audit entries, and emitting domain events. Any failure automatically rolls back all changes.
+- **REST Endpoints (`server/src/modules/versions`, `server/src/modules/publishing`)**:
+  - `GET /projects/:projectId/versions` - List all versions for a project.
+  - `GET /versions/:versionId` - Retrieve detailed version metadata.
+  - `PATCH /versions/:versionId/label` - Rename/tag a version.
+  - `POST /versions/:versionId/duplicate` - Duplicate a version and clone entries.
+  - `POST /versions/:versionId/restore` - Restore an archived or published version as a fresh draft revision.
+  - `POST /versions/:versionId/archive` - Archive a version.
+  - `GET /versions/:leftVersionId/diff/:rightVersionId` - Compute pure diff and summary.
+  - `POST /versions/:versionId/publish-request` - Designer requests publishing.
+  - `GET /projects/:projectId/publish-requests` - List publish requests for a project.
+  - `GET /admin/approvals` - Admin queue of pending publish requests.
+  - `POST /publish-requests/:requestId/approve` - Admin approves request and executes publish transaction.
+  - `POST /publish-requests/:requestId/reject` - Admin rejects request back to editing state with comment.
+  - `POST /versions/:versionId/publish` - Admin direct publish (seals and publishes in transaction).
+  - `POST /versions/:versionId/rate` - Submit feedback/rating for a version.
+  - `GET /versions/:versionId/ratings` - Retrieve rating summaries and faculty feedback.
+
+### Decisions
+1. **Repository-Level Immutability**: Immutability is enforced at the repository layer (`MongoScheduleVersionRepository` and `ScheduleEntryRepository`), ensuring no controller, background worker, or service can bypass immutability checks on published/archived versions.
+2. **Deterministic Diff Summaries**: Slot movements, room changes, and teacher changes generate natural language explanations via `ChangeSummaryService` with zero LLM dependence, guaranteeing speed, consistency, and no external token cost.
+3. **Atomic MongoDB Multi-Document Publishing**: All publish lifecycle mutations (version status update, archiving of prior published versions, project status update, request approval, and audit logs) execute inside a single MongoDB transaction session via `TransactionHelper`.
+
+### Test Evidence
+- 6 test suites covering Phase 11 Pass 1 functionality:
+  - `publish-state-machine.spec.ts` (9 tests): Validates lifecycle transitions, guards for hard conflicts and blueprint completion, and rejection returns.
+  - `diff-and-summary.spec.ts` (4 tests): Tests slot diffs, workload deltas, conflict deltas, and natural language summary generation.
+  - `transactional-publishing.spec.ts` (3 tests): Tests atomic publish execution, previous version archiving, and rollback on failure.
+  - `repository-immutability.spec.ts` (6 tests): Validates `VERSION_IMMUTABLE` repository exceptions across versions and schedule entries.
+  - `publishing-workflow.spec.ts` (4 tests): Tests request, approve, and reject workflows with role checks and comments.
+  - `versions-service.spec.ts` (4 tests): Tests duplicate, restore, label update, and archive flows.
+- Total test suite status: 52 passed, 262 tests passed, 0 failures.
+- Verification: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm codemap:check` all pass cleanly with 0 errors.
+
+### Manual Test Checklist
+1. **Version Duplication & Restore**:
+   - Duplicate an existing version -> verify new version is created with status `draft` and identical entries.
+   - Restore an archived or published version -> verify a new draft revision is created.
+2. **Diff & Summary**:
+   - Request diff between two versions -> verify returned JSON contains `added`, `removed`, `changed`, `workloadDeltas`, `conflictDeltas`, and readable `summaryLines`.
+3. **Publishing Lifecycle & Approval**:
+   - As DESIGNER, request publish on a draft with hard conflicts -> verify 400 rejection `HARD_CONFLICTS_EXIST`.
+   - As DESIGNER, request publish on a valid schedule -> verify status is `pending_approval`.
+   - As ADMIN, reject request with comment -> verify status transitions back to `editing` and comment is recorded.
+   - As ADMIN, approve request -> verify version is sealed `published`, previous version is `archived`, and project status is `published`.
+4. **Immutability Protection**:
+   - Attempt to update or delete a published version or its schedule entries -> verify 409 `VERSION_IMMUTABLE` response.
+

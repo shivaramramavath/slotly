@@ -1,13 +1,14 @@
-import { ScheduleState } from '../core/schedule-state';
-import { ConstraintRegistry } from '../core/constraint.registry';
-import { SuggestionStrategy } from '../core/suggestion.strategy';
+// Unit tests validating SuggestionStrategy ranking and conflict resolution in @slotly/engine.
 import {
+  ScheduleState,
+  ConstraintRegistry,
+  SuggestionStrategy,
   FacultyNoDoubleBookingConstraint,
   RoomNoDoubleBookingConstraint,
   MinBreaksConstraint,
   RoomCapacityFitsSectionConstraint,
-} from '../core/constraints/hard';
-import type { EngineInput, Slot } from '../core/types';
+} from '@slotly/engine';
+import type { EngineInput, Slot } from '@slotly/engine';
 
 describe('SuggestionStrategy', () => {
   const baseInput: EngineInput = {

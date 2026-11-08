@@ -84,6 +84,59 @@ export function getIndexDefinitions(): IndexDefinition[] {
       collection: 'schedule_versions',
       fields: { projectId: 1, status: 1 },
     },
+    // Schedule Entries
+    {
+      collection: 'schedule_entries',
+      fields: { versionId: 1, sectionId: 1, day: 1, startPeriod: 1 },
+    },
+    {
+      collection: 'schedule_entries',
+      fields: { versionId: 1, facultyId: 1, day: 1 },
+    },
+    {
+      collection: 'schedule_entries',
+      fields: { versionId: 1, roomId: 1, day: 1 },
+    },
+    // Schedule Occupancies
+    {
+      collection: 'schedule_occupancies',
+      fields: {
+        versionId: 1,
+        resourceType: 1,
+        resourceId: 1,
+        day: 1,
+        period: 1,
+      },
+      options: { unique: true },
+    },
+    {
+      collection: 'schedule_occupancies',
+      fields: { versionId: 1, entryId: 1 },
+    },
+    // Schedule Operations
+    {
+      collection: 'schedule_operations',
+      fields: { versionId: 1, seq: 1 },
+      options: { unique: true },
+    },
+    // Publish Requests
+    {
+      collection: 'publish_requests',
+      fields: { projectId: 1, status: 1 },
+    },
+    {
+      collection: 'publish_requests',
+      fields: { versionId: 1 },
+    },
+    // Timetable Ratings
+    {
+      collection: 'timetable_ratings',
+      fields: { versionId: 1 },
+    },
+    {
+      collection: 'timetable_ratings',
+      fields: { projectId: 1 },
+    },
     // Faculties
     {
       collection: 'faculties',

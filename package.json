@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "docker compose up -d && concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"pnpm --filter server start:dev\" \"pnpm --filter client dev\"",
     "dev:apps": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"pnpm --filter server start:dev\" \"pnpm --filter client dev\"",
-    "build": "pnpm --filter @slotly/contracts build && pnpm -r --filter=!slotly-monorepo build",
+    "build": "pnpm --filter @slotly/contracts build && pnpm --filter @slotly/engine build && pnpm -r --filter=!slotly-monorepo build",
     "lint": "pnpm -r --filter=!slotly-monorepo lint",
     "typecheck": "pnpm -r --filter=!slotly-monorepo typecheck",
     "test": "pnpm -r --filter=!slotly-monorepo test && tsx scripts/codemap/tests/generate.spec.ts",

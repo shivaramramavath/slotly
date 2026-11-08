@@ -6,7 +6,7 @@ import type {
   ScheduleVersionStatus,
   ScheduleVersionStats,
 } from '@slotly/contracts';
-import type { Slot, Violation } from '../../engine/core/types';
+import type { Slot, Violation } from '@slotly/engine';
 
 /** Type alias for schedule version document. */
 export type ScheduleVersionDocument = ScheduleVersion & Document;

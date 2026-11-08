@@ -1,6 +1,6 @@
-import { ScheduleState } from '../core/schedule-state';
-import type { EngineInput, Slot } from '../core/types';
+// Unit tests validating all 20 hard scheduling constraints in @slotly/engine.
 import {
+  ScheduleState,
   FacultyNoDoubleBookingConstraint,
   RoomNoDoubleBookingConstraint,
   SectionNoDoubleBookingConstraint,
@@ -21,7 +21,8 @@ import {
   WeeklyHoursMetConstraint,
   MissingAllocationConstraint,
   BreakNotOverwritableConstraint,
-} from '../core/constraints/hard';
+} from '@slotly/engine';
+import type { EngineInput, Slot } from '@slotly/engine';
 
 describe('Hard Constraints Suite (20 Constraints)', () => {
   const baseInput: EngineInput = {

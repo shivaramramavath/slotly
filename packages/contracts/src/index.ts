@@ -1996,7 +1996,16 @@ export const ScheduleVersionKindSchema = z.enum(['auto', 'regenerate', 'manual']
 export type ScheduleVersionKind = z.infer<typeof ScheduleVersionKindSchema>;
 
 /** Zod schema validating schedule version status. */
-export const ScheduleVersionStatusSchema = z.enum(['draft', 'ready', 'published', 'archived']);
+export const ScheduleVersionStatusSchema = z.enum([
+  'draft',
+  'editing',
+  'ready',
+  'validated',
+  'pending_approval',
+  'approved',
+  'published',
+  'archived',
+]);
 /** TypeScript type inferred from schedule version status Zod schema. */
 export type ScheduleVersionStatus = z.infer<typeof ScheduleVersionStatusSchema>;
 
@@ -2081,3 +2090,347 @@ export const BuildProgressPayloadSchema = z.object({
 });
 /** TypeScript type inferred from build progress payload Zod schema. */
 export type BuildProgressPayload = z.infer<typeof BuildProgressPayloadSchema>;
+
+
+
+// ============================================================================
+// Phase 10: Board & Studio Schedules
+// ============================================================================
+
+/** Zod schema validating schedule resource type. */
+export const ScheduleResourceTypeSchema = z.enum(['faculty', 'room', 'section', 'batch']);
+/** TypeScript type inferred from schedule resource type Zod schema. */
+export type ScheduleResourceType = z.infer<typeof ScheduleResourceTypeSchema>;
+
+/** Zod schema validating schedule entry dto. */
+export const ScheduleEntryDtoSchema = z.object({
+  id: z.string(),
+  versionId: z.string(),
+  sectionId: z.string(),
+  batchId: z.string().optional(),
+  day: z.number().int().min(0).max(6),
+  startPeriod: z.number().int().min(1),
+  span: z.number().int().min(1).default(1),
+  type: SlotTypeSchema,
+  subjectId: z.string().optional(),
+  facultyId: z.string().optional(),
+  roomId: z.string().optional(),
+  locked: z.boolean().default(false),
+  revision: z.number().int().default(1),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+/** TypeScript type inferred from schedule entry dto Zod schema. */
+export type ScheduleEntryDto = z.infer<typeof ScheduleEntryDtoSchema>;
+
+/** Zod schema validating schedule occupancy dto. */
+export const ScheduleOccupancyDtoSchema = z.object({
+  id: z.string(),
+  versionId: z.string(),
+  resourceType: ScheduleResourceTypeSchema,
+  resourceId: z.string(),
+  day: z.number().int().min(0).max(6),
+  period: z.number().int().min(1),
+  entryId: z.string(),
+});
+/** TypeScript type inferred from schedule occupancy dto Zod schema. */
+export type ScheduleOccupancyDto = z.infer<typeof ScheduleOccupancyDtoSchema>;
+
+/** Zod schema validating schedule operation dto. */
+export const ScheduleOperationDtoSchema = z.object({
+  id: z.string(),
+  versionId: z.string(),
+  seq: z.number().int(),
+  userId: z.string(),
+  type: z.string(),
+  forward: z.record(z.unknown()),
+  inverse: z.record(z.unknown()),
+  at: z.string(),
+});
+/** TypeScript type inferred from schedule operation dto Zod schema. */
+export type ScheduleOperationDto = z.infer<typeof ScheduleOperationDtoSchema>;
+
+/** Zod schema validating move slot dto. */
+export const MoveSlotDtoSchema = z.object({
+  targetDay: z.number().int().min(0).max(6),
+  targetStartPeriod: z.number().int().min(1),
+  targetRoomId: z.string().optional(),
+  targetFacultyId: z.string().optional(),
+});
+/** TypeScript type inferred from move slot dto Zod schema. */
+export type MoveSlotDto = z.infer<typeof MoveSlotDtoSchema>;
+
+/** Zod schema validating swap slots dto. */
+export const SwapSlotsDtoSchema = z.object({
+  slotIdA: z.string(),
+  slotIdB: z.string(),
+});
+/** TypeScript type inferred from swap slots dto Zod schema. */
+export type SwapSlotsDto = z.infer<typeof SwapSlotsDtoSchema>;
+
+/** Zod schema validating edit slot dto. */
+export const EditSlotDtoSchema = z.object({
+  slotId: z.string().optional(),
+  subjectId: z.string().optional(),
+  facultyId: z.string().optional(),
+  roomId: z.string().optional(),
+  type: SlotTypeSchema.optional(),
+  batchId: z.string().optional(),
+  span: z.number().int().min(1).optional(),
+});
+/** TypeScript type inferred from edit slot dto Zod schema. */
+export type EditSlotDto = z.infer<typeof EditSlotDtoSchema>;
+
+/** Zod schema validating bulk slot action type. */
+export const BulkSlotActionTypeSchema = z.enum([
+  'assign_faculty',
+  'assign_room',
+  'change_subject',
+  'clear',
+  'lock',
+  'unlock',
+  'copy_paste',
+]);
+/** TypeScript type inferred from bulk slot action type Zod schema. */
+export type BulkSlotActionType = z.infer<typeof BulkSlotActionTypeSchema>;
+
+/** Zod schema validating bulk slots dto. */
+export const BulkSlotsDtoSchema = z.object({
+  action: BulkSlotActionTypeSchema,
+  slotIds: z.array(z.string()).min(1),
+  facultyId: z.string().optional(),
+  roomId: z.string().optional(),
+  subjectId: z.string().optional(),
+  copyPasteMode: z.enum(['full', 'subject_only', 'faculty_only', 'room_only']).optional(),
+  targetSlotIds: z.array(z.string()).optional(),
+});
+/** TypeScript type inferred from bulk slots dto Zod schema. */
+export type BulkSlotsDto = z.infer<typeof BulkSlotsDtoSchema>;
+
+/** Zod schema validating merge slot dto. */
+export const MergeSlotDtoSchema = z.object({
+  span: z.number().int().min(2),
+});
+/** TypeScript type inferred from merge slot dto Zod schema. */
+export type MergeSlotDto = z.infer<typeof MergeSlotDtoSchema>;
+
+/** Zod schema validating split slot dto. */
+export const SplitSlotDtoSchema = z.object({
+  splitIntoSpans: z.array(z.number().int().min(1)).optional(),
+});
+/** TypeScript type inferred from split slot dto Zod schema. */
+export type SplitSlotDto = z.infer<typeof SplitSlotDtoSchema>;
+
+/** Zod schema validating lock scope. */
+export const LockScopeSchema = z.enum(['cell', 'row', 'day', 'timetable']);
+/** TypeScript type inferred from lock scope Zod schema. */
+export type LockScope = z.infer<typeof LockScopeSchema>;
+
+/** Zod schema validating lock slot dto. */
+export const LockSlotDtoSchema = z.object({
+  scope: LockScopeSchema,
+  locked: z.boolean(),
+  slotId: z.string().optional(),
+  day: z.number().int().min(0).max(6).optional(),
+  period: z.number().int().min(1).optional(),
+  sectionId: z.string().optional(),
+});
+/** TypeScript type inferred from lock slot dto Zod schema. */
+export type LockSlotDto = z.infer<typeof LockSlotDtoSchema>;
+
+/** Zod schema validating update periods dto. */
+export const UpdatePeriodsDtoSchema = z.object({
+  periodsPerDay: z.number().int().min(1).max(16),
+  periodDuration: z.number().int().min(15).max(180),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).default('09:00'),
+  breaks: z.array(z.object({
+    period: z.number().int().min(1),
+    name: z.string().min(1),
+  })).default([]),
+  days: z.array(z.string()).min(1).default(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
+  dryRun: z.boolean().optional(),
+});
+/** TypeScript type inferred from update periods dto Zod schema. */
+export type UpdatePeriodsDto = z.infer<typeof UpdatePeriodsDtoSchema>;
+
+/** Zod schema validating periods change result dto. */
+export const PeriodsChangeResultDtoSchema = z.object({
+  updated: z.boolean(),
+  invalidEntriesCount: z.number().int(),
+  invalidEntries: z.array(z.object({
+    id: z.string(),
+    day: z.number().int(),
+    startPeriod: z.number().int(),
+    span: z.number().int(),
+    reason: z.string(),
+  })),
+});
+/** TypeScript type inferred from periods change result dto Zod schema. */
+export type PeriodsChangeResultDto = z.infer<typeof PeriodsChangeResultDtoSchema>;
+
+/** Zod schema validating move validation result dto. */
+export const MoveValidationResultDtoSchema = z.object({
+  valid: z.boolean(),
+  reason: z.string().optional(),
+  code: z.string().optional(),
+  suggestions: z.array(ViolationSuggestionSchema).default([]),
+});
+/** TypeScript type inferred from move validation result dto Zod schema. */
+export type MoveValidationResultDto = z.infer<typeof MoveValidationResultDtoSchema>;
+
+/** Constant socket events for schedule namespace. */
+export const ScheduleSocketEvents = {
+  JOIN_SCHEDULE: 'schedule:join',
+  LEAVE_SCHEDULE: 'schedule:leave',
+  SLOT_MOVED: 'slot:moved',
+  SLOT_UPDATED: 'slot:updated',
+  SLOT_LOCKED: 'slot:locked',
+  SLOT_CLEARED: 'slot:cleared',
+  REVISION_CONFLICT: 'revision:conflict',
+  PRESENCE_CHANGED: 'presence:changed',
+} as const;
+
+// ==========================================
+// Phase 11: Versions, Comparison & Publishing
+// ==========================================
+
+/** Zod schema validating publish request status. */
+export const PublishRequestStatusSchema = z.enum(['pending', 'approved', 'rejected']);
+/** TypeScript type inferred from publish request status Zod schema. */
+export type PublishRequestStatus = z.infer<typeof PublishRequestStatusSchema>;
+
+/** Zod schema validating publish request DTO. */
+export const PublishRequestDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  versionId: z.string(),
+  requestedBy: z.string(),
+  status: PublishRequestStatusSchema,
+  reviewer: z.string().optional(),
+  comment: z.string().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+/** TypeScript type inferred from publish request DTO Zod schema. */
+export type PublishRequestDto = z.infer<typeof PublishRequestDtoSchema>;
+
+/** Zod schema validating request publish DTO. */
+export const RequestPublishDtoSchema = z.object({
+  comment: z.string().max(1000).optional(),
+});
+/** TypeScript type inferred from request publish DTO Zod schema. */
+export type RequestPublishDto = z.infer<typeof RequestPublishDtoSchema>;
+
+/** Zod schema validating review publish DTO. */
+export const ReviewPublishDtoSchema = z.object({
+  approved: z.boolean(),
+  comment: z.string().min(1, 'Review comment is required when reviewing publication').max(1000),
+});
+/** TypeScript type inferred from review publish DTO Zod schema. */
+export type ReviewPublishDto = z.infer<typeof ReviewPublishDtoSchema>;
+
+/** Zod schema validating update version label DTO. */
+export const UpdateVersionLabelDtoSchema = z.object({
+  label: z.string().min(1, 'Label cannot be empty').max(100),
+});
+/** TypeScript type inferred from update version label DTO Zod schema. */
+export type UpdateVersionLabelDto = z.infer<typeof UpdateVersionLabelDtoSchema>;
+
+/** Zod schema validating duplicate version DTO. */
+export const DuplicateVersionDtoSchema = z.object({
+  label: z.string().min(1).max(100).optional(),
+});
+/** TypeScript type inferred from duplicate version DTO Zod schema. */
+export type DuplicateVersionDto = z.infer<typeof DuplicateVersionDtoSchema>;
+
+/** Zod schema validating slot change detail. */
+export const SlotChangeDetailSchema = z.object({
+  field: z.enum(['subject', 'faculty', 'room', 'time', 'span', 'type']),
+  from: z.any(),
+  to: z.any(),
+});
+/** TypeScript type inferred from slot change detail Zod schema. */
+export type SlotChangeDetail = z.infer<typeof SlotChangeDetailSchema>;
+
+/** Zod schema validating slot diff item. */
+export const SlotDiffItemSchema = z.object({
+  slotId: z.string().optional(),
+  sectionId: z.string(),
+  subjectId: z.string().optional(),
+  facultyId: z.string().optional(),
+  roomId: z.string().optional(),
+  day: z.number().int(),
+  startPeriod: z.number().int(),
+  span: z.number().int().optional(),
+  type: z.string().optional(),
+  changes: z.array(SlotChangeDetailSchema).optional(),
+});
+/** TypeScript type inferred from slot diff item Zod schema. */
+export type SlotDiffItem = z.infer<typeof SlotDiffItemSchema>;
+
+/** Zod schema validating faculty workload delta. */
+export const FacultyWorkloadDeltaSchema = z.object({
+  facultyId: z.string(),
+  facultyName: z.string().optional(),
+  fromPeriods: z.number().int(),
+  toPeriods: z.number().int(),
+  delta: z.number().int(),
+});
+/** TypeScript type inferred from faculty workload delta Zod schema. */
+export type FacultyWorkloadDelta = z.infer<typeof FacultyWorkloadDeltaSchema>;
+
+/** Zod schema validating conflict delta. */
+export const ConflictDeltaSchema = z.object({
+  fromCount: z.number().int(),
+  toCount: z.number().int(),
+  delta: z.number().int(),
+});
+/** TypeScript type inferred from conflict delta Zod schema. */
+export type ConflictDelta = z.infer<typeof ConflictDeltaSchema>;
+
+/** Zod schema validating score delta. */
+export const ScoreDeltaSchema = z.object({
+  fromScore: z.number(),
+  toScore: z.number(),
+  delta: z.number(),
+});
+/** TypeScript type inferred from score delta Zod schema. */
+export type ScoreDelta = z.infer<typeof ScoreDeltaSchema>;
+
+/** Zod schema validating version comparison diff DTO. */
+export const VersionDiffDtoSchema = z.object({
+  leftVersionId: z.string(),
+  rightVersionId: z.string(),
+  added: z.array(SlotDiffItemSchema),
+  removed: z.array(SlotDiffItemSchema),
+  changed: z.array(SlotDiffItemSchema),
+  workloadDeltas: z.array(FacultyWorkloadDeltaSchema),
+  conflictDelta: ConflictDeltaSchema,
+  scoreDelta: ScoreDeltaSchema,
+  summaries: z.array(z.string()),
+});
+/** TypeScript type inferred from version comparison diff DTO Zod schema. */
+export type VersionDiffDto = z.infer<typeof VersionDiffDtoSchema>;
+
+/** Zod schema validating timetable rating DTO. */
+export const TimetableRatingDtoSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().max(500).optional(),
+  categories: z.record(z.number()).optional(),
+});
+/** TypeScript type inferred from timetable rating DTO Zod schema. */
+export type TimetableRatingDto = z.infer<typeof TimetableRatingDtoSchema>;
+
+/** Zod schema validating timetable rating response DTO. */
+export const TimetableRatingResponseDtoSchema = z.object({
+  id: z.string(),
+  versionId: z.string(),
+  projectId: z.string(),
+  userId: z.string(),
+  rating: z.number().int(),
+  comment: z.string().optional(),
+  categories: z.record(z.number()).optional(),
+  createdAt: z.string(),
+});
+/** TypeScript type inferred from timetable rating response DTO Zod schema. */
+export type TimetableRatingResponseDto = z.infer<typeof TimetableRatingResponseDtoSchema>;

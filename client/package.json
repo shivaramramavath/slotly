@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@slotly/contracts": "workspace:*",
+    "@slotly/engine": "workspace:*",
     "@tanstack/react-query": "^5.106.1",
     "@xyflow/react": "^12.12.1",
     "clsx": "^2.1.1",

@@ -1,5 +1,6 @@
-import { ValidationService } from '../core/validation.service';
-import type { EngineInput, Slot } from '../core/types';
+// Unit tests validating ValidationService pipeline in @slotly/engine.
+import { ValidationService } from '@slotly/engine';
+import type { EngineInput, Slot } from '@slotly/engine';
 
 describe('ValidationService Pipeline', () => {
   const validator = new ValidationService();

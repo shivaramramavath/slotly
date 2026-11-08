@@ -1,7 +1,7 @@
 // Database repository managing mongo-schedule-version.repository persistence.
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, ClientSession } from 'mongoose';
 import {
   ScheduleVersion,
   ScheduleVersionDocument,
@@ -80,14 +80,54 @@ export class MongoScheduleVersionRepository implements IScheduleVersionRepositor
   async update(
     id: string,
     data: Partial<ScheduleVersionDto>,
+    session?: ClientSession,
   ): Promise<ScheduleVersionDto | null> {
-    const updated = await this.model
-      .findByIdAndUpdate(id, { $set: data }, { new: true })
+    const existing = await this.model
+      .findById(id)
+      .session(session || null)
       .exec();
-    return updated ? this.toDto(updated) : null;
+    if (!existing) {
+      return null;
+    }
+
+    if (existing.status === 'published') {
+      const isArchiving = data.status === 'archived';
+      if (!isArchiving) {
+        throw new ConflictException({
+          message:
+            'Published schedule versions are immutable and cannot be modified.',
+          code: 'VERSION_IMMUTABLE',
+        });
+      }
+    } else if (existing.status === 'archived') {
+      throw new ConflictException({
+        message:
+          'Archived schedule versions are immutable and cannot be modified.',
+        code: 'VERSION_IMMUTABLE',
+      });
+    }
+
+    const options = session
+      ? { new: true as const, session }
+      : { new: true as const };
+    const updated = await this.model
+      .findByIdAndUpdate(id, { $set: data }, options)
+      .exec();
+    return updated ? this.toDto(updated as ScheduleVersionDocument) : null;
   }
 
   async delete(id: string): Promise<boolean> {
+    const existing = await this.model.findById(id).exec();
+    if (
+      existing &&
+      (existing.status === 'published' || existing.status === 'archived')
+    ) {
+      throw new ConflictException({
+        message:
+          'Published or archived schedule versions are immutable and cannot be deleted.',
+        code: 'VERSION_IMMUTABLE',
+      });
+    }
     const res = await this.model.findByIdAndDelete(id).exec();
     return res !== null;
   }

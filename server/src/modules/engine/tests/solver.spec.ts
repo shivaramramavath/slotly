@@ -1,6 +1,7 @@
+// Unit tests validating TimetableSolver heuristics, backtracking, and alternatives generation.
 import { TimetableSolver } from '../core/solver/timetable-solver';
 import { generateAlternatives } from '../core/solver/alternatives-generator';
-import type { EngineInput, Slot } from '../core/types';
+import type { EngineInput, Slot } from '@slotly/engine';
 
 describe('TimetableSolver (Pure Engine)', () => {
   // Common base settings

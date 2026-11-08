@@ -106,14 +106,38 @@ GET /projects/:projectId/builds/:versionId get specific schedule version with sl
 POST /projects/:projectId/builds/cancel cancel in-flight build job
 
 TIMETABLE & EDITOR (use If-Match: <revision> on all writes; 409 on mismatch)
-POST /versions/:versionId/slots/bulk
-POST /versions/:versionId/slots/:slotId/merge
-POST /versions/:versionId/slots/:slotId/split
-DELETE /versions/:versionId/slots/:slotId clear cell
-POST /versions/:versionId/undo
-POST /versions/:versionId/redo
-GET /versions/:versionId/periods
-PUT /versions/:versionId/periods
+GET    /versions/:versionId/slots                        query schedule entries by sectionId, facultyId, roomId, subjectId, day
+PATCH  /versions/:versionId/slots/:slotId                edit slot details
+POST   /versions/:versionId/slots/:slotId/move           move slot to target day, startPeriod, roomId, facultyId
+POST   /versions/:versionId/slots/swap                   swap two slots atomically
+POST   /versions/:versionId/slots/bulk                   bulk batch actions (atomic, validated together)
+POST   /versions/:versionId/slots/:slotId/merge
+POST   /versions/:versionId/slots/:slotId/split
+DELETE /versions/:versionId/slots/:slotId                clear cell assignment
+POST   /versions/:versionId/slots/lock                   lock or unlock cells, rows, days, or whole timetable
+POST   /versions/:versionId/slots/validate-move          dry-run move validation against MoveValidator chain
+POST   /versions/:versionId/slots/suggestions            smart suggestions for slot assignment
+POST   /versions/:versionId/undo
+POST   /versions/:versionId/redo
+GET    /versions/:versionId/periods
+PUT    /versions/:versionId/periods
+
+VERSIONS, COMPARISON & PUBLISHING (FEATURES §10, Phase 11)
+GET    /projects/:projectId/versions                     list schedule versions for a project
+GET    /projects/:projectId/versions/:versionId          get specific schedule version details
+PATCH  /versions/:versionId/label                        update version label
+POST   /versions/:versionId/duplicate                    duplicate version as a new draft
+POST   /versions/:versionId/restore                      restore an older version as a new draft
+POST   /versions/:versionId/archive                      archive a version
+GET    /versions/:leftVersionId/diff/:rightVersionId     compare two versions with slot, workload, conflict, and score diffs
+POST   /versions/:versionId/publish-request              submit a publish request (DESIGNER)
+GET    /projects/:projectId/publish-requests             list publish requests for a project
+GET    /admin/approvals                                  list pending publish requests across projects (ADMIN)
+POST   /publish-requests/:requestId/approve              admin approves publish request and executes atomic publication
+POST   /publish-requests/:requestId/reject               admin rejects publish request with mandatory comment
+POST   /versions/:versionId/publish                      admin direct publish in atomic transaction
+POST   /versions/:versionId/rate                         submit timetable quality rating and feedback
+GET    /versions/:versionId/ratings                      list quality ratings for a timetable version
 
 SOCKET NAMESPACES & EVENTS
 /blueprint:
@@ -124,6 +148,10 @@ node:locked, node:unlocked, revision:conflict
 /builds:
 client -> server: join:project, leave:project
 server -> client: build:progress, build:completed, build:failed
+
+/schedule:
+  client -> server: schedule:join, schedule:leave
+  server -> client: slot:moved, slot:updated, slot:locked, slot:cleared, revision:conflict, presence:changed
 
 BULLMQ QUEUES & PROCESSORS
 builds:

@@ -1,5 +1,6 @@
 // Database repository managing cached-schedule-version.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
+import type { ClientSession } from 'mongoose';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import type { IScheduleVersionRepository } from './schedule-version.repository.interface';
@@ -53,8 +54,9 @@ export class CachedScheduleVersionRepository implements IScheduleVersionReposito
   async update(
     id: string,
     data: Partial<ScheduleVersionDto>,
+    session?: ClientSession,
   ): Promise<ScheduleVersionDto | null> {
-    const updated = await this.inner.update(id, data);
+    const updated = await this.inner.update(id, data, session);
     if (updated) {
       await this.cache.del(`slotly:version:${id}`);
       await this.cache.invalidateTag(`project:${updated.projectId}`);

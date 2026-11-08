@@ -23,6 +23,9 @@ import { ProjectsModule } from './modules/projects/projects.module';
 import { BlueprintModule } from './modules/blueprint/blueprint.module';
 import { EngineModule } from './modules/engine/engine.module';
 import { BuildsModule } from './modules/builds/builds.module';
+import { SchedulesModule } from './modules/schedules/schedules.module';
+import { VersionsModule } from './modules/versions/versions.module';
+import { PublishingModule } from './modules/publishing/publishing.module';
 
 /** Class implementing app module. */
 @Module({
@@ -49,6 +52,9 @@ import { BuildsModule } from './modules/builds/builds.module';
     BlueprintModule,
     EngineModule,
     BuildsModule,
+    SchedulesModule,
+    VersionsModule,
+    PublishingModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,6 +1,6 @@
-import { ScheduleState } from '../core/schedule-state';
-import type { EngineInput, Slot } from '../core/types';
+// Unit tests validating all 7 soft scheduling constraints in @slotly/engine.
 import {
+  ScheduleState,
   FacultyPreferredPeriodsConstraint,
   SpreadSubjectsAcrossDaysConstraint,
   LimitConsecutiveSameSubjectConstraint,
@@ -8,7 +8,8 @@ import {
   LabsInAfternoonConstraint,
   MinimizeRoomChangesConstraint,
   DepartmentRulesConstraint,
-} from '../core/constraints/soft';
+} from '@slotly/engine';
+import type { EngineInput, Slot } from '@slotly/engine';
 
 describe('Soft Constraints Suite (7 Constraints)', () => {
   const baseInput: EngineInput = {
