@@ -57,7 +57,9 @@ describe('RedisSessionsService - Token Rotation & Reuse Detection', () => {
     );
 
     // Simulate elapsed grace window so replay is detected as reuse rather than concurrent grace recovery
-    const sessionObj = await cache.get<SessionData>(`slotly:session:${session.sessionId}`);
+    const sessionObj = await cache.get<SessionData>(
+      `slotly:session:${session.sessionId}`,
+    );
     if (sessionObj) {
       sessionObj.graceRotatedAt = Date.now() - 15000;
       await cache.set(`slotly:session:${session.sessionId}`, sessionObj);

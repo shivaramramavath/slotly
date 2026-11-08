@@ -51,6 +51,7 @@ describe('Auth Refresh Flow & Session Hardening', () => {
       mockAuthService,
       sessionsService,
       {} as unknown as OAuthService,
+      undefined,
       mockThrottler,
     );
   });

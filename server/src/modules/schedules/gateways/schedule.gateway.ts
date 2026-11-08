@@ -9,7 +9,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Inject, Logger } from '@nestjs/common';
+import { Inject, Logger, Optional } from '@nestjs/common';
 import { Server, Socket, type DefaultEventsMap } from 'socket.io';
 import { createHash } from 'crypto';
 import {
@@ -19,6 +19,7 @@ import {
 } from '@slotly/contracts';
 import { SESSIONS_SERVICE } from '../../auth/services/sessions.service';
 import type { SessionsService } from '../../auth/services/sessions.service';
+import { jwtConfig, DEFAULT_CONFIG, type JwtConfig } from '../../../config';
 
 /** Interface defining structure for socket user data. */
 export interface SocketUserData {
@@ -46,7 +47,7 @@ export type AuthenticatedScheduleSocket = Socket<
 @WebSocketGateway({
   namespace: '/schedule',
   cors: {
-    origin: process.env['CLIENT_URL'] || 'http://localhost:3000',
+    origin: DEFAULT_CONFIG.app.clientUrl,
     credentials: true,
   },
 })
@@ -64,6 +65,9 @@ export class ScheduleGateway
   constructor(
     @Inject(SESSIONS_SERVICE)
     private readonly sessionsService: SessionsService,
+    @Optional()
+    @Inject(jwtConfig.KEY)
+    private readonly jwtConf?: JwtConfig,
   ) {}
 
   afterInit() {
@@ -99,8 +103,7 @@ export class ScheduleGateway
 
       const [header, payload, signature] = parts;
       const secret =
-        process.env['JWT_ACCESS_SECRET'] ||
-        'slotly-dev-super-secure-access-token-secret-32-chars';
+        this.jwtConf?.access.secret || DEFAULT_CONFIG.jwt.access.secret;
       const expectedSig = createHash('sha256')
         .update(`${header}.${payload}.${secret}`)
         .digest('base64url');

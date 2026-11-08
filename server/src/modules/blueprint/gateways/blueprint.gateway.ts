@@ -10,7 +10,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Inject, Logger, Optional } from '@nestjs/common';
-import { jwtConfig } from '../../../config';
+import { jwtConfig, DEFAULT_CONFIG } from '../../../config';
 import type { JwtConfig } from '../../../config';
 import { Server, Socket, type DefaultEventsMap } from 'socket.io';
 import { createHash, randomUUID } from 'crypto';
@@ -70,7 +70,7 @@ interface NodeLockInfo {
 @WebSocketGateway({
   namespace: '/blueprint',
   cors: {
-    origin: process.env['CLIENT_URL'] || 'http://localhost:3000',
+    origin: DEFAULT_CONFIG.app.clientUrl,
     credentials: true,
   },
 })
