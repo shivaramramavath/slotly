@@ -1,4 +1,4 @@
-// React component for step-up-dialog.
+// React component for step-up verification supporting password, TOTP, and email code methods.
 'use client';
 
 import React, { useState } from 'react';
@@ -15,18 +15,38 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast';
 
-/** React component rendering step up dialog. */
+/** React component rendering step up dialog with password, TOTP, and email OTP options. */
 export function StepUpDialog() {
   const stepUpRequired = useAuthStore((s) => s.stepUpRequired);
   const setStepUpRequired = useAuthStore((s) => s.setStepUpRequired);
+  const user = useAuthStore((s) => s.user);
 
-  const [mode, setMode] = useState<'password' | 'code'>('password');
+  const [mode, setMode] = useState<'password' | 'totp' | 'email_otp'>('password');
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const handleClose = () => {
     setStepUpRequired(false);
     setValue('');
+  };
+
+  const handleSendEmailOtp = async () => {
+    if (!user?.email) return;
+    setSendingEmail(true);
+    try {
+      await authApi.resendEmail({
+        email: user.email,
+      });
+      toast.success(
+        'Code Sent',
+        `A verification code was sent to ${user.email}.`,
+      );
+    } catch {
+      // toast error handled by apiClient
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,9 +55,14 @@ export function StepUpDialog() {
 
     setLoading(true);
     try {
-      await authApi.stepUp(
-        mode === 'password' ? { password: value } : { code: value },
-      );
+      if (mode === 'password') {
+        await authApi.stepUp({ method: 'password', password: value });
+      } else if (mode === 'totp') {
+        await authApi.stepUp({ method: 'totp', code: value });
+      } else {
+        await authApi.stepUp({ method: 'email_otp', code: value });
+      }
+
       toast.success('Identity confirmed', 'Step-up authentication successful.');
       setStepUpRequired(false);
       setValue('');
@@ -54,8 +79,8 @@ export function StepUpDialog() {
         <DialogHeader>
           <DialogTitle>Confirm Your Identity</DialogTitle>
           <DialogDescription>
-            This action requires recent authentication. Please enter your account
-            password or 6-digit authenticator code to proceed.
+            This action requires recent authentication. Please verify your credentials
+            to proceed with sensitive security changes.
           </DialogDescription>
         </DialogHeader>
 
@@ -63,7 +88,10 @@ export function StepUpDialog() {
           <div className="flex gap-2 border-b border-[#232323] pb-2">
             <button
               type="button"
-              onClick={() => setMode('password')}
+              onClick={() => {
+                setMode('password');
+                setValue('');
+              }}
               className={`text-xs uppercase tracking-wider font-mono px-3 py-1.5 rounded transition-colors ${
                 mode === 'password'
                   ? 'bg-[#FACC15] text-black font-semibold'
@@ -74,18 +102,35 @@ export function StepUpDialog() {
             </button>
             <button
               type="button"
-              onClick={() => setMode('code')}
+              onClick={() => {
+                setMode('totp');
+                setValue('');
+              }}
               className={`text-xs uppercase tracking-wider font-mono px-3 py-1.5 rounded transition-colors ${
-                mode === 'code'
+                mode === 'totp'
                   ? 'bg-[#FACC15] text-black font-semibold'
                   : 'text-[#8A8A8A] hover:text-[#FAFAFA]'
               }`}
             >
-              TOTP Code
+              Authenticator App
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('email_otp');
+                setValue('');
+              }}
+              className={`text-xs uppercase tracking-wider font-mono px-3 py-1.5 rounded transition-colors ${
+                mode === 'email_otp'
+                  ? 'bg-[#FACC15] text-black font-semibold'
+                  : 'text-[#8A8A8A] hover:text-[#FAFAFA]'
+              }`}
+            >
+              Email Code
             </button>
           </div>
 
-          {mode === 'password' ? (
+          {mode === 'password' && (
             <div>
               <label className="block text-xs font-mono text-[#8A8A8A] mb-1.5 uppercase">
                 Account Password
@@ -99,7 +144,9 @@ export function StepUpDialog() {
                 required
               />
             </div>
-          ) : (
+          )}
+
+          {mode === 'totp' && (
             <div>
               <label className="block text-xs font-mono text-[#8A8A8A] mb-1.5 uppercase">
                 6-Digit Authenticator Code
@@ -115,10 +162,45 @@ export function StepUpDialog() {
               />
             </div>
           )}
+
+          {mode === 'email_otp' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-mono text-[#8A8A8A] uppercase">
+                  Email Verification Code
+                </label>
+                <button
+                  type="button"
+                  onClick={handleSendEmailOtp}
+                  disabled={sendingEmail}
+                  className="text-xs font-mono text-[#3B82F6] hover:underline disabled:opacity-50"
+                >
+                  {sendingEmail ? 'Sending...' : 'Send code to email'}
+                </button>
+              </div>
+              <Input
+                type="text"
+                placeholder="6-digit email code"
+                maxLength={6}
+                value={value}
+                onChange={(e) => setValue(e.target.value.trim())}
+                autoFocus
+                required
+              />
+              <p className="text-[11px] font-mono text-[#8A8A8A]">
+                Sent to {user?.email || 'your registered email address'}.
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" type="button" onClick={handleClose} disabled={loading}>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={handleClose}
+            disabled={loading}
+          >
             Cancel
           </Button>
           <Button variant="primary" type="submit" disabled={loading}>
