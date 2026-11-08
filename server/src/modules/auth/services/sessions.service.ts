@@ -4,7 +4,10 @@ import {
   UnauthorizedException,
   Inject,
   Logger,
+  Optional,
 } from '@nestjs/common';
+import { jwtConfig, sessionConfig, DEFAULT_CONFIG } from '../../../config';
+import type { JwtConfig, SessionConfig } from '../../../config';
 import { createHash, randomBytes, randomUUID } from 'crypto';
 import { UserRole } from '@slotly/contracts';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
@@ -88,10 +91,24 @@ export interface SessionsService {
 @Injectable()
 export class RedisSessionsService implements SessionsService {
   private readonly logger = new Logger(RedisSessionsService.name);
-  private readonly inactivityTtl = 7 * 24 * 3600; // 7 days in seconds
-  private readonly maxLifetime = 30 * 24 * 3600; // 30 days in seconds
 
-  constructor(@Inject(CACHE_SERVICE) private readonly cache: CacheService) {}
+  constructor(
+    @Inject(CACHE_SERVICE) private readonly cache: CacheService,
+    @Optional()
+    @Inject(jwtConfig.KEY)
+    private readonly jwtConf?: JwtConfig,
+    @Optional()
+    @Inject(sessionConfig.KEY)
+    private readonly sessionConf?: SessionConfig,
+  ) {}
+
+  private get inactivityTtl(): number {
+    return this.sessionConf?.ttl || DEFAULT_CONFIG.session.ttl;
+  }
+
+  private get maxLifetime(): number {
+    return this.sessionConf?.maxLifetime || DEFAULT_CONFIG.session.maxLifetime;
+  }
 
   private getSessionKey(sessionId: string): string {
     return `slotly:session:${sessionId}`;
@@ -126,7 +143,7 @@ export class RedisSessionsService implements SessionsService {
     ).toString('base64url');
 
     const secret =
-      process.env['JWT_ACCESS_SECRET'] ||
+      this.jwtConf?.access.secret ||
       'slotly-dev-super-secure-access-token-secret-32-chars';
     const signature = createHash('sha256')
       .update(`${header}.${payload}.${secret}`)

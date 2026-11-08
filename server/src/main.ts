@@ -1,9 +1,9 @@
-// Core implementation for main in Projects/slotly/server/src.
+// Core bootstrap implementation for the Slotly backend server.
 import { NestFactory } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { appConfig, AppConfig } from './config';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import {
@@ -14,14 +14,14 @@ import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const config = app.get(ConfigService);
+  const appCfg = app.get<AppConfig>(appConfig.KEY);
 
   // Security headers & cookies
   app.use(helmet());
   app.use(cookieParser());
 
   // CORS configuration
-  const clientUrl = config.get<string>('CLIENT_URL', 'http://localhost:3000');
+  const clientUrl = appCfg.clientUrl;
   app.enableCors({
     origin: clientUrl,
     credentials: true,
@@ -46,7 +46,7 @@ async function bootstrap() {
     new MetricsInterceptor(metricsService),
   );
 
-  const port = config.get<number>('PORT', 4000);
+  const port = appCfg.port;
   await app.listen(port);
   console.log(`Slotly server listening on port ${port}`);
 }

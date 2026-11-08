@@ -1,7 +1,13 @@
 // Core implementation for queue.module in server/src/common/queue.
 import { Global, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
+import {
+  redisConfig,
+  RedisConfig,
+  queueConfig,
+  QueueConfig,
+} from '../../config';
 import { WriteBehindService, WRITE_BEHIND_QUEUE } from './write-behind.service';
 
 /** Class implementing app queue module. */
@@ -9,15 +15,21 @@ import { WriteBehindService, WRITE_BEHIND_QUEUE } from './write-behind.service';
 @Module({
   imports: [
     BullModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (config: ConfigService) => ({
+      imports: [
+        ConfigModule.forFeature(redisConfig),
+        ConfigModule.forFeature(queueConfig),
+      ],
+      inject: [redisConfig.KEY, queueConfig.KEY],
+      useFactory: (redisConf: RedisConfig, queueConf: QueueConfig) => ({
+        prefix: queueConf.prefix,
         connection: {
-          host: config.get<string>('REDIS_HOST', 'localhost'),
-          port: config.get<number>('REDIS_PORT', 6379),
-          password: config.get<string>('REDIS_PASSWORD') || undefined,
+          host: redisConf.host,
+          port: redisConf.port,
+          password: redisConf.password || undefined,
+          db: redisConf.db,
+          tls: redisConf.tls ? {} : undefined,
         },
       }),
-      inject: [ConfigService],
     }),
     BullModule.registerQueue(
       { name: WRITE_BEHIND_QUEUE },

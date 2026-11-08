@@ -1,4 +1,5 @@
 // Database migration to ensure MongoDB indexes and compound unique constraints across all collections.
+import { DEFAULT_CONFIG } from '../../config/defaults';
 
 /** Interface defining an index specification for a collection. */
 export interface IndexDefinition {
@@ -215,8 +216,9 @@ if (process.argv[1] && process.argv[1].endsWith('ensure-indexes.ts')) {
   // Direct CLI invocation
   const dryRun = process.argv.includes('--dry-run');
   const uri =
-    process.env.MONGODB_URI ??
-    'mongodb://localhost:27017/slotly?replicaSet=rs0&directConnection=true';
+    process.env['DATABASE_URL'] ??
+    process.env['MONGODB_URI'] ??
+    DEFAULT_CONFIG.database.uri;
 
   void (async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports

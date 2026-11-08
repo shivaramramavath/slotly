@@ -1,5 +1,7 @@
 // Core implementation for email-template.renderer in server/src/common/email.
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, Optional } from '@nestjs/common';
+import { appConfig, DEFAULT_CONFIG } from '../../config';
+import type { AppConfig } from '../../config';
 import type { EmailMessage } from './email.interface';
 
 /** Interface defining structure for rendered email. */
@@ -17,6 +19,11 @@ function str(val: unknown, fallback = ''): string {
 /** Injectable service providing email template renderer logic. */
 @Injectable()
 export class EmailTemplateRenderer {
+  constructor(
+    @Optional()
+    @Inject(appConfig.KEY)
+    private readonly appConf?: AppConfig,
+  ) {}
   /**
    * Renders HTML and text versions of an email message based on its template and variables.
    */
@@ -176,7 +183,7 @@ export class EmailTemplateRenderer {
       </div>
 
       <p style="color: #8A8A8A; font-size: 12px; line-height: 1.5; margin: 20px 0 0 0; border-top: 1px solid #232323; padding-top: 16px;">
-        If you performed this action, no further response is needed. If you did not authorize this, please <a href="${process.env['CLIENT_URL'] || 'http://localhost:3000'}/users/me/security" style="color: #3B82F6; text-decoration: underline;">review your active sessions and reset your password</a> immediately.
+        If you performed this action, no further response is needed. If you did not authorize this, please <a href="${this.appConf?.clientUrl || DEFAULT_CONFIG.app.clientUrl}/users/me/security" style="color: #3B82F6; text-decoration: underline;">review your active sessions and reset your password</a> immediately.
       </p>
     `;
 

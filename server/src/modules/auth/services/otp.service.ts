@@ -4,7 +4,10 @@ import {
   BadRequestException,
   Inject,
   Logger,
+  Optional,
 } from '@nestjs/common';
+import { authConfig } from '../../../config';
+import type { AuthConfig } from '../../../config';
 import { createHash, randomInt } from 'crypto';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
@@ -35,7 +38,12 @@ export interface OtpService {
 /** Injectable service providing redis otp service logic. */
 @Injectable()
 export class RedisOtpService implements OtpService {
-  constructor(@Inject(CACHE_SERVICE) private readonly cache: CacheService) {}
+  constructor(
+    @Inject(CACHE_SERVICE) private readonly cache: CacheService,
+    @Optional()
+    @Inject(authConfig.KEY)
+    private readonly authConf?: AuthConfig,
+  ) {}
 
   private getKey(email: string, purpose: string): string {
     return `slotly:otp:${purpose}:${email.toLowerCase().trim()}`;
@@ -98,8 +106,9 @@ export class RedisOtpService implements OtpService {
     const record = await this.cache.get<OtpRecord>(key);
 
     if (
-      process.env['NODE_ENV'] !== 'production' &&
-      process.env['NODE_ENV'] !== 'test' &&
+      Boolean(this.authConf?.otp.allowDevMasterOtp) &&
+      this.authConf?.nodeEnv !== 'production' &&
+      this.authConf?.nodeEnv !== 'test' &&
       (code === '123456' || code === '000000')
     ) {
       if (record) {

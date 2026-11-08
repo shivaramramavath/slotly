@@ -9,7 +9,9 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Inject, Logger } from '@nestjs/common';
+import { Inject, Logger, Optional } from '@nestjs/common';
+import { jwtConfig } from '../../../config';
+import type { JwtConfig } from '../../../config';
 import { Server, Socket, type DefaultEventsMap } from 'socket.io';
 import { createHash, randomUUID } from 'crypto';
 import {
@@ -93,6 +95,9 @@ export class BlueprintGateway
     @Inject(CACHE_SERVICE) private readonly cacheService: CacheService,
     @Inject(SESSIONS_SERVICE)
     private readonly sessionsService: SessionsService,
+    @Optional()
+    @Inject(jwtConfig.KEY)
+    private readonly jwtConf?: JwtConfig,
   ) {}
 
   afterInit() {
@@ -128,7 +133,7 @@ export class BlueprintGateway
 
       const [header, payload, signature] = parts;
       const secret =
-        process.env['JWT_ACCESS_SECRET'] ||
+        this.jwtConf?.access.secret ||
         'slotly-dev-super-secure-access-token-secret-32-chars';
       const expectedSig = createHash('sha256')
         .update(`${header}.${payload}.${secret}`)
