@@ -53,13 +53,7 @@ export type RevisionConflict = z.infer<typeof RevisionConflictSchema>;
 // ROLES & PERMISSIONS
 // ==========================================
 /** Zod schema validating user role. */
-export const UserRoleSchema = z.enum([
-  'SUPER_ADMIN',
-  'ADMIN',
-  'DESIGNER',
-  'FACULTY',
-  'STUDENT',
-]);
+export const UserRoleSchema = z.enum(['SUPER_ADMIN', 'ADMIN', 'DESIGNER', 'FACULTY', 'STUDENT']);
 /** TypeScript type inferred from user role Zod schema. */
 export type UserRole = z.infer<typeof UserRoleSchema>;
 
@@ -160,7 +154,14 @@ export const RolePermissions: Record<UserRole, Permission[]> = {
     'TIMETABLE_EDIT',
     'TIMETABLE_EXPORT',
   ],
-  FACULTY: ['INSTITUTION_READ', 'FACULTY_READ', 'ROOM_READ', 'SUBJECT_READ', 'TIMETABLE_READ', 'TIMETABLE_EXPORT'],
+  FACULTY: [
+    'INSTITUTION_READ',
+    'FACULTY_READ',
+    'ROOM_READ',
+    'SUBJECT_READ',
+    'TIMETABLE_READ',
+    'TIMETABLE_EXPORT',
+  ],
   STUDENT: ['INSTITUTION_READ', 'ROOM_READ', 'SUBJECT_READ', 'TIMETABLE_READ', 'TIMETABLE_EXPORT'],
 };
 
@@ -177,7 +178,7 @@ export const UserDtoSchema = z.object({
   departmentId: z.string().optional(),
   isEmailVerified: z.boolean(),
   mfaEnabled: z.boolean(),
-  status: z.enum(['active', 'suspended', 'deactivated']).default('active'),
+  status: z.enum(['active', 'suspended', 'deactivated', 'pending_onboarding']).default('active'),
 });
 /** TypeScript type inferred from user dto Zod schema. */
 export type UserDto = z.infer<typeof UserDtoSchema>;
@@ -197,7 +198,8 @@ export type RegisterDto = z.infer<typeof RegisterDtoSchema>;
 export const LoginDtoSchema = z.object({
   email: z.string().email(),
   password: z.string(),
-  code: z.string().optional(), // MFA code if logging in with 2FA
+  code: z.string().optional(),
+  otp: z.string().optional(), // MFA code if logging in with 2FA
 });
 /** TypeScript type inferred from login dto Zod schema. */
 export type LoginDto = z.infer<typeof LoginDtoSchema>;
@@ -277,11 +279,78 @@ export type MfaRecoveryDto = z.infer<typeof MfaRecoveryDtoSchema>;
 
 /** Zod schema validating step up dto. */
 export const StepUpDtoSchema = z.object({
+  method: z.enum(['password', 'totp', 'email_otp']).optional(),
   password: z.string().optional(),
   code: z.string().optional(),
 });
 /** TypeScript type inferred from step up dto Zod schema. */
 export type StepUpDto = z.infer<typeof StepUpDtoSchema>;
+
+/** Zod schema validating OAuth provider key. */
+export const OAuthProviderKeySchema = z.enum(['google', 'github']);
+/** TypeScript type inferred from OAuth provider key Zod schema. */
+export type OAuthProviderKey = z.infer<typeof OAuthProviderKeySchema>;
+
+/** Zod schema validating single OAuth provider information for login/link. */
+export const OAuthProviderInfoSchema = z.object({
+  key: OAuthProviderKeySchema,
+  name: z.string(),
+  enabled: z.boolean(),
+  authUrl: z.string().optional(),
+});
+/** TypeScript type inferred from OAuth provider information Zod schema. */
+export type OAuthProviderInfo = z.infer<typeof OAuthProviderInfoSchema>;
+
+/** Zod schema validating OAuth providers list response. */
+export const OAuthProvidersResponseSchema = z.object({
+  providers: z.array(OAuthProviderInfoSchema),
+});
+/** TypeScript type inferred from OAuth providers response Zod schema. */
+export type OAuthProvidersResponse = z.infer<typeof OAuthProvidersResponseSchema>;
+
+/** Zod schema validating connected OAuth account item. */
+export const ConnectedAccountDtoSchema = z.object({
+  provider: OAuthProviderKeySchema,
+  email: z.string().optional(),
+  displayName: z.string().optional(),
+  avatarUrl: z.string().optional(),
+  linkedAt: z.string(),
+  lastLoginAt: z.string(),
+});
+/** TypeScript type inferred from connected OAuth account Zod schema. */
+export type ConnectedAccountDto = z.infer<typeof ConnectedAccountDtoSchema>;
+
+/** Zod schema validating OAuth error code. */
+export const OAuthErrorCodeSchema = z.enum([
+  'oauth_denied',
+  'oauth_state_invalid',
+  'oauth_email_unverified',
+  'oauth_account_conflict',
+  'oauth_provider_error',
+  'oauth_disabled',
+  'account_suspended',
+  'link_conflict',
+]);
+/** TypeScript type inferred from OAuth error code Zod schema. */
+export type OAuthErrorCode = z.infer<typeof OAuthErrorCodeSchema>;
+
+/** Zod schema validating onboarding completion dto. */
+export const OnboardingDtoSchema = z.object({
+  institutionName: z.string().min(1).optional(),
+  institutionCode: z.string().min(1).max(10).optional(),
+  joinCode: z.string().min(1).optional(),
+});
+/** TypeScript type inferred from onboarding dto Zod schema. */
+export type OnboardingDto = z.infer<typeof OnboardingDtoSchema>;
+
+/** Audit event action names for authentication and OAuth lifecycle. */
+export const AuditEventNames = {
+  AUTH_OAUTH_SIGNUP: 'AUTH_OAUTH_SIGNUP',
+  AUTH_OAUTH_LOGIN_SUCCESS: 'AUTH_OAUTH_LOGIN_SUCCESS',
+  AUTH_OAUTH_LOGIN_FAILED: 'AUTH_OAUTH_LOGIN_FAILED',
+  AUTH_OAUTH_LINKED: 'AUTH_OAUTH_LINKED',
+  AUTH_OAUTH_UNLINKED: 'AUTH_OAUTH_UNLINKED',
+} as const;
 
 /** Zod schema validating session dto. */
 export const SessionDtoSchema = z.object({
@@ -917,8 +986,7 @@ export function normalizeAvailabilityMatrix(
   const pCount = Math.max(periodsCount, 1);
 
   return Array.from({ length: dCount }, (_, d) => {
-    const existingRow =
-      matrix && Array.isArray(matrix[d]) ? matrix[d] : undefined;
+    const existingRow = matrix && Array.isArray(matrix[d]) ? matrix[d] : undefined;
     return Array.from({ length: pCount }, (_, p) => {
       if (existingRow && typeof existingRow[p] === 'boolean') {
         return existingRow[p];
@@ -1027,7 +1095,11 @@ export const CreateSubjectDtoSchema = z.object({
   labHours: z.number().min(0).default(0),
   consecutivePeriods: z.number().int().min(1).default(1),
   preferredDays: z.array(z.number().int().min(0).max(6)).default([]),
-  requirements: SubjectRequirementsSchema.default({ roomType: 'lecture', minCapacity: 30, equipment: [] }),
+  requirements: SubjectRequirementsSchema.default({
+    roomType: 'lecture',
+    minCapacity: 30,
+    equipment: [],
+  }),
   enrollment: z.number().int().min(0).default(0),
   dependsOn: z.array(z.string()).default([]),
   isElective: z.boolean().default(false),
@@ -1237,7 +1309,10 @@ export type ProjectTerm = z.infer<typeof ProjectTermSchema>;
 /** Zod schema validating per day override. */
 export const PerDayOverrideSchema = z.object({
   periods: z.number().int().min(1).max(14).optional(),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
+  startTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .optional(),
 });
 /** TypeScript type inferred from per day override Zod schema. */
 export type PerDayOverride = z.infer<typeof PerDayOverrideSchema>;
@@ -1247,7 +1322,10 @@ export const ProjectSettingsSchema = z.object({
   days: z.array(z.number().int().min(0).max(6)).default([1, 2, 3, 4, 5]),
   periodsPerDay: z.number().int().min(1).max(14).default(7),
   periodDuration: z.number().int().min(30).max(180).default(50),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).default('09:00'),
+  startTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .default('09:00'),
   breaks: z.array(PeriodBreakSchema).default([]),
   perDayOverrides: z.record(z.string(), PerDayOverrideSchema).optional().default({}),
 });
@@ -1815,10 +1893,12 @@ export type ViolationDto = z.infer<typeof ViolationDtoSchema>;
 export const PreBuildCheckErrorSchema = z.object({
   code: z.string(),
   message: z.string(),
-  fixHint: z.object({
-    nodeId: z.string().optional(),
-    field: z.string().optional(),
-  }).optional(),
+  fixHint: z
+    .object({
+      nodeId: z.string().optional(),
+      field: z.string().optional(),
+    })
+    .optional(),
   details: z.record(z.unknown()).optional(),
 });
 /** TypeScript type inferred from pre build check error Zod schema. */
@@ -2001,5 +2081,3 @@ export const BuildProgressPayloadSchema = z.object({
 });
 /** TypeScript type inferred from build progress payload Zod schema. */
 export type BuildProgressPayload = z.infer<typeof BuildProgressPayloadSchema>;
-
-
