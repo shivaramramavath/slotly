@@ -974,3 +974,43 @@
 - [x] Run `pnpm typecheck`: Contracts, server, and client all typecheck with zero errors.
 - [x] Run `pnpm test`: All 36 Jest test suites (178 tests) + codemap golden test pass.
 - [x] Run `pnpm codemap:check`: All maps and symbol references verified cleanly.
+
+---
+
+## Integration Audit (Phases 0 to 9)
+
+### What Was Built
+- **Baseline Verification:** Tagged `pre-audit-baseline` on `main`/`fix/integration-audit`. Verified clean install, clean temporary clone build, MongoDB replica set `rs0`, and Redis health.
+- **Static Analysis:**
+  - Circular dependencies: identified 2 cycles in server via `madge` (`auth.module` -> `institutions.module` -> `users.module`, `blueprint.module` -> `projects.module`); 0 in client.
+  - Code duplication: identified 304 clones (7.42% duplicate token density) via `jscpd` across repository CRUD implementations and client modals.
+  - Vulnerability scan: identified 8 vulnerabilities via `pnpm audit` (`xlsx` Prototype Pollution/ReDoS, `zod` collection memory exhaustion).
+  - Code smells: 0 `any`, 0 `@ts-ignore`, 0 TODO/FIXME comments, 0 `console.log` in production code; 1 `@typescript-eslint/no-require-imports` in migrations.
+- **Contract & Drift Analysis:**
+  - Audited 122 controller routes and gateways against `@RequirePermissions`, identifying unguarded endpoints.
+  - Identified live MongoDB missing compound unique indexes (`{ institutionId: 1, code: 1, isDeleted: 1 }` unapplied on `faculties`, `rooms`, `subjects`).
+  - Identified matrix dimension out-of-bounds issue in `FacultyAvailabilityConstraint` for 6-day institutions.
+  - Identified BullMQ queue naming drift (`builds` in-process execution, `notifications` vs `email`, and inverted Redis lock key `slotly:lock:build:{projectId}`).
+  - Identified socket event name drift on `/builds` (`build:join`/`build:leave` vs `join:project`/`leave:project`).
+- **Integration Test Suite (`server/src/integration-audit/cross-module-scenarios.spec.ts`):**
+  - Added test coverage for Scenarios 1 through 15.
+  - Documented 5 confirmed bug reproduction `.todo` tests without altering production behavior.
+- **Runtime Checks:**
+  - Verified `/health` dependency reporting (MongoDB and Redis up).
+  - Verified Redis memory footprint (2.40 MB, 36 keys).
+  - Executed WebSocket load test (`scripts/audit-socket-load.js`) with 50 concurrent authenticated clients and 500 drag events (0% drops, 0.03 ms avg emit latency).
+- **Audit Report:**
+  - Compiled comprehensive `docs/AUDIT_REPORT.md` with findings categorized S1 through S4, impact analysis, reproduction commands, and test gap tables.
+
+### Decisions Made
+- **Zero Production Code Changes:** Strictly adhered to audit task requirements. Discovered discrepancies and bugs are documented with evidence and `.todo` tests rather than patched in-place.
+- **Dedicated Audit Tooling in `scripts/`:** Preserved audit analysis scripts (`audit-routes.js`, `audit-mongo-indexes.js`, `audit-socket-load.js`, etc.) for reproducible verification.
+
+### Manual Verification Checklist
+- [x] Pre-audit baseline tagged and pushed (`pre-audit-baseline`).
+- [x] Clean clone build passes cleanly.
+- [x] Static checks completed (madge, jscpd, pnpm audit, code smell metrics).
+- [x] Live MongoDB index queries and dry-run migration executed.
+- [x] WebSocket load test (50 concurrent clients, 500 events) executed with 0 dropped events.
+- [x] Full workspace verification passes: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+- [x] Comprehensive `docs/AUDIT_REPORT.md` generated.
