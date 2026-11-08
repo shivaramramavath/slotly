@@ -204,3 +204,40 @@ slotly:viewer:{projectId}:{type}:{targetId}[:day] - cached published timetable v
 slotly:public:share:{tokenHash}                   - cached public share metadata & timetable (TTL 1h)
 slotly:export:signed:{token}                      - expiring signed export download ticket (TTL 24h)
 slotly:feed:token:{tokenHash}                     - cached calendar feed token mapping (TTL 24h)
+
+# Phase 13: Analytics, Administration, Feedback, Monitoring
+GET    /analytics/projects/:projectId/overview           totals: faculty, departments, rooms, subjects, sections, timetables, conflicts
+GET    /analytics/projects/:projectId/metrics            all analytics metrics (workload, room, period, free periods, etc.)
+GET    /analytics/projects/:projectId/metrics/:metric    single analytics metric by key
+GET    /analytics/projects/:projectId/balancing-suggestions smart workload balancing suggestions
+GET    /admin/users                                      list users with pagination and search
+PATCH  /admin/users/:userId/role                         change user role (requires step-up)
+GET    /admin/roles                                      role × permission matrix
+GET    /admin/timetables                                 all timetables across institution
+GET    /admin/conflicts                                  reported problems and open conflicts across institution
+GET    /admin/users/:userId/sessions                     per-user active sessions
+DELETE /admin/users/:userId/sessions/:sessionId          terminate user session
+GET    /admin/users/:userId/security-events              security audit events for user
+POST   /admin/users/:userId/force-password-reset          force user password reset on next login
+POST   /admin/users/:userId/require-mfa                  toggle required MFA for user
+GET    /admin/audit-logs                                 filter audit logs (actor, action, date range, target)
+POST   /admin/audit-logs/export                          enqueue CSV audit log export through exports queue
+POST   /feedback                                         submit feedback, quality rating, or problem report
+GET    /feedback/me                                      list own submitted feedback
+GET    /admin/feedback                                   admin feedback triage list
+PATCH  /admin/feedback/:id                               admin update feedback status and reply
+GET    /admin/system/health                              health checks for API, MongoDB, Redis, and Queues
+GET    /admin/system/queues                              queue depths, active/failed/delayed counts
+POST   /admin/system/queues/:queueName/retry-failed      retry failed jobs in queue
+GET    /metrics                                          internal Prometheus metrics endpoint
+POST   /monitoring/vitals                                queue client Web Vitals reporting
+
+QUEUES (Phase 13)
+analytics:
+concurrency: 3
+processors: AnalyticsProcessor (asynchronous counter increments)
+
+REDIS CACHE KEYS & TAGS (Phase 13)
+slotly:analytics:{projectId}:overview                  - cached analytics overview counts (TTL 1h, tag project:{projectId}:analytics)
+slotly:analytics:{projectId}:{metricKey}               - cached metric calculation (TTL 1h, tag project:{projectId}:analytics)
+slotly:system:rate-limit:{ipOrUserId}                  - sliding window rate limiting key

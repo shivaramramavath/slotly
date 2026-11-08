@@ -97,6 +97,10 @@ export const PermissionSchema = z.enum([
   'AUDIT_READ',
   'TIMETABLE_SHARE',
   'ANNOUNCEMENT_CREATE',
+  'ANALYTICS_READ',
+  'FEEDBACK_SUBMIT',
+  'FEEDBACK_MANAGE',
+  'SYSTEM_MONITOR',
 ]);
 /** TypeScript type inferred from permission Zod schema. */
 export type Permission = z.infer<typeof PermissionSchema>;
@@ -105,6 +109,10 @@ export type Permission = z.infer<typeof PermissionSchema>;
 export const RolePermissions: Record<UserRole, Permission[]> = {
   SUPER_ADMIN: Object.values(PermissionSchema.enum),
   ADMIN: [
+    'ANALYTICS_READ',
+    'FEEDBACK_SUBMIT',
+    'FEEDBACK_MANAGE',
+    'SYSTEM_MONITOR',
     'TIMETABLE_SHARE',
     'ANNOUNCEMENT_CREATE',
     'INSTITUTION_READ',
@@ -137,6 +145,8 @@ export const RolePermissions: Record<UserRole, Permission[]> = {
     'AUDIT_READ',
   ],
   DESIGNER: [
+    'ANALYTICS_READ',
+    'FEEDBACK_SUBMIT',
     'TIMETABLE_SHARE',
     'INSTITUTION_READ',
     'DEPARTMENT_READ',
@@ -160,6 +170,8 @@ export const RolePermissions: Record<UserRole, Permission[]> = {
     'TIMETABLE_EXPORT',
   ],
   FACULTY: [
+    'ANALYTICS_READ',
+    'FEEDBACK_SUBMIT',
     'INSTITUTION_READ',
     'FACULTY_READ',
     'ROOM_READ',
@@ -2675,3 +2687,437 @@ export const NotificationSocketEvents = {
   NOTIFICATION_RECEIVED: 'notification:received',
   ANNOUNCEMENT_RECEIVED: 'announcement:received',
 } as const;
+
+// ============================================================================
+// Phase 13: Analytics, Administration, Feedback, Monitoring
+// ============================================================================
+
+/** Zod schema validating analytics metric key. */
+export const AnalyticsMetricKeySchema = z.enum([
+  'overview_counts',
+  'faculty_workload',
+  'room_utilization',
+  'subject_allocation',
+  'period_utilization',
+  'free_periods',
+  'department_stats',
+  'unallocated_subjects',
+  'scheduling_efficiency',
+]);
+/** TypeScript type inferred from analytics metric key Zod schema. */
+export type AnalyticsMetricKey = z.infer<typeof AnalyticsMetricKeySchema>;
+
+/** Zod schema validating analytics overview counts DTO. */
+export const AnalyticsOverviewDtoSchema = z.object({
+  facultyCount: z.number().int(),
+  departmentCount: z.number().int(),
+  roomCount: z.number().int(),
+  subjectCount: z.number().int(),
+  sectionCount: z.number().int(),
+  generatedTimetablesCount: z.number().int(),
+  publishedTimetablesCount: z.number().int(),
+  openConflictsCount: z.number().int(),
+  calculatedAt: z.string(),
+});
+/** TypeScript type inferred from analytics overview counts DTO. */
+export type AnalyticsOverviewDto = z.infer<typeof AnalyticsOverviewDtoSchema>;
+
+/** Zod schema validating faculty workload distribution item. */
+export const FacultyWorkloadDistributionItemSchema = z.object({
+  facultyId: z.string(),
+  facultyName: z.string(),
+  departmentId: z.string().optional(),
+  departmentName: z.string().optional(),
+  targetHours: z.number(),
+  scheduledHours: z.number(),
+  deltaHours: z.number(),
+  status: z.enum(['underloaded', 'balanced', 'overloaded']),
+});
+/** TypeScript type inferred from faculty workload distribution item. */
+export type FacultyWorkloadDistributionItem = z.infer<typeof FacultyWorkloadDistributionItemSchema>;
+
+/** Zod schema validating faculty workload distribution DTO. */
+export const FacultyWorkloadDistributionDtoSchema = z.object({
+  items: z.array(FacultyWorkloadDistributionItemSchema),
+  averageScheduledHours: z.number(),
+  overloadedCount: z.number().int(),
+  underloadedCount: z.number().int(),
+  balancedCount: z.number().int(),
+});
+/** TypeScript type inferred from faculty workload distribution DTO. */
+export type FacultyWorkloadDistributionDto = z.infer<typeof FacultyWorkloadDistributionDtoSchema>;
+
+/** Zod schema validating room utilization item. */
+export const RoomUtilizationItemSchema = z.object({
+  roomId: z.string(),
+  roomName: z.string(),
+  capacity: z.number().int(),
+  totalPeriodsAvailable: z.number().int(),
+  occupiedPeriods: z.number().int(),
+  utilizationPercentage: z.number(),
+  dayBreakdown: z.record(z.string(), z.number()),
+});
+/** TypeScript type inferred from room utilization item. */
+export type RoomUtilizationItem = z.infer<typeof RoomUtilizationItemSchema>;
+
+/** Zod schema validating room utilization DTO. */
+export const RoomUtilizationDtoSchema = z.object({
+  items: z.array(RoomUtilizationItemSchema),
+  averageUtilization: z.number(),
+});
+/** TypeScript type inferred from room utilization DTO. */
+export type RoomUtilizationDto = z.infer<typeof RoomUtilizationDtoSchema>;
+
+/** Zod schema validating subject allocation item. */
+export const SubjectAllocationItemSchema = z.object({
+  subjectId: z.string(),
+  subjectName: z.string(),
+  departmentId: z.string().optional(),
+  requiredWeeklyHours: z.number(),
+  allocatedHours: z.number(),
+  fulfillmentPercentage: z.number(),
+});
+/** TypeScript type inferred from subject allocation item. */
+export type SubjectAllocationItem = z.infer<typeof SubjectAllocationItemSchema>;
+
+/** Zod schema validating subject allocation DTO. */
+export const SubjectAllocationDtoSchema = z.object({
+  items: z.array(SubjectAllocationItemSchema),
+  fullyAllocatedCount: z.number().int(),
+  partiallyAllocatedCount: z.number().int(),
+});
+/** TypeScript type inferred from subject allocation DTO. */
+export type SubjectAllocationDto = z.infer<typeof SubjectAllocationDtoSchema>;
+
+/** Zod schema validating period utilization item. */
+export const PeriodUtilizationItemSchema = z.object({
+  periodNumber: z.number().int(),
+  periodName: z.string(),
+  totalOccupied: z.number().int(),
+  utilizationPercentage: z.number(),
+  dayBreakdown: z.record(z.string(), z.number()),
+});
+/** TypeScript type inferred from period utilization item. */
+export type PeriodUtilizationItem = z.infer<typeof PeriodUtilizationItemSchema>;
+
+/** Zod schema validating period utilization DTO. */
+export const PeriodUtilizationDtoSchema = z.object({
+  items: z.array(PeriodUtilizationItemSchema),
+  peakPeriod: z.number().int().optional(),
+});
+/** TypeScript type inferred from period utilization DTO. */
+export type PeriodUtilizationDto = z.infer<typeof PeriodUtilizationDtoSchema>;
+
+/** Zod schema validating faculty free periods item. */
+export const FacultyFreePeriodsItemSchema = z.object({
+  facultyId: z.string(),
+  facultyName: z.string(),
+  freePeriodsCount: z.number().int(),
+  freePeriodsByDay: z.record(z.string(), z.array(z.number().int())),
+});
+/** TypeScript type inferred from faculty free periods item. */
+export type FacultyFreePeriodsItem = z.infer<typeof FacultyFreePeriodsItemSchema>;
+
+/** Zod schema validating faculty free periods DTO. */
+export const FacultyFreePeriodsDtoSchema = z.object({
+  items: z.array(FacultyFreePeriodsItemSchema),
+});
+/** TypeScript type inferred from faculty free periods DTO. */
+export type FacultyFreePeriodsDto = z.infer<typeof FacultyFreePeriodsDtoSchema>;
+
+/** Zod schema validating department stats item. */
+export const DepartmentStatsItemSchema = z.object({
+  departmentId: z.string(),
+  departmentName: z.string(),
+  sectionsCount: z.number().int(),
+  facultyCount: z.number().int(),
+  roomsCount: z.number().int(),
+  totalWeeklyHours: z.number(),
+});
+/** TypeScript type inferred from department stats item. */
+export type DepartmentStatsItem = z.infer<typeof DepartmentStatsItemSchema>;
+
+/** Zod schema validating department stats DTO. */
+export const DepartmentStatsDtoSchema = z.object({
+  items: z.array(DepartmentStatsItemSchema),
+});
+/** TypeScript type inferred from department stats DTO. */
+export type DepartmentStatsDto = z.infer<typeof DepartmentStatsDtoSchema>;
+
+/** Zod schema validating unallocated subject item. */
+export const UnallocatedSubjectItemSchema = z.object({
+  subjectId: z.string(),
+  subjectName: z.string(),
+  departmentId: z.string().optional(),
+  requiredHours: z.number(),
+  allocatedHours: z.number(),
+  unallocatedHours: z.number(),
+});
+/** TypeScript type inferred from unallocated subject item. */
+export type UnallocatedSubjectItem = z.infer<typeof UnallocatedSubjectItemSchema>;
+
+/** Zod schema validating unallocated subjects DTO. */
+export const UnallocatedSubjectsDtoSchema = z.object({
+  items: z.array(UnallocatedSubjectItemSchema),
+  totalUnallocatedHours: z.number(),
+});
+/** TypeScript type inferred from unallocated subjects DTO. */
+export type UnallocatedSubjectsDto = z.infer<typeof UnallocatedSubjectsDtoSchema>;
+
+/** Zod schema validating scheduling efficiency DTO. */
+export const SchedulingEfficiencyDtoSchema = z.object({
+  overallScore: z.number(),
+  compactnessScore: z.number(),
+  distributionScore: z.number(),
+  teacherPreferenceScore: z.number(),
+  roomFitScore: z.number(),
+  explanations: z.array(z.string()),
+});
+/** TypeScript type inferred from scheduling efficiency DTO. */
+export type SchedulingEfficiencyDto = z.infer<typeof SchedulingEfficiencyDtoSchema>;
+
+/** Zod schema validating workload balancing suggestion. */
+export const WorkloadBalancingSuggestionSchema = z.object({
+  id: z.string(),
+  fromFacultyId: z.string(),
+  fromFacultyName: z.string(),
+  toFacultyId: z.string(),
+  toFacultyName: z.string(),
+  subjectId: z.string(),
+  subjectName: z.string(),
+  sectionId: z.string(),
+  sectionName: z.string(),
+  hoursToTransfer: z.number(),
+  reason: z.string(),
+});
+/** TypeScript type inferred from workload balancing suggestion. */
+export type WorkloadBalancingSuggestion = z.infer<typeof WorkloadBalancingSuggestionSchema>;
+
+/** Zod schema validating workload balancing suggestions response DTO. */
+export const WorkloadBalancingSuggestionsResponseSchema = z.object({
+  suggestions: z.array(WorkloadBalancingSuggestionSchema),
+  imbalanceScore: z.number(),
+});
+/** TypeScript type inferred from workload balancing suggestions response DTO. */
+export type WorkloadBalancingSuggestionsResponse = z.infer<typeof WorkloadBalancingSuggestionsResponseSchema>;
+
+/** Zod schema validating admin user list item DTO. */
+export const AdminUserListItemDtoSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  name: z.string(),
+  role: UserRoleSchema,
+  status: z.enum(['active', 'suspended', 'deactivated', 'pending_onboarding']),
+  mfaRequired: z.boolean(),
+  mfaEnabled: z.boolean(),
+  createdAt: z.string(),
+  lastActiveAt: z.string().optional(),
+});
+/** TypeScript type inferred from admin user list item DTO. */
+export type AdminUserListItemDto = z.infer<typeof AdminUserListItemDtoSchema>;
+
+/** Zod schema validating admin change user role DTO. */
+export const ChangeUserRoleDtoSchema = z.object({
+  role: UserRoleSchema,
+  stepUpToken: z.string().optional(),
+  password: z.string().optional(),
+  code: z.string().optional(),
+});
+/** TypeScript type inferred from admin change user role DTO. */
+export type ChangeUserRoleDto = z.infer<typeof ChangeUserRoleDtoSchema>;
+
+/** Zod schema validating role permissions matrix DTO. */
+export const RolePermissionsMatrixDtoSchema = z.object({
+  roles: z.record(UserRoleSchema, z.array(PermissionSchema)),
+});
+/** TypeScript type inferred from role permissions matrix DTO. */
+export type RolePermissionsMatrixDto = z.infer<typeof RolePermissionsMatrixDtoSchema>;
+
+/** Zod schema validating admin timetable overview item. */
+export const AdminTimetableItemDtoSchema = z.object({
+  projectId: z.string(),
+  projectName: z.string(),
+  status: ProjectLifecycleStatusSchema,
+  versionId: z.string().optional(),
+  versionNo: z.number().int().optional(),
+  versionLabel: z.string().optional(),
+  publishedAt: z.string().optional(),
+  conflictsCount: z.number().int(),
+  updatedAt: z.string(),
+});
+/** TypeScript type inferred from admin timetable overview item. */
+export type AdminTimetableItemDto = z.infer<typeof AdminTimetableItemDtoSchema>;
+
+/** Zod schema validating admin reported conflict item. */
+export const AdminReportedConflictDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  projectName: z.string(),
+  versionId: z.string().optional(),
+  severity: z.enum(['hard', 'soft', 'warning', 'error']),
+  message: z.string(),
+  reportedBy: z.string(),
+  status: z.enum(['open', 'investigating', 'resolved', 'ignored']),
+  createdAt: z.string(),
+});
+/** TypeScript type inferred from admin reported conflict item. */
+export type AdminReportedConflictDto = z.infer<typeof AdminReportedConflictDtoSchema>;
+
+/** Zod schema validating security event DTO. */
+export const SecurityEventDtoSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  action: z.string(),
+  ipAddress: z.string().optional(),
+  timestamp: z.string(),
+  meta: z.record(z.unknown()).optional(),
+});
+/** TypeScript type inferred from security event DTO. */
+export type SecurityEventDto = z.infer<typeof SecurityEventDtoSchema>;
+
+/** Zod schema validating user session item DTO. */
+export const UserSessionItemDtoSchema = z.object({
+  sessionId: z.string(),
+  userId: z.string(),
+  device: z.string(),
+  browser: z.string(),
+  ip: z.string(),
+  createdAt: z.string(),
+  lastActiveAt: z.string(),
+  isCurrent: z.boolean().optional(),
+});
+/** TypeScript type inferred from user session item DTO. */
+export type UserSessionItemDto = z.infer<typeof UserSessionItemDtoSchema>;
+
+/** Zod schema validating feedback type. */
+export const FeedbackTypeSchema = z.enum(['idea', 'problem', 'rating', 'general']);
+/** TypeScript type inferred from feedback type. */
+export type FeedbackType = z.infer<typeof FeedbackTypeSchema>;
+
+/** Zod schema validating feedback status. */
+export const FeedbackStatusSchema = z.enum(['open', 'in_review', 'resolved', 'dismissed']);
+/** TypeScript type inferred from feedback status. */
+export type FeedbackStatus = z.infer<typeof FeedbackStatusSchema>;
+
+/** Zod schema validating create feedback DTO. */
+export const CreateFeedbackDtoSchema = z.object({
+  type: FeedbackTypeSchema,
+  message: z.string().min(5),
+  rating: z.number().int().min(1).max(5).optional(),
+  projectId: z.string().optional(),
+  versionId: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+/** TypeScript type inferred from create feedback DTO. */
+export type CreateFeedbackDto = z.infer<typeof CreateFeedbackDtoSchema>;
+
+/** Zod schema validating feedback DTO. */
+export const FeedbackDtoSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  userName: z.string(),
+  userEmail: z.string(),
+  type: FeedbackTypeSchema,
+  message: z.string(),
+  rating: z.number().int().optional(),
+  projectId: z.string().optional(),
+  versionId: z.string().optional(),
+  status: FeedbackStatusSchema,
+  adminReply: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+/** TypeScript type inferred from feedback DTO. */
+export type FeedbackDto = z.infer<typeof FeedbackDtoSchema>;
+
+/** Zod schema validating update feedback status and reply DTO. */
+export const UpdateFeedbackDtoSchema = z.object({
+  status: FeedbackStatusSchema.optional(),
+  adminReply: z.string().optional(),
+});
+/** TypeScript type inferred from update feedback status and reply DTO. */
+export type UpdateFeedbackDto = z.infer<typeof UpdateFeedbackDtoSchema>;
+
+/** Zod schema validating audit query DTO. */
+export const AuditQueryDtoSchema = z.object({
+  actorId: z.string().optional(),
+  action: z.string().optional(),
+  targetType: z.string().optional(),
+  targetId: z.string().optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+/** TypeScript type inferred from audit query DTO. */
+export type AuditQueryDto = z.infer<typeof AuditQueryDtoSchema>;
+
+/** Zod schema validating single audit log entry DTO. */
+export const AuditLogDtoSchema = z.object({
+  id: z.string(),
+  action: z.string(),
+  actorId: z.string(),
+  targetType: z.string(),
+  targetId: z.string(),
+  ipAddress: z.string().optional(),
+  timestamp: z.string(),
+  meta: z.record(z.unknown()).optional(),
+});
+/** TypeScript type inferred from single audit log entry DTO. */
+export type AuditLogDto = z.infer<typeof AuditLogDtoSchema>;
+
+/** Zod schema validating audit log list response DTO. */
+export const AuditLogListDtoSchema = z.object({
+  items: z.array(AuditLogDtoSchema),
+  total: z.number().int(),
+  page: z.number().int(),
+  limit: z.number().int(),
+});
+/** TypeScript type inferred from audit log list response DTO. */
+export type AuditLogListDto = z.infer<typeof AuditLogListDtoSchema>;
+
+/** Zod schema validating system health response DTO. */
+export const SystemHealthDtoSchema = z.object({
+  status: z.enum(['ok', 'error', 'shutting_down']),
+  services: z.object({
+    mongodb: z.enum(['up', 'down']),
+    redis: z.enum(['up', 'down']),
+    queues: z.enum(['up', 'down']),
+  }),
+  timestamp: z.string(),
+});
+/** TypeScript type inferred from system health response DTO. */
+export type SystemHealthDto = z.infer<typeof SystemHealthDtoSchema>;
+
+/** Zod schema validating queue health item DTO. */
+export const QueueHealthItemSchema = z.object({
+  name: z.string(),
+  waiting: z.number().int(),
+  active: z.number().int(),
+  completed: z.number().int(),
+  failed: z.number().int(),
+  delayed: z.number().int(),
+  paused: z.boolean(),
+});
+/** TypeScript type inferred from queue health item DTO. */
+export type QueueHealthItem = z.infer<typeof QueueHealthItemSchema>;
+
+/** Zod schema validating queues health response DTO. */
+export const QueuesHealthResponseDtoSchema = z.object({
+  queues: z.array(QueueHealthItemSchema),
+});
+/** TypeScript type inferred from queues health response DTO. */
+export type QueuesHealthResponseDto = z.infer<typeof QueuesHealthResponseDtoSchema>;
+
+/** Zod schema validating client web vitals metric DTO. */
+export const ClientWebVitalsDtoSchema = z.object({
+  name: z.enum(['CLS', 'FID', 'LCP', 'INP', 'FCP', 'TTFB']),
+  value: z.number(),
+  rating: z.enum(['good', 'needs-improvement', 'poor']),
+  delta: z.number(),
+  id: z.string(),
+  navigationType: z.string().optional(),
+  url: z.string().optional(),
+});
+/** TypeScript type inferred from client web vitals metric DTO. */
+export type ClientWebVitalsDto = z.infer<typeof ClientWebVitalsDtoSchema>;

@@ -1627,3 +1627,55 @@
   - Exporter golden outputs (valid PDF buffer, Excel buffer, PNG magic header, compliant RFC 5545 .ics structure).
   - Calendar feed & share token hashing, verification, expiry, and revocation.
   - Fan-out recipient resolution & notification preference filtering.
+---
+
+## Phase 13: Analytics and Administration (Pass 1: Contracts & Server - In Progress)
+
+### Plan
+- **Contracts (`packages/contracts`):**
+  - Added permissions: `ANALYTICS_READ`, `FEEDBACK_SUBMIT`, `FEEDBACK_MANAGE`, `SYSTEM_MONITOR`.
+  - Analytics DTOs: `AnalyticsOverviewDto`, `FacultyWorkloadDistributionDto`, `RoomUtilizationDto`, `PeriodUtilizationDto`, `FacultyFreePeriodsDto`, `DepartmentStatsDto`, `UnallocatedSubjectDto`, `SchedulingEfficiencyDto`, `WorkloadBalancingSuggestionDto`.
+  - Admin & Security DTOs: `AdminUserListItemDto`, `ChangeUserRoleDto`, `RolePermissionsMatrixDto`, `AdminTimetableItemDto`, `AdminReportedConflictDto`, `SecurityEventDto`, `UserSessionItemDto`.
+  - Feedback DTOs: `CreateFeedbackDto`, `FeedbackDto`, `UpdateFeedbackDto`.
+  - Audit Query DTOs: `AuditQueryDto`, `AuditLogListDto`.
+  - Monitoring DTOs: `SystemHealthDto`, `QueueHealthItemDto`, `QueuesHealthResponseDto`, `ClientWebVitalsDto`.
+- **Analytics Module (`server/src/modules/analytics`):**
+  - Strategy Pattern: `AnalyticsMetric` interface with individual metric calculators:
+    - `OverviewCountsMetric` (totals: faculty, departments, rooms, subjects, sections, generated/published timetables, open conflicts)
+    - `FacultyWorkloadMetric` (target vs scheduled hours, under/overload status)
+    - `RoomUtilizationMetric` (capacity, occupied periods, percentage)
+    - `SubjectAllocationMetric` (allocated vs required weekly periods)
+    - `PeriodUtilizationMetric` (period popularity across days)
+    - `FreePeriodsMetric` (free periods per faculty)
+    - `DepartmentStatsMetric` (sections, faculty, weekly hours)
+    - `UnallocatedSubjectsMetric` (missing hours and unassigned classes)
+    - `SchedulingEfficiencyMetric` (compactness, teacher preference, distribution)
+  - `MetricRegistry`: Register and resolve metric strategies dynamically.
+  - `WorkloadBalancerService`: Read-only suggestion engine identifying load rebalancing swaps.
+  - `AnalyticsService`: Redis cache-aside (`slotly:analytics:{projectId}:{metric}`, TTL 1h) tagged with `project:{projectId}:analytics`.
+  - BullMQ `analytics` queue worker for background counter increments and cache pre-warming.
+- **Admin Module (`server/src/modules/admin`):**
+  - User management: List users with pagination and search, role modification with step-up verification (password or MFA), force password reset, and require MFA flag.
+  - Role permissions matrix endpoint (`GET /admin/roles`).
+  - Session and security audit tracking per user.
+  - Timetable and reported conflict monitoring.
+  - System health and queue operations (`GET /admin/system/health`, `GET /admin/system/queues`, retry failed jobs).
+- **Feedback Module (`server/src/modules/feedback`):**
+  - Mongoose `Feedback` schema and repository (`feedback` collection).
+  - User submission and own feedback querying (`POST /feedback`, `GET /feedback/me`).
+  - Admin triage, status transitions, and replies (`GET /admin/feedback`, `PATCH /admin/feedback/:id`).
+- **Audit Query & CSV Export:**
+  - Indexed filtering on `AuditLog` collection: actorId, action, targetType, targetId, date range, pagination.
+  - Export CSV job on `exports` queue returning expiring signed download ticket.
+- **Monitoring & Observability (`server/src/modules/monitoring`):**
+  - Prometheus metrics at `GET /metrics` via `prom-client`.
+  - Terminus health indicators for MongoDB, Redis, and BullMQ queues.
+  - Redis sliding window rate limiting storage adapter.
+  - Web Vitals collector `POST /monitoring/vitals` enqueuing client metrics.
+- **OpenAPI Swagger:**
+  - Configured at `/docs` in `server/src/main.ts` for non-production environments.
+- **Tests:**
+  - Metric calculators tested with deterministic timetable and blueprint fixtures.
+  - Audit filtering and pagination unit tests.
+  - Admin endpoint authorization guards and step-up verification tests.
+  - Rate limiting tests.
