@@ -1510,3 +1510,120 @@
 4. **Immutability Protection**:
    - Attempt to update or delete a published version or its schedule entries -> verify 409 `VERSION_IMMUTABLE` response.
 
+
+
+## Phase 12: Viewers, Exports, Sharing, Notifications (Pass 1: Server & Contracts Complete)
+
+### What Was Built (Pass 1: Contracts & Server)
+
+1. **Contracts Package (`@slotly/contracts`):**
+   - Added reason codes: `SHARE_EXPIRED`, `SHARE_REVOKED`, `FEED_REVOKED`, `NO_PUBLISHED_VERSION`, `EXPORT_EXPIRED`.
+   - Added permissions: `TIMETABLE_SHARE`, `ANNOUNCEMENT_CREATE` to `PermissionSchema` and `RolePermissions`.
+   - Added Zod schemas and TypeScript types: `ViewerEntityTypeSchema`, `CurrentPeriodStatusSchema`, `ViewerTimetableQueryDtoSchema`, `ViewerTimetableDtoSchema`, `ExportFormatSchema`, `CreateExportDtoSchema`, `ExportJobStatusSchema`, `ExportJobDtoSchema`, `CreateCalendarFeedDtoSchema`, `CalendarFeedDtoSchema`, `ShareScopeSchema`, `CreateShareDtoSchema`, `ShareDtoSchema`, `PublicShareViewDtoSchema`, `NotificationChannelSchema`, `NotificationTypeSchema`, `NotificationDtoSchema`, `NotificationPreferencesDtoSchema`, `CreateAnnouncementDtoSchema`, `NotificationSocketEvents`.
+
+2. **Viewer Module (`server/src/modules/viewer`):**
+   - `CurrentPeriodService`: Pure domain service computing period position with injectable `CLOCK` token (`IClock`), supporting before first period, active periods, breaks, after last period, holidays, and per-day overrides.
+   - `ViewerService`: Queries published-only timetable versions, computes live period status, resolves entity landing timetable (`me` for Faculty/Student), and caches results in Redis under `slotly:viewer:...` with invalidation tag `project:{id}:viewer`.
+   - `ViewerController`: `GET /viewer/projects/:projectId/timetable` and `GET /viewer/me`.
+
+3. **Exports Module (`server/src/modules/exports`):**
+   - Exporter Strategy pattern: `IExporter` implemented by:
+     - `PdfExporter` (landscape vector grid via `pdfkit`)
+     - `ExcelExporter` (multi-column spreadsheet via `xlsx`)
+     - `ImageExporter` (raster PNG table via pure JavaScript `pngjs` - no native bindings)
+     - `IcsExporter` (RFC 5545 compliant recurring iCalendar VCALENDAR/VEVENT events with proper timestamps, UTC conversions, and breaks)
+   - `ExporterFactory`: Resolves exporter strategy by requested format.
+   - `LocalStorageProvider`: `IStorageProvider` adapter persisting artifacts under `uploads/exports/`.
+   - `ExportFacade`: Coordinates BullMQ export jobs, expiring signed download tokens, and ownership authorization.
+   - `ExportProcessor`: BullMQ worker processing `exports` queue jobs.
+   - `ExportsController`: `POST /exports/projects/:projectId`, `GET /exports/:jobId`, `GET /exports/download/:token`.
+
+4. **Calendar Feeds Module (`server/src/modules/calendar-feeds`):**
+   - `CalendarFeed` schema and repository: SHA-256 token hashing, per-faculty/section/room scopes, and active status tracking.
+   - `CalendarFeedsService`: Feed URL tokenization and RFC 5545 streaming.
+   - `CalendarFeedsController`: `POST /calendar-feeds/projects/:projectId`, `GET /calendar-feeds/projects/:projectId`, `DELETE /calendar-feeds/:feedId`.
+   - `PublicCalendarController`: Public unauthenticated rate-limited endpoint `GET /public/calendar/:feedToken.ics` with live calendar streaming.
+
+5. **Shares Module (`server/src/modules/shares`):**
+   - `Share` schema and repository: SHA-256 token hashing, scope (`all`, `section`, `faculty`, `room`), label, and expiry tracking.
+   - `SharesService`: Generates revocable random tokens, handles public read-only resolution cached under `slotly:public:share:${tokenHash}` with 300s TTL.
+   - `SharesController`: `POST /shares/projects/:projectId`, `GET /shares/projects/:projectId`, `DELETE /shares/:shareId`.
+   - `PublicSharesController`: Public endpoint `GET /public/shares/:token` returning published timetable views.
+
+6. **Notifications & Announcements Module (`server/src/modules/notifications`):**
+   - `Notification` and `NotificationPreferences` schemas and repositories.
+   - `RecipientResolverService`: Resolves recipient user IDs and emails for announcements (role and institution targeting) and timetable lifecycle events.
+   - `NotificationsGateway`: WebSocket gateway on namespace `/notifications` with JWT handshake authentication, joining personal user room `user:${userId}`, and emitting `notification:received` and `announcement:received`.
+   - `NotificationsService`: Preference evaluation (global channels and per-type overrides), in-app notification creation, gateway push, and email dispatch.
+   - `NotificationsFanoutProcessor`: Event consumer on `EventBus` listening to `timetable.published`, `timetable.updated`, `timetable.assignment_changed`, `timetable.conflict_found`, and `timetable.schedule_change`. Automatically invalidates cache tag `project:${projectId}:viewer` when published.
+   - `NotificationsController`: `GET /notifications`, `GET /notifications/unread-count`, `PATCH /notifications/:id/read`, `POST /notifications/read-all`, `GET /notifications/preferences`, `PUT /notifications/preferences`.
+   - `AnnouncementsController`: Admin-only `POST /announcements`.
+
+### Decisions
+1. **Zero Native C++ Dependencies**: Selected `pngjs` for raster PNG generation and `pdfkit` for vector PDF rendering, eliminating binary build dependencies (`node-gyp` / `canvas`) that frequently cause platform instabilities on Windows and Docker.
+2. **Deterministic SHA-256 Token Hashing**: Public calendar feeds and public shares store SHA-256 hashes of cryptographically random hex tokens, ensuring database leaks cannot compromise active subscription feeds.
+3. **Published-Only Isolation**: All viewer, export, calendar feed, and public share queries strictly load the **published** schedule version only. Un-published projects uniformly return `NO_PUBLISHED_VERSION`.
+4. **Cache Invalidation on Publish**: `ViewerService` caches are tagged with `project:${projectId}:viewer`. When `timetable.published` is emitted on the domain event bus, `NotificationsFanoutProcessor` invalidates the cache tag.
+
+### Test Evidence
+- 4 test suites covering Phase 12 Pass 1 functionality:
+  - `current-period.service.spec.ts` (7 tests): Validates clock before start, in period, in break, after end, holidays, off-days, and per-day overrides using a FakeClock.
+  - `exporters.spec.ts` (5 tests): Validates golden outputs for PDF (`%PDF-1.3`), Excel (`workbook.SheetNames`), PNG (magic signature `0x89 0x50 0x4E 0x47`), and RFC 5545 compliant iCalendar string structure.
+  - `shares.spec.ts` (5 tests): Validates token hashing, public timetable resolution, `SHARE_REVOKED` on inactive/missing tokens, `SHARE_EXPIRED` on past expiry dates, and cache eviction on revocation.
+  - `notifications-fanout.spec.ts` (6 tests): Validates announcement audience resolution, event recipient resolution, channel preference filtering (in-app vs email), per-type preference overrides, and `timetable.published` cache invalidation.
+- Monorepo tests: 69 test suites passed, 373 tests passed, 0 failures.
+- Verification: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm codemap` all pass cleanly with 0 errors.
+
+### Manual Test Checklist
+1. **Viewer & Current Period**:
+   - Query `GET /viewer/projects/:projectId/timetable?type=section&targetId=:secId` on a published project -> verify published timetable is returned with current period context.
+   - Query `GET /viewer/me` as FACULTY / STUDENT -> verify landing timetable is automatically resolved for the user.
+2. **Exports & Downloads**:
+   - Request export `POST /exports/projects/:projectId` with format `pdf` / `excel` / `image` / `ics` -> verify job is enqueued.
+   - Poll `GET /exports/:jobId` until completed -> verify signed download URL.
+   - Download file using signed URL `GET /exports/download/:token` -> verify valid binary/text content.
+3. **Calendar Feeds & Sharing**:
+   - Create feed `POST /calendar-feeds/projects/:projectId` -> subscribe in calendar app or fetch `GET /public/calendar/:feedToken.ics` -> verify valid VCALENDAR stream.
+   - Create share link `POST /shares/projects/:projectId` -> fetch unauthenticated `GET /public/shares/:token` -> verify public timetable payload.
+   - Revoke share / feed -> verify subsequent requests return 404 / 410.
+4. **Notifications & Announcements**:
+   - Connect WebSocket client to `/notifications` with JWT.
+   - Post admin announcement `POST /announcements` -> verify WebSocket client receives `announcement:received` and notification appears in `GET /notifications`.
+   - Update preferences `PUT /notifications/preferences` with inApp disabled -> verify subsequent notifications are suppressed from in-app delivery.
+
+
+### Plan
+- **Contracts (`packages/contracts`)**:
+  - Viewer DTOs: `ViewerTimetableDto`, `CurrentPeriodStatusDto`, `ViewerTimetableQueryDto`.
+  - Export DTOs: `CreateExportDto`, `ExportJobDto`, `ExportFormat` ('pdf' | 'excel' | 'image' | 'ics').
+  - Calendar Feed DTOs: `CreateCalendarFeedDto`, `CalendarFeedDto`.
+  - Public Share DTOs: `CreateShareDto`, `ShareDto`, `PublicShareViewDto`.
+  - Notification DTOs: `NotificationDto`, `NotificationPreferencesDto`, `CreateAnnouncementDto`, `NotificationType`.
+  - Socket events: `/notifications` namespace with `notification:received`, `announcement:received`.
+- **Viewer Module (`server/src/modules/viewer`)**:
+  - Pure `CurrentPeriodService` with injectable `CLOCK` token (`IClock`) supporting fake clock in tests.
+  - `ViewerService`: loads week/day schedules from published version only, resolves current & upcoming period.
+  - Tag-based caching with `project:{id}:viewer` invalidated when a new version is published.
+- **Exports Module (`server/src/modules/exports`)**:
+  - Strategy pattern: `IExporter` implemented by `PdfExporter` (`pdfkit`), `ExcelExporter` (`xlsx`), `ImageExporter` (`pngjs`), and `IcsExporter` (RFC 5545).
+  - Factory & Facade: `ExporterFactory`, `ExportFacade`.
+  - Storage: `IStorageProvider` adapter (`LocalStorageProvider` targeting `./uploads/exports/`).
+  - BullMQ `exports` queue worker + signed download token generator with ownership check.
+- **Calendar Feed Module (`server/src/modules/calendar-feeds`)**:
+  - Hashed token generation (SHA-256), database persistence in `calendar_feeds`, revocation.
+  - Public endpoint `GET /public/calendar/:feedToken.ics` rendering live RFC 5545 iCalendar stream.
+- **Sharing Module (`server/src/modules/shares`)**:
+  - Random token generation, SHA-256 hashing, scoped visibility (`all`, `section`, `faculty`, `room`).
+  - Public endpoint `GET /public/shares/:token` (rate-limited, Redis cached, published read-only).
+- **Notifications & Announcements (`server/src/modules/notifications`)**:
+  - Fan-out processor listening to domain events (`timetable.published`, `timetable.updated`, `timetable.assignment_changed`, `timetable.conflict_found`, `timetable.schedule_change`, `announcement.created`).
+  - Recipient resolver: resolves users by role, department, section, or faculty assignment.
+  - User channel preferences filtering (`email`, `in_app`).
+  - In-app notification repository and WebSocket gateway (`/notifications` namespace).
+  - BullMQ `EmailProcessor` with retry, exponential backoff, and dead-letter queue.
+  - Admin announcement dispatch.
+- **Tests**:
+  - Fake clock testing for `CurrentPeriodService` (before start, in period, in break, after end, holidays, per-day overrides).
+  - Exporter golden outputs (valid PDF buffer, Excel buffer, PNG magic header, compliant RFC 5545 .ics structure).
+  - Calendar feed & share token hashing, verification, expiry, and revocation.
+  - Fan-out recipient resolution & notification preference filtering.

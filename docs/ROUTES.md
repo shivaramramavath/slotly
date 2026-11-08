@@ -139,6 +139,27 @@ POST   /versions/:versionId/publish                      admin direct publish in
 POST   /versions/:versionId/rate                         submit timetable quality rating and feedback
 GET    /versions/:versionId/ratings                      list quality ratings for a timetable version
 
+VIEWERS, EXPORTS, SHARING & NOTIFICATIONS (FEATURES §11, Phase 12)
+GET    /viewer/projects/:projectId/timetable             published timetable view for faculty, section, room, subject with current period
+GET    /viewer/me                                        landing timetable view for current logged-in faculty/student
+POST   /exports/projects/:projectId                      enqueue timetable export job (PDF, Excel, PNG, ICS)
+GET    /exports/:jobId                                   poll export job progress and status
+GET    /exports/download/:token                          download exported file via signed token
+POST   /calendar-feeds/projects/:projectId               create revocable calendar feed token
+GET    /calendar-feeds/projects/:projectId               list active calendar feeds
+DELETE /calendar-feeds/:feedId                           revoke calendar feed token
+GET    /public/calendar/:feedToken.ics                   unauthenticated RFC 5545 calendar subscription feed
+POST   /shares/projects/:projectId                       create revocable public share link
+GET    /shares/projects/:projectId                       list share links for a project
+DELETE /shares/:shareId                                  revoke public share link
+GET    /public/shares/:token                             unauthenticated rate-limited view of published timetable
+GET    /notifications                                    list user notifications (paginated, unread & type filters)
+PATCH  /notifications/:notificationId/read               mark single notification as read
+POST   /notifications/read-all                           mark all notifications as read
+GET    /notifications/preferences                        get notification channel preferences
+PUT    /notifications/preferences                        update notification channel preferences
+POST   /announcements                                    admin broadcast announcement to target audience
+
 SOCKET NAMESPACES & EVENTS
 /blueprint:
 client -> server: project:join, project:leave, cursor:update, node:lock, node:unlock
@@ -152,6 +173,10 @@ server -> client: build:progress, build:completed, build:failed
 /schedule:
   client -> server: schedule:join, schedule:leave
   server -> client: slot:moved, slot:updated, slot:locked, slot:cleared, revision:conflict, presence:changed
+
+/notifications:
+  client -> server: subscribe, mark_read
+  server -> client: notification:received, announcement:received
 
 BULLMQ QUEUES & PROCESSORS
 builds:
@@ -167,3 +192,15 @@ direct delivery or transactional queued email dispatch via Brevo / SMTP
 audit:
 concurrency: 5
 persists audit trail entries from memory / Redis to Mongo audit_logs collection
+notifications:
+concurrency: 5
+processors: NotificationsFanOutProcessor, EmailProcessor with retry and dead letter
+exports:
+concurrency: 2
+processors: ExportProcessor -> ExportFacade -> StorageProvider (local disk)
+
+REDIS CACHE KEYS & TAGS (Phase 12)
+slotly:viewer:{projectId}:{type}:{targetId}[:day] - cached published timetable view (TTL 24h, tag project:{projectId}:viewer)
+slotly:public:share:{tokenHash}                   - cached public share metadata & timetable (TTL 1h)
+slotly:export:signed:{token}                      - expiring signed export download ticket (TTL 24h)
+slotly:feed:token:{tokenHash}                     - cached calendar feed token mapping (TTL 24h)
