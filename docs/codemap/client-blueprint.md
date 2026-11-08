@@ -176,6 +176,11 @@
 - **Interface** `BlueprintSocketCallbacks` - Interface defining structure for blueprint socket callbacks.
 - **Type** `SocketStatus` - Type alias for socket status.
 
+### `client/src/features/blueprint/services/blueprint.api.ts`
+*Domain service orchestrating blueprint.api business logic.*
+
+- **Const** `blueprintApi`: `{ getGraph(projectId: string): Promise<{ revisi...` - Constant representing blueprint api.
+
 ### `client/src/features/blueprint/store/blueprint.store.ts`
 *Zustand store managing application state for blueprint.store.*
 

@@ -7,9 +7,9 @@
 - **Component** `ProjectStatusBadge({ status }: import("E:/Shiva Ram/Projects/slotly/client/src/features/projects/components/project-status-badge").ProjectStatusBadgeProps)` - React component rendering project status badge.
 
 ### `client/src/features/projects/services/blueprint.api.ts`
-*Domain service orchestrating blueprint.api business logic.*
+*Re-export of blueprintApi for backward compatibility. Canonical location: features/blueprint/services/blueprint.api.ts*
 
-- **Const** `blueprintApi`: `{ getGraph(projectId: string): Promise<{ revisi...` - Constant representing blueprint api.
+*(No public exports)*
 
 ### `client/src/features/projects/services/projects.api.ts`
 *Domain service orchestrating projects.api business logic.*

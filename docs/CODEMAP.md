@@ -119,7 +119,7 @@
 | [server-library.md](docs/codemap/server-library.md) | Server Library Module | 140 lines |
 | [client-app.md](docs/codemap/client-app.md) | Client App Routes | 188 lines |
 | [client-auth.md](docs/codemap/client-auth.md) | Client Auth Feature | 47 lines |
-| [client-blueprint.md](docs/codemap/client-blueprint.md) | Client Blueprint Feature | 207 lines |
+| [client-blueprint.md](docs/codemap/client-blueprint.md) | Client Blueprint Feature | 212 lines |
 | [client-builds.md](docs/codemap/client-builds.md) | Client Builds Feature | 84 lines |
 | [client-institution.md](docs/codemap/client-institution.md) | Client Institution Feature | 125 lines |
 | [client-library.md](docs/codemap/client-library.md) | Client Library Feature | 86 lines |
