@@ -5,3 +5,7 @@ export * from './hooks/use-permission';
 export * from './components/auth-provider';
 export * from './components/can';
 export * from './components/step-up-dialog';
+export * from './components/oauth-buttons';
+export * from './components/oauth-icons';
+export * from './components/connected-accounts';
+export * from './utils/oauth-errors';

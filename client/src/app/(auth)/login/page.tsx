@@ -1,18 +1,45 @@
-// React component for page.
+// React component for login page supporting credentials and OAuth sign-in.
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthLayout } from '@/components/layouts/auth-layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { authApi } from '@/features/auth/services/auth.api';
 import { useAuthStore } from '@/features/auth/store/auth.store';
 import { toast } from '@/components/ui/toast';
+import { OAuthButtons } from '@/features/auth/components/oauth-buttons';
+import { getOAuthErrorMessage } from '@/features/auth/utils/oauth-errors';
 
-/** React component rendering login page. */
-export default function LoginPage() {
+function OAuthErrorBanner() {
+  const searchParams = useSearchParams();
+  const errorParam = searchParams.get('error');
+  const errorMessage = getOAuthErrorMessage(errorParam);
+
+  useEffect(() => {
+    if (errorParam) {
+      // Clean query parameter from URL without triggering a reload
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [errorParam]);
+
+  if (!errorMessage) return null;
+
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="mb-4 rounded border border-[#EF4444]/40 bg-[#EF4444]/10 p-3 text-xs font-mono text-[#EF4444]"
+    >
+      {errorMessage}
+    </div>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
   const setMfaPending = useAuthStore((s) => s.setMfaPending);
@@ -30,7 +57,10 @@ export default function LoginPage() {
       const res = await authApi.login({ email, password });
       if (res.mfaRequired) {
         setMfaPending(res.mfaToken, email);
-        toast.info('Two-Factor Required', 'Please enter your authenticator code.');
+        toast.info(
+          'Two-Factor Required',
+          'Please enter your authenticator code.',
+        );
         router.push('/mfa');
         return;
       }
@@ -48,10 +78,13 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout subtitle="Sign in to your institution account">
+    <>
+      <OAuthErrorBanner />
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-mono uppercase text-[#8A8A8A]">Email address</label>
+          <label className="text-xs font-mono uppercase text-[#8A8A8A]">
+            Email address
+          </label>
           <Input
             type="email"
             placeholder="name@institution.edu"
@@ -63,8 +96,13 @@ export default function LoginPage() {
         </div>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-mono uppercase text-[#8A8A8A]">Password</label>
-            <Link href="/forgot-password" className="text-xs text-[#3B82F6] hover:underline font-mono">
+            <label className="text-xs font-mono uppercase text-[#8A8A8A]">
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-[#3B82F6] hover:underline font-mono"
+            >
               Forgot?
             </Link>
           </div>
@@ -77,16 +115,37 @@ export default function LoginPage() {
             autoComplete="current-password"
           />
         </div>
-        <Button variant="primary" className="w-full font-mono uppercase tracking-wider" disabled={loading}>
+        <Button
+          variant="primary"
+          className="w-full font-mono uppercase tracking-wider"
+          disabled={loading}
+        >
           {loading ? 'Authenticating...' : 'Sign In'}
         </Button>
       </form>
+
+      <OAuthButtons mode="login" />
+
       <div className="mt-4 pt-4 border-t border-[#232323] text-center text-xs text-[#8A8A8A]">
         Need an account?{' '}
-        <Link href="/register" className="text-[#FAFAFA] underline hover:text-[#FACC15]">
+        <Link
+          href="/register"
+          className="text-[#FAFAFA] underline hover:text-[#FACC15]"
+        >
           Register
         </Link>
       </div>
+    </>
+  );
+}
+
+/** React component rendering login page. */
+export default function LoginPage() {
+  return (
+    <AuthLayout subtitle="Sign in to your institution account">
+      <Suspense fallback={null}>
+        <LoginForm />
+      </Suspense>
     </AuthLayout>
   );
 }

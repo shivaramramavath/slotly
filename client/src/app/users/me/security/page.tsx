@@ -31,6 +31,7 @@ import type {
 } from '@slotly/contracts';
 import { toast } from '@/components/ui/toast';
 import { Shield, Key, Smartphone, History, Check, Copy } from 'lucide-react';
+import { ConnectedAccounts } from '@/features/auth/components/connected-accounts';
 
 /** React component rendering security settings page. */
 export default function SecuritySettingsPage() {
@@ -368,6 +369,9 @@ export default function SecuritySettingsPage() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Connected OAuth Accounts Card */}
+        <ConnectedAccounts />
 
         {/* Active Sessions Card */}
         <Card>

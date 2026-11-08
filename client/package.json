@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node -e \"console.log('client unit tests pass')\""
+    "test": "tsx --tsconfig tsconfig.json --test \"src/**/*.spec.ts\""
   },
   "dependencies": {
     "@slotly/contracts": "workspace:*",

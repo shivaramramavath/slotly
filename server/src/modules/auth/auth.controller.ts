@@ -7,6 +7,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -14,6 +15,7 @@ import {
   HttpCode,
   HttpStatus,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import {
@@ -27,6 +29,7 @@ import {
   MfaVerifyDtoSchema,
   MfaRecoveryDtoSchema,
   StepUpDtoSchema,
+  OnboardingDtoSchema,
 } from '@slotly/contracts';
 import type {
   RegisterDto,
@@ -40,11 +43,14 @@ import type {
   MfaRecoveryDto,
   StepUpDto,
   SessionDto,
+  OnboardingDto,
+  OAuthProviderKey,
 } from '@slotly/contracts';
 import { AUTH_SERVICE } from './auth.interface';
 import type { AuthService } from './auth.interface';
 import { SESSIONS_SERVICE } from './services/sessions.service';
 import type { SessionsService } from './services/sessions.service';
+import { OAuthService } from './services/oauth.service';
 import { AuthGuard } from './guards/auth.guard';
 import type { RequestUser } from './guards/auth.guard';
 import { Public } from './guards/public.decorator';
@@ -57,6 +63,7 @@ export class AuthController {
   constructor(
     @Inject(AUTH_SERVICE) private readonly authService: AuthService,
     @Inject(SESSIONS_SERVICE) private readonly sessionsService: SessionsService,
+    private readonly oauthService: OAuthService,
   ) {}
 
   private extractMeta(req: Request) {
@@ -123,21 +130,9 @@ export class AuthController {
     @Req() req: Request & { user: RequestUser },
     @Res({ passthrough: true }) res: Response,
   ) {
-    await this.authService.logout(req.user.sessionId);
+    await this.sessionsService.revokeSession(req.user.sessionId);
     this.clearRefreshCookie(res);
     return { message: 'Logged out successfully.' };
-  }
-
-  @UseGuards(AuthGuard)
-  @Post('logout-all')
-  @HttpCode(HttpStatus.OK)
-  async logoutAll(
-    @Req() req: Request & { user: RequestUser },
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    await this.authService.logoutAll(req.user.id);
-    this.clearRefreshCookie(res);
-    return { message: 'All sessions have been revoked.' };
   }
 
   @Public()
@@ -146,10 +141,17 @@ export class AuthController {
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    @Body() body?: { sessionId?: string },
   ) {
-    const cookies = req.cookies as Record<string, string> | undefined;
-    const refreshToken = cookies?.['refreshToken'];
+    const rawCookies = req.headers.cookie;
+    let refreshToken: string | undefined = (
+      req as unknown as { cookies?: Record<string, string> }
+    ).cookies?.['refreshToken'];
+
+    if (!refreshToken && rawCookies) {
+      const match = rawCookies.match(/refreshToken=([^;]+)/);
+      if (match) refreshToken = match[1];
+    }
+
     if (!refreshToken) {
       throw new UnauthorizedException({
         code: 'MISSING_REFRESH_TOKEN',
@@ -157,43 +159,31 @@ export class AuthController {
       });
     }
 
-    // Access token or body may provide sessionId
-    const authHeader = req.headers['authorization'];
-    let sessionId: string | undefined = body?.sessionId;
-    if (!sessionId && authHeader?.startsWith('Bearer ')) {
-      try {
-        const parts = authHeader.substring(7).split('.');
-        if (parts[1]) {
-          const payload = JSON.parse(
-            Buffer.from(parts[1], 'base64url').toString('utf-8'),
-          ) as { sid?: string };
-          sessionId = payload.sid;
-        }
-      } catch {
-        // ignore
-      }
+    // Decode session ID from refresh token (format: s_${sessionId}_${random})
+    const parts = refreshToken.split('_');
+    if (parts.length < 3 || parts[0] !== 's') {
+      throw new UnauthorizedException({
+        code: 'INVALID_REFRESH_TOKEN_FORMAT',
+        message: 'Malformed refresh token.',
+      });
     }
+    const sessionId = parts[1] as string;
 
-    if (!sessionId) {
-      throw new UnauthorizedException(
-        'Session identifier required to rotate refresh token.',
-      );
-    }
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+      session,
+    } = await this.sessionsService.rotateRefreshToken(sessionId, refreshToken);
 
-    const rotated = await this.authService.refresh(sessionId, refreshToken);
-    this.setRefreshCookie(res, rotated.refreshToken);
-    return { accessToken: rotated.accessToken, user: rotated.user };
-  }
-
-  @UseGuards(AuthGuard)
-  @Post('revoke')
-  @HttpCode(HttpStatus.OK)
-  async revoke(
-    @Body('sessionId') sessionIdToRevoke: string,
-    @Req() req: Request & { user: RequestUser },
-  ) {
-    await this.authService.revokeSession(sessionIdToRevoke, req.user.id);
-    return { message: 'Session revoked.' };
+    this.setRefreshCookie(res, newRefreshToken);
+    return {
+      accessToken,
+      user: {
+        id: session.userId,
+        role: session.role,
+        institutionId: session.institutionId,
+      },
+    };
   }
 
   @Public()
@@ -208,7 +198,7 @@ export class AuthController {
   @Public()
   @Post('email/resend')
   @HttpCode(HttpStatus.OK)
-  async resendEmail(
+  async resendVerificationEmail(
     @Body(new ZodValidationPipe(ResendEmailDtoSchema)) dto: ResendEmailDto,
   ) {
     return this.authService.resendEmailVerification(dto.email);
@@ -233,7 +223,7 @@ export class AuthController {
     return this.authService.resetPassword(dto);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, StepUpGuard)
   @Patch('password')
   async changePassword(
     @Body(new ZodValidationPipe(ChangePasswordDtoSchema))
@@ -252,52 +242,54 @@ export class AuthController {
   async listSessions(
     @Req() req: Request & { user: RequestUser },
   ): Promise<SessionDto[]> {
-    const list = await this.sessionsService.listUserSessions(req.user.id);
-    return list.map((s) => ({
+    const sessions = await this.sessionsService.listUserSessions(req.user.id);
+    return sessions.map((s) => ({
       sessionId: s.sessionId,
       device: s.device,
       browser: s.browser,
       ip: s.ip,
+      isCurrent: s.sessionId === req.user.sessionId,
       lastActiveAt: new Date(s.lastActiveAt).toISOString(),
       createdAt: new Date(s.createdAt).toISOString(),
-      isCurrent: s.sessionId === req.user.sessionId,
     }));
   }
 
   @UseGuards(AuthGuard)
-  @Get('sessions/:sessionId')
-  async getSession(
-    @Param('sessionId') sessionId: string,
-    @Req() req: Request & { user: RequestUser },
-  ) {
-    const session = await this.sessionsService.validateSession(sessionId);
-    if (session.userId !== req.user.id) {
-      throw new UnauthorizedException('Access denied to session.');
-    }
-    return session;
-  }
-
-  @UseGuards(AuthGuard)
   @Delete('sessions/:sessionId')
-  async revokeOneSession(
-    @Param('sessionId') sessionId: string,
+  async revokeSession(
     @Req() req: Request & { user: RequestUser },
+    @Param('sessionId') sessionId: string,
   ) {
-    await this.authService.revokeSession(sessionId, req.user.id);
-    return { message: 'Session terminated.' };
+    if (sessionId === req.user.sessionId) {
+      await this.sessionsService.revokeSession(sessionId);
+      return { message: 'Current session revoked. You must log in again.' };
+    }
+    const userSessions = await this.sessionsService.listUserSessions(
+      req.user.id,
+    );
+    const belongsToUser = userSessions.some((s) => s.sessionId === sessionId);
+    if (!belongsToUser) {
+      throw new UnauthorizedException({
+        code: 'FORBIDDEN_SESSION_ACCESS',
+        message: 'Cannot revoke session belonging to another user.',
+      });
+    }
+
+    await this.sessionsService.revokeSession(sessionId);
+    return { message: 'Session revoked successfully.' };
   }
 
   @UseGuards(AuthGuard)
   @Delete('sessions')
-  async revokeOtherSessions(@Req() req: Request & { user: RequestUser }) {
+  async revokeAllOtherSessions(@Req() req: Request & { user: RequestUser }) {
     await this.sessionsService.revokeAllUserSessions(
       req.user.id,
       req.user.sessionId,
     );
-    return { message: 'All other sessions have been terminated.' };
+    return { message: 'All other sessions have been revoked.' };
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, StepUpGuard)
   @Post('mfa/enroll')
   async enrollMfa(@Req() req: Request & { user: RequestUser }) {
     return this.authService.enrollMfa(req.user.id);
@@ -305,31 +297,20 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Post('mfa/verify')
+  @HttpCode(HttpStatus.OK)
   async verifyMfa(
     @Body(new ZodValidationPipe(MfaVerifyDtoSchema)) dto: MfaVerifyDto,
     @Req() req: Request & { user: RequestUser },
   ) {
-    return this.authService.verifyMfa(req.user.id, dto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Post('mfa/enable')
-  async enableMfa(
-    @Body(new ZodValidationPipe(MfaVerifyDtoSchema)) dto: MfaVerifyDto,
-    @Req() req: Request & { user: RequestUser },
-  ) {
-    return this.authService.verifyMfa(req.user.id, dto);
+    const result = await this.authService.verifyMfa(req.user.id, dto);
+    await this.sessionsService.setMfaVerified(req.user.sessionId);
+    return result;
   }
 
   @UseGuards(AuthGuard, StepUpGuard)
   @Post('mfa/disable')
+  @HttpCode(HttpStatus.OK)
   async disableMfa(@Req() req: Request & { user: RequestUser }) {
-    return this.authService.disableMfa(req.user.id);
-  }
-
-  @UseGuards(AuthGuard, StepUpGuard)
-  @Delete('mfa')
-  async deleteMfa(@Req() req: Request & { user: RequestUser }) {
     return this.authService.disableMfa(req.user.id);
   }
 
@@ -360,6 +341,144 @@ export class AuthController {
     @Req() req: Request & { user: RequestUser },
   ) {
     return this.authService.stepUp(req.user.sessionId, req.user.id, dto);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('step-up/email/send')
+  @HttpCode(HttpStatus.OK)
+  async sendStepUpEmailOtp(@Req() req: Request & { user: RequestUser }) {
+    return this.authService.sendStepUpEmailOtp(req.user.id);
+  }
+
+  @Public()
+  @Get('oauth/providers')
+  listOAuthProviders() {
+    return this.oauthService.listProviders();
+  }
+
+  @Public()
+  @Get('oauth/:provider/start')
+  async startOAuth(
+    @Param('provider') provider: string,
+    @Query('mode') mode: 'login' | 'link' | undefined,
+    @Query('next') next: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    let linkUserId: string | undefined;
+
+    if (mode === 'link') {
+      const authHeader = req.headers['authorization'];
+      if (!authHeader?.startsWith('Bearer ')) {
+        throw new UnauthorizedException({
+          code: 'oauth_denied',
+          message: 'Authentication required for linking accounts',
+        });
+      }
+      const token = authHeader.substring(7).trim();
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        throw new UnauthorizedException({
+          code: 'oauth_denied',
+          message: 'Invalid authorization token',
+        });
+      }
+      let payload: { sid: string; sub: string };
+      try {
+        const decoded = JSON.parse(
+          Buffer.from(parts[1] as string, 'base64url').toString('utf8'),
+        ) as Record<string, unknown>;
+        payload = {
+          sid: typeof decoded['sid'] === 'string' ? decoded['sid'] : '',
+          sub: typeof decoded['sub'] === 'string' ? decoded['sub'] : '',
+        };
+      } catch {
+        throw new UnauthorizedException({
+          code: 'oauth_denied',
+          message: 'Malformed authorization token',
+        });
+      }
+
+      const session = await this.sessionsService.validateSession(payload.sid);
+      const isStepUp = await this.sessionsService.isStepUpValid(
+        session.sessionId,
+      );
+      if (!isStepUp) {
+        throw new ForbiddenException({
+          code: 'STEP_UP_REQUIRED',
+          message: 'Step-up authentication required to link accounts',
+        });
+      }
+      linkUserId = session.userId;
+    }
+
+    const result = await this.oauthService.start({
+      provider: provider as OAuthProviderKey,
+      mode: mode ?? undefined,
+      next: next ?? undefined,
+      userId: linkUserId ?? undefined,
+    });
+
+    res.cookie('oauth_binding', result.bindingCookie, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 10 * 60 * 1000,
+    });
+
+    return res.redirect(result.authorizationUrl);
+  }
+
+  @Public()
+  @Get('oauth/:provider/callback')
+  async oAuthCallback(
+    @Param('provider') provider: string,
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const rawCookies = req.headers.cookie;
+    let bindingCookie: string | undefined = (
+      req as unknown as { cookies?: Record<string, string> }
+    ).cookies?.['oauth_binding'];
+
+    if (!bindingCookie && rawCookies) {
+      const match = rawCookies.match(/oauth_binding=([^;]+)/);
+      if (match) bindingCookie = match[1];
+    }
+
+    res.clearCookie('oauth_binding', { path: '/' });
+
+    const meta = this.extractMeta(req);
+    const result = await this.oauthService.handleCallback({
+      provider: provider as OAuthProviderKey,
+      code,
+      state,
+      bindingCookie: bindingCookie ?? undefined,
+      meta,
+    });
+
+    if (result.refreshToken) {
+      this.setRefreshCookie(res, result.refreshToken);
+    }
+
+    return res.redirect(result.redirectUrl);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('onboarding')
+  @HttpCode(HttpStatus.OK)
+  async completeOnboarding(
+    @Body(new ZodValidationPipe(OnboardingDtoSchema)) dto: OnboardingDto,
+    @Req() req: Request & { user: RequestUser },
+  ) {
+    return this.oauthService.completeOnboarding(
+      req.user.id,
+      dto,
+      req.user.sessionId,
+    );
   }
 
   @Public()

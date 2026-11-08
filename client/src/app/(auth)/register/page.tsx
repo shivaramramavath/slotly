@@ -1,17 +1,44 @@
-// React component for page.
+// React component for register page supporting credentials and OAuth sign-up.
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthLayout } from '@/components/layouts/auth-layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { authApi } from '@/features/auth/services/auth.api';
 import { toast } from '@/components/ui/toast';
+import { OAuthButtons } from '@/features/auth/components/oauth-buttons';
+import { getOAuthErrorMessage } from '@/features/auth/utils/oauth-errors';
 
-/** React component rendering register page. */
-export default function RegisterPage() {
+function OAuthErrorBanner() {
+  const searchParams = useSearchParams();
+  const errorParam = searchParams.get('error');
+  const errorMessage = getOAuthErrorMessage(errorParam);
+
+  useEffect(() => {
+    if (errorParam) {
+      // Clean query parameter from URL without triggering a reload
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [errorParam]);
+
+  if (!errorMessage) return null;
+
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="mb-4 rounded border border-[#EF4444]/40 bg-[#EF4444]/10 p-3 text-xs font-mono text-[#EF4444]"
+    >
+      {errorMessage}
+    </div>
+  );
+}
+
+function RegisterForm() {
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -50,10 +77,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <AuthLayout subtitle="Create your designer or institution account">
+    <>
+      <OAuthErrorBanner />
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-mono uppercase text-[#8A8A8A]">Full Name</label>
+          <label className="text-xs font-mono uppercase text-[#8A8A8A]">
+            Full Name
+          </label>
           <Input
             placeholder="Prof. Jane Doe"
             value={name}
@@ -63,7 +93,9 @@ export default function RegisterPage() {
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-mono uppercase text-[#8A8A8A]">Email address</label>
+          <label className="text-xs font-mono uppercase text-[#8A8A8A]">
+            Email address
+          </label>
           <Input
             type="email"
             placeholder="name@institution.edu"
@@ -74,7 +106,9 @@ export default function RegisterPage() {
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-mono uppercase text-[#8A8A8A]">Password</label>
+          <label className="text-xs font-mono uppercase text-[#8A8A8A]">
+            Password
+          </label>
           <Input
             type="password"
             placeholder="At least 12 characters"
@@ -90,7 +124,10 @@ export default function RegisterPage() {
         </div>
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase text-[#8A8A8A]">
-            Institution Name <span className="text-[#8A8A8A] font-normal lowercase">(optional)</span>
+            Institution Name{' '}
+            <span className="text-[#8A8A8A] font-normal lowercase">
+              (optional)
+            </span>
           </label>
           <Input
             placeholder="e.g. Stanford University"
@@ -106,12 +143,29 @@ export default function RegisterPage() {
           {loading ? 'Registering...' : 'Create Account'}
         </Button>
       </form>
+
+      <OAuthButtons mode="login" />
+
       <div className="mt-4 pt-4 border-t border-[#232323] text-center text-xs text-[#8A8A8A]">
         Already have an account?{' '}
-        <Link href="/login" className="text-[#FAFAFA] underline hover:text-[#FACC15]">
+        <Link
+          href="/login"
+          className="text-[#FAFAFA] underline hover:text-[#FACC15]"
+        >
           Sign In
         </Link>
       </div>
+    </>
+  );
+}
+
+/** React component rendering register page. */
+export default function RegisterPage() {
+  return (
+    <AuthLayout subtitle="Create your designer or institution account">
+      <Suspense fallback={null}>
+        <RegisterForm />
+      </Suspense>
     </AuthLayout>
   );
 }

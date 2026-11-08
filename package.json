@@ -13,6 +13,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "codemap": "tsx scripts/codemap/generate.ts",
     "codemap:check": "tsx scripts/codemap/generate.ts --check",
+    "oauth:urls": "tsx scripts/print-oauth-urls.ts",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"
   },

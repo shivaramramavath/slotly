@@ -16,6 +16,10 @@ import type {
   SessionDto,
   DeviceDto,
   SecurityActivityDto,
+  OAuthProviderKey,
+  OAuthProvidersResponse,
+  ConnectedAccountDto,
+  OnboardingDto,
 } from '@slotly/contracts';
 
 /** Interface defining structure for security overview. */
@@ -182,5 +186,43 @@ export const authApi = {
     return apiClient<{ message: string }>(`/users/me/security/devices/${deviceId}`, {
       method: 'DELETE',
     });
+  },
+
+  async getOAuthProviders(): Promise<OAuthProvidersResponse> {
+    return apiClient<OAuthProvidersResponse>('/auth/oauth/providers');
+  },
+
+  async getConnectedAccounts(): Promise<ConnectedAccountDto[]> {
+    return apiClient<ConnectedAccountDto[]>('/users/me/connected-accounts');
+  },
+
+  async unlinkOAuth(provider: OAuthProviderKey): Promise<{ message: string }> {
+    return apiClient<{ message: string }>(`/auth/oauth/link/${provider}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async onboardOAuth(dto: OnboardingDto): Promise<AuthResponse> {
+    const res = await apiClient<AuthResponse>('/auth/oauth/onboard', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
+    if (res.accessToken) {
+      setAccessToken(res.accessToken);
+    }
+    return res;
+  },
+
+  getOAuthStartUrl(
+    provider: OAuthProviderKey,
+    mode: 'login' | 'link' = 'login',
+    next?: string,
+  ): string {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    const params = new URLSearchParams({ mode });
+    if (next) {
+      params.set('next', next);
+    }
+    return `${baseUrl}/auth/oauth/${provider}/start?${params.toString()}`;
   },
 };
