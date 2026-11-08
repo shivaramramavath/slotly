@@ -48,7 +48,12 @@
 ### `client/src/features/library/components/room-dialog.tsx`
 *React component for room-dialog.*
 
-- **Component** `RoomDialog({ open, onOpenChange, room, onSuccess }: RoomDialogProps)` - React component rendering room dialog.
+- **Component** `RoomDialog({
+  open,
+  onOpenChange,
+  room,
+  onSuccess,
+}: RoomDialogProps)` - React component rendering room dialog.
 
 ### `client/src/features/library/components/subject-dialog.tsx`
 *React component for subject-dialog.*

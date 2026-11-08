@@ -25,12 +25,20 @@
 ### `client/src/features/institution/components/holiday-calendar.tsx`
 *React component for holiday-calendar.*
 
-- **Component** `HolidayCalendar({ holidays, onAddHoliday, onDeleteHoliday }: HolidayCalendarProps)` - React component rendering holiday calendar.
+- **Component** `HolidayCalendar({
+  holidays,
+  onAddHoliday,
+  onDeleteHoliday,
+}: HolidayCalendarProps)` - React component rendering holiday calendar.
 
 ### `client/src/features/institution/components/holiday-dialog.tsx`
 *React component for holiday-dialog.*
 
-- **Component** `HolidayDialog({ open, onOpenChange, onSuccess }: HolidayDialogProps)` - React component rendering holiday dialog.
+- **Component** `HolidayDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: HolidayDialogProps)` - React component rendering holiday dialog.
 
 ### `client/src/features/institution/components/program-dialog.tsx`
 *React component for program-dialog.*

@@ -1169,3 +1169,78 @@
 - [x] Run `pnpm codemap` and verify sync.
 
 ---
+
+
+### What Was Built (Pass 2: Client UI, Callback, Onboarding & Security Settings)
+
+1. **OAuth Buttons & Monochrome Visual Tokens:**
+   - Created `OAuthButtons` (`client/src/features/auth/components/oauth-buttons.tsx`):
+     - Renders outline monochrome buttons with accessible `aria-label`s ("Continue with Google", "Continue with GitHub").
+     - Renders native `<a>` links directly to backend `/auth/oauth/:provider/start` endpoint for full-page navigation.
+     - Dynamically checks enabled providers using `authApi.getOAuthProviders()`, renders skeleton while loading, and renders nothing if no providers are enabled.
+     - Reusable across login, registration, and account linking.
+   - Created `GoogleMonochromeIcon` and `GitHubIcon` (`client/src/features/auth/components/oauth-icons.tsx`) strictly adhering to black-and-white theme without brand color fills.
+
+2. **Login & Register Integration with Error Banners:**
+   - Created `getOAuthErrorMessage()` (`client/src/features/auth/utils/oauth-errors.ts`) mapping `OAuthErrorCode` strings to user-friendly plain-language messages.
+   - Integrated `OAuthErrorBanner` in `client/src/app/(auth)/login/page.tsx` and `client/src/app/(auth)/register/page.tsx`:
+     - Reads `?error=` search parameter.
+     - Renders alert banner with error message.
+     - Cleans URL parameter via `window.history.replaceState` without triggering reload or cascading renders.
+   - Embedded `<OAuthButtons mode="login" />` above credentials form with "or continue with" divider.
+
+3. **OAuth Callback Handler (`/auth/callback`):**
+   - Created `client/src/app/(auth)/auth/callback/page.tsx`:
+     - Renders "Signing you in..." skeleton within `AuthLayout`.
+     - Calls `authApi.refresh()` to fetch current session and set in-memory access token from httpOnly cookie.
+     - Checks user status: redirects `pending_onboarding` users to `/onboarding`, redirects MFA challenges to `/mfa`, or redirects to sanitized relative `next` URL (defaults to `/dashboard`).
+     - Error handling redirects cleanly to `/login?error=oauth_state_invalid`.
+
+4. **Single-step Onboarding (`/onboarding`):**
+   - Created `client/src/app/(auth)/onboarding/page.tsx`:
+     - Dedicated onboarding page for users authenticated via OAuth without institution assignment.
+     - Stepper-free UI providing options to create a new institution (name + optional code) or join an existing institution via join code.
+     - Terms of Service agreement checkbox.
+     - Submits `authApi.onboardOAuth(dto)` and redirects directly to `/dashboard`.
+
+5. **Connected Accounts & Security Management (`/users/me/security`):**
+   - Created `ConnectedAccounts` component (`client/src/features/auth/components/connected-accounts.tsx`):
+     - Card in Security settings listing Google and GitHub connection statuses, email addresses, and linked dates.
+     - Connect action initiates `/auth/oauth/:provider/start?mode=link`.
+     - Disconnect action triggers confirmation dialog before calling `DELETE /users/me/security/connections/:provider`.
+     - Security safeguard: Disconnect button is disabled with an explanatory tooltip if OAuth is the user's only sign-in method (`!hasPassword && accounts.length <= 1`).
+   - Integrated `<ConnectedAccounts />` into `client/src/app/users/me/security/page.tsx`.
+
+6. **Email OTP Step-Up Support:**
+   - Updated `StepUpDialog` (`client/src/features/auth/components/step-up-dialog.tsx`) to support `email_otp` verification alongside password and TOTP for passwordless accounts.
+
+7. **Client Tests:**
+   - Added `client/src/features/auth/utils/oauth-errors.spec.ts`: Unit tests verifying error code mappings and fallback messages.
+   - Added `client/src/features/auth/services/auth.api.spec.ts`: Unit tests verifying OAuth start URL formatting for login, link, and next parameters.
+   - Configured `client/package.json` test script to run Node test runner with `tsx`.
+
+### Decisions Made (Pass 2)
+
+- **Pure Query Parameter Reading:** To prevent React Compiler cascading render warnings, `OAuthErrorBanner` computes error message directly from search parameters during render and executes `window.history.replaceState` inside `useEffect` without component re-renders.
+- **Strict Black & White Styling:** Adhered strictly to the 5% accent rule by rendering third-party brand logos in monochrome outlines (`#FAFAFA` on `#111` surface with `#232323` borders) without brand-colored fills.
+- **Account Disconnect Prevention:** Prevented user lockouts by checking whether the account has a password or alternative login method before allowing provider unlinking.
+
+### Automated Test Evidence (Pass 2)
+
+- **Client Tests:** 6/6 tests passed (`authApi.getOAuthStartUrl`, `getOAuthErrorMessage`).
+- **Server Tests:** 45 test suites passed, 243 tests passed, 0 failures.
+- **Typecheck:** 0 errors across `@slotly/contracts`, `server`, and `client`.
+- **Lint:** 0 errors across `@slotly/contracts`, `server`, and `client`.
+- **Build:** Next.js production build succeeded with all static auth and onboarding routes prerendered.
+- **Codemap:** All 339 files mapped, 0 missing purpose headers, `pnpm codemap:check` passed.
+
+### Manual Verification Checklist (Pass 2)
+
+- [x] Run `pnpm test` and verify client and server tests pass.
+- [x] Run `pnpm lint` and verify zero errors/warnings.
+- [x] Run `pnpm typecheck` and verify clean TypeScript output.
+- [x] Run `pnpm build` and verify successful compilation of client and server.
+- [x] Run `pnpm codemap:check` and confirm codemap is in sync.
+- [x] Verify monochrome B&W UI tokens in `OAuthButtons` and `ConnectedAccounts`.
+
+---

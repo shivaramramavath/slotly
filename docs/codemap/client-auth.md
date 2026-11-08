@@ -17,10 +17,32 @@
   fallback = null,
 }: CanProps)` - React component rendering can.
 
-### `client/src/features/auth/components/step-up-dialog.tsx`
-*React component for step-up-dialog.*
+### `client/src/features/auth/components/connected-accounts.tsx`
+*React component rendering connected social OAuth accounts card in Security settings.*
 
-- **Component** `StepUpDialog()` - React component rendering step up dialog.
+- **Component** `ConnectedAccounts({ hasPassword = true }: ConnectedAccountsProps)` - React component displaying connected third-party OAuth accounts with connect and disconnect controls.
+
+### `client/src/features/auth/components/oauth-buttons.tsx`
+*React component rendering monochrome OAuth sign-in and registration buttons.*
+
+- **Component** `OAuthButtons({
+  mode = 'login',
+  next,
+  dividerText = 'or continue with',
+  className = '',
+}: OAuthButtonsProps)` - React component rendering available OAuth login/link buttons.
+
+### `client/src/features/auth/components/oauth-icons.tsx`
+*Monochrome SVG icon components for Google and GitHub authentication providers.*
+
+- **Component** `GoogleIcon({ className = 'w-4 h-4' }: { className?: string | undefined; })` - Monochrome Google 'G' icon matching strict black-and-white theme without brand colors.
+- **Component** `GitHubIcon({ className = 'w-4 h-4' }: { className?: string | undefined; })` - Monochrome GitHub Octocat icon matching strict black-and-white theme without brand colors.
+- **Component** `GoogleMonochromeIcon({ className = 'w-4 h-4' }: { className?: string | undefined; })` - Google standard logo path rendered in monochrome fill.
+
+### `client/src/features/auth/components/step-up-dialog.tsx`
+*React component for step-up verification supporting password, TOTP, and email code methods.*
+
+- **Component** `StepUpDialog()` - React component rendering step up dialog with password, TOTP, and email OTP options.
 
 ### `client/src/features/auth/hooks/use-permission.ts`
 *Custom React hook for use-permission.*
@@ -43,4 +65,9 @@
 
 - **Type** `AuthStatus` - Type alias for auth status.
 - **Zustand Store** `useAuthStore` (actions: setAuth, setUser, clearAuth, setStatus, setMfaPending, clearMfaPending, setStepUpRequired) - Zustand store managing use auth store state.
+
+### `client/src/features/auth/utils/oauth-errors.ts`
+*Plain-language user-facing error message mapping for OAuth error codes per CLIENT_UX specifications.*
+
+- **Function** `getOAuthErrorMessage(code: string | null | undefined)`: `string | null` - Translates an OAuth error code into a user-friendly error message.
 

@@ -1,5 +1,11 @@
 # Client App Routes Code Map
 
+### `client/src/app/(auth)/auth/callback/page.tsx`
+*React component for OAuth callback landing page handling token exchange verification and routing.*
+
+- **Route Page:** `/auth/callback` -> renders `default`
+- **Component** `OAuthCallbackPage()` - React component rendering OAuth callback page.
+
 ### `client/src/app/(auth)/forgot-password/page.tsx`
 *React component for page.*
 
@@ -7,7 +13,7 @@
 - **Component** `ForgotPasswordPage()` - React component rendering forgot password page.
 
 ### `client/src/app/(auth)/login/page.tsx`
-*React component for page.*
+*React component for login page supporting credentials and OAuth sign-in.*
 
 - **Route Page:** `/login` -> renders `default`
 - **Component** `LoginPage()` - React component rendering login page.
@@ -18,8 +24,14 @@
 - **Route Page:** `/mfa` -> renders `default`
 - **Component** `MfaChallengePage()` - React component rendering mfa challenge page.
 
+### `client/src/app/(auth)/onboarding/page.tsx`
+*React component for single-step onboarding page for users registered via social OAuth.*
+
+- **Route Page:** `/onboarding` -> renders `default`
+- **Component** `OnboardingPage()` - React component rendering single-step social onboarding page.
+
 ### `client/src/app/(auth)/register/page.tsx`
-*React component for page.*
+*React component for register page supporting credentials and OAuth sign-up.*
 
 - **Route Page:** `/register` -> renders `default`
 - **Component** `RegisterPage()` - React component rendering register page.
