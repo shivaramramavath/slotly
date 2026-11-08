@@ -1,5 +1,6 @@
 // Core bootstrap implementation for the Slotly backend server.
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
@@ -45,6 +46,19 @@ async function bootstrap() {
     new LoggingInterceptor(),
     new MetricsInterceptor(metricsService),
   );
+
+  // OpenAPI / Swagger documentation (non-production)
+  if (process.env.NODE_ENV !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Slotly API')
+      .setDescription('Slotly Timetable Engine and Administration API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = appCfg.port;
   await app.listen(port);

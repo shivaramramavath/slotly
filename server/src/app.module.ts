@@ -31,6 +31,10 @@ import { ExportsModule } from './modules/exports/exports.module';
 import { CalendarFeedsModule } from './modules/calendar-feeds/calendar-feeds.module';
 import { SharesModule } from './modules/shares/shares.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { MonitoringModule } from './modules/monitoring/monitoring.module';
 
 /** Class implementing app module. */
 @Module({
@@ -65,6 +69,10 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     CalendarFeedsModule,
     SharesModule,
     NotificationsModule,
+    AnalyticsModule,
+    FeedbackModule,
+    AdminModule,
+    MonitoringModule,
   ],
   controllers: [AppController],
   providers: [
