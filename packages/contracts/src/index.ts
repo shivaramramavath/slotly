@@ -2434,3 +2434,239 @@ export const TimetableRatingResponseDtoSchema = z.object({
 });
 /** TypeScript type inferred from timetable rating response DTO Zod schema. */
 export type TimetableRatingResponseDto = z.infer<typeof TimetableRatingResponseDtoSchema>;
+
+
+// ==========================================
+// Phase 12: Viewers, Exports, Sharing & Notifications
+// ==========================================
+
+/** Zod schema validating viewer entity type. */
+export const ViewerEntityTypeSchema = z.enum(['faculty', 'section', 'room', 'subject']);
+/** TypeScript type inferred from viewer entity type Zod schema. */
+export type ViewerEntityType = z.infer<typeof ViewerEntityTypeSchema>;
+
+/** Zod schema validating current period status type. */
+export const CurrentPeriodStatusTypeSchema = z.enum([
+  'before_start',
+  'in_period',
+  'in_break',
+  'after_end',
+  'holiday',
+  'off_day',
+]);
+/** TypeScript type inferred from current period status type Zod schema. */
+export type CurrentPeriodStatusType = z.infer<typeof CurrentPeriodStatusTypeSchema>;
+
+/** Zod schema validating current period status. */
+export const CurrentPeriodStatusSchema = z.object({
+  status: CurrentPeriodStatusTypeSchema,
+  periodNumber: z.number().int().optional(),
+  periodName: z.string().optional(),
+  currentEntry: ScheduleEntryDtoSchema.nullable().optional(),
+  nextEntry: ScheduleEntryDtoSchema.nullable().optional(),
+  timeRemainingMinutes: z.number().optional(),
+  startsInMinutes: z.number().optional(),
+  breakName: z.string().optional(),
+  currentDay: z.number().int().optional(),
+  currentTime: z.string().optional(),
+});
+/** TypeScript type inferred from current period status Zod schema. */
+export type CurrentPeriodStatus = z.infer<typeof CurrentPeriodStatusSchema>;
+
+/** Zod schema validating viewer timetable query DTO. */
+export const ViewerTimetableQueryDtoSchema = z.object({
+  type: ViewerEntityTypeSchema,
+  targetId: z.string(),
+  day: z.coerce.number().int().min(0).max(6).optional(),
+});
+/** TypeScript type inferred from viewer timetable query DTO Zod schema. */
+export type ViewerTimetableQueryDto = z.infer<typeof ViewerTimetableQueryDtoSchema>;
+
+/** Zod schema validating viewer timetable DTO. */
+export const ViewerTimetableDtoSchema = z.object({
+  projectId: z.string(),
+  versionId: z.string(),
+  versionLabel: z.string().optional(),
+  entityType: ViewerEntityTypeSchema,
+  entityId: z.string(),
+  entityName: z.string(),
+  entries: z.array(ScheduleEntryDtoSchema),
+  settings: ProjectSettingsSchema,
+  currentPeriod: CurrentPeriodStatusSchema.optional(),
+});
+/** TypeScript type inferred from viewer timetable DTO Zod schema. */
+export type ViewerTimetableDto = z.infer<typeof ViewerTimetableDtoSchema>;
+
+/** Zod schema validating export format. */
+export const ExportFormatSchema = z.enum(['pdf', 'excel', 'image', 'ics']);
+/** TypeScript type inferred from export format Zod schema. */
+export type ExportFormat = z.infer<typeof ExportFormatSchema>;
+
+/** Zod schema validating create export DTO. */
+export const CreateExportDtoSchema = z.object({
+  format: ExportFormatSchema,
+  entityType: ViewerEntityTypeSchema,
+  entityId: z.string(),
+  day: z.number().int().min(0).max(6).optional(),
+});
+/** TypeScript type inferred from create export DTO Zod schema. */
+export type CreateExportDto = z.infer<typeof CreateExportDtoSchema>;
+
+/** Zod schema validating export job status. */
+export const ExportJobStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed']);
+/** TypeScript type inferred from export job status Zod schema. */
+export type ExportJobStatus = z.infer<typeof ExportJobStatusSchema>;
+
+/** Zod schema validating export job DTO. */
+export const ExportJobDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  userId: z.string(),
+  format: ExportFormatSchema,
+  entityType: ViewerEntityTypeSchema,
+  entityId: z.string(),
+  status: ExportJobStatusSchema,
+  downloadUrl: z.string().optional(),
+  expiresAt: z.string().optional(),
+  error: z.string().optional(),
+  createdAt: z.string(),
+  completedAt: z.string().optional(),
+});
+/** TypeScript type inferred from export job DTO Zod schema. */
+export type ExportJobDto = z.infer<typeof ExportJobDtoSchema>;
+
+/** Zod schema validating create calendar feed DTO. */
+export const CreateCalendarFeedDtoSchema = z.object({
+  entityType: ViewerEntityTypeSchema,
+  entityId: z.string(),
+  label: z.string().optional(),
+});
+/** TypeScript type inferred from create calendar feed DTO Zod schema. */
+export type CreateCalendarFeedDto = z.infer<typeof CreateCalendarFeedDtoSchema>;
+
+/** Zod schema validating calendar feed DTO. */
+export const CalendarFeedDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  entityType: ViewerEntityTypeSchema,
+  entityId: z.string(),
+  feedUrl: z.string(),
+  label: z.string().optional(),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+  lastAccessedAt: z.string().optional(),
+});
+/** TypeScript type inferred from calendar feed DTO Zod schema. */
+export type CalendarFeedDto = z.infer<typeof CalendarFeedDtoSchema>;
+
+/** Zod schema validating share scope. */
+export const ShareScopeSchema = z.enum(['all', 'section', 'faculty', 'room']);
+/** TypeScript type inferred from share scope Zod schema. */
+export type ShareScope = z.infer<typeof ShareScopeSchema>;
+
+/** Zod schema validating create share link DTO. */
+export const CreateShareDtoSchema = z.object({
+  scope: ShareScopeSchema.default('all'),
+  targetId: z.string().optional(),
+  label: z.string().optional(),
+  expiresAt: z.string().optional(),
+});
+/** TypeScript type inferred from create share link DTO Zod schema. */
+export type CreateShareDto = z.infer<typeof CreateShareDtoSchema>;
+
+/** Zod schema validating share DTO. */
+export const ShareDtoSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  shareUrl: z.string(),
+  scope: ShareScopeSchema,
+  targetId: z.string().optional(),
+  label: z.string().optional(),
+  isActive: z.boolean(),
+  expiresAt: z.string().optional(),
+  createdAt: z.string(),
+});
+/** TypeScript type inferred from share DTO Zod schema. */
+export type ShareDto = z.infer<typeof ShareDtoSchema>;
+
+/** Zod schema validating public share view DTO. */
+export const PublicShareViewDtoSchema = z.object({
+  institutionName: z.string(),
+  projectName: z.string(),
+  scope: ShareScopeSchema,
+  targetId: z.string().optional(),
+  timetable: ViewerTimetableDtoSchema,
+});
+/** TypeScript type inferred from public share view DTO Zod schema. */
+export type PublicShareViewDto = z.infer<typeof PublicShareViewDtoSchema>;
+
+/** Zod schema validating notification channel. */
+export const NotificationChannelSchema = z.enum(['in_app', 'email']);
+/** TypeScript type inferred from notification channel Zod schema. */
+export type NotificationChannel = z.infer<typeof NotificationChannelSchema>;
+
+/** Zod schema validating notification type. */
+export const NotificationTypeSchema = z.enum([
+  'published',
+  'updated',
+  'assignment_changed',
+  'conflict_found',
+  'schedule_change',
+  'announcement',
+]);
+/** TypeScript type inferred from notification type Zod schema. */
+export type NotificationType = z.infer<typeof NotificationTypeSchema>;
+
+/** Zod schema validating notification DTO. */
+export const NotificationDtoSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  type: NotificationTypeSchema,
+  title: z.string(),
+  message: z.string(),
+  data: z.record(z.unknown()).optional(),
+  read: z.boolean(),
+  createdAt: z.string(),
+});
+/** TypeScript type inferred from notification DTO Zod schema. */
+export type NotificationDto = z.infer<typeof NotificationDtoSchema>;
+
+/** Zod schema validating notification preferences DTO. */
+export const NotificationPreferencesDtoSchema = z.object({
+  email: z.boolean().default(true),
+  inApp: z.boolean().default(true),
+  types: z
+    .record(
+      NotificationTypeSchema,
+      z.object({
+        inApp: z.boolean(),
+        email: z.boolean(),
+      }),
+    )
+    .optional(),
+});
+/** TypeScript type inferred from notification preferences DTO Zod schema. */
+export type NotificationPreferencesDto = z.infer<typeof NotificationPreferencesDtoSchema>;
+
+/** Zod schema validating create announcement DTO. */
+export const CreateAnnouncementDtoSchema = z.object({
+  title: z.string().min(3),
+  message: z.string().min(5),
+  audience: z
+    .object({
+      roles: z.array(UserRoleSchema).optional(),
+      departmentId: z.string().optional(),
+      sectionId: z.string().optional(),
+    })
+    .optional(),
+});
+/** TypeScript type inferred from create announcement DTO Zod schema. */
+export type CreateAnnouncementDto = z.infer<typeof CreateAnnouncementDtoSchema>;
+
+/** Constant socket events for notifications namespace. */
+export const NotificationSocketEvents = {
+  SUBSCRIBE: 'subscribe',
+  MARK_READ: 'mark_read',
+  NOTIFICATION_RECEIVED: 'notification:received',
+  ANNOUNCEMENT_RECEIVED: 'announcement:received',
+} as const;
