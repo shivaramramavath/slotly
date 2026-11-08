@@ -99,10 +99,17 @@ GET    /projects/:projectId/builds/:versionId            get specific schedule v
 POST   /projects/:projectId/builds/cancel                cancel in-flight build job
 
 TIMETABLE & EDITOR (use If-Match: <revision> on all writes; 409 on mismatch)
-POST   /versions/:versionId/slots/bulk
+GET    /versions/:versionId/slots                        query schedule entries by sectionId, facultyId, roomId, subjectId, day
+PATCH  /versions/:versionId/slots/:slotId                edit slot details
+POST   /versions/:versionId/slots/:slotId/move           move slot to target day, startPeriod, roomId, facultyId
+POST   /versions/:versionId/slots/swap                   swap two slots atomically
+POST   /versions/:versionId/slots/bulk                   bulk batch actions (atomic, validated together)
 POST   /versions/:versionId/slots/:slotId/merge
 POST   /versions/:versionId/slots/:slotId/split
-DELETE /versions/:versionId/slots/:slotId                clear cell
+DELETE /versions/:versionId/slots/:slotId                clear cell assignment
+POST   /versions/:versionId/slots/lock                   lock or unlock cells, rows, days, or whole timetable
+POST   /versions/:versionId/slots/validate-move          dry-run move validation against MoveValidator chain
+POST   /versions/:versionId/slots/suggestions            smart suggestions for slot assignment
 POST   /versions/:versionId/undo
 POST   /versions/:versionId/redo
 GET    /versions/:versionId/periods
@@ -117,6 +124,10 @@ SOCKET NAMESPACES & EVENTS
 /builds:
   client -> server: join:project, leave:project
   server -> client: build:progress, build:completed, build:failed
+
+/schedule:
+  client -> server: schedule:join, schedule:leave
+  server -> client: slot:moved, slot:updated, slot:locked, slot:cleared, revision:conflict, presence:changed
 
 BULLMQ QUEUES & PROCESSORS
 builds:

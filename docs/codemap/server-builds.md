@@ -52,7 +52,7 @@
 ### `server/src/modules/builds/services/build.facade.ts`
 *Domain service orchestrating build.facade business logic.*
 
-- **Injectable** `BuildFacade` (deps: WriteBehindService, @Inject(forwardRef(() => BlueprintService)), ReadinessService, @Inject(forwardRef(() => ProjectsService)), EngineValidationService, @Inject(SCHEDULE_VERSION_REPOSITORY), EventBus, AuditService) - Injectable service providing build facade logic.
+- **Injectable** `BuildFacade` (deps: WriteBehindService, @Inject(forwardRef(() => BlueprintService)), ReadinessService, @Inject(forwardRef(() => ProjectsService)), EngineValidationService, @Inject(SCHEDULE_VERSION_REPOSITORY), EventBus, AuditService, ScheduleEntryRepository | undefined, ScheduleOccupancyRepository | undefined, TransactionHelper | undefined) - Injectable service providing build facade logic.
 
 ### `server/src/modules/builds/services/builds.service.ts`
 *Domain service orchestrating builds.service business logic.*

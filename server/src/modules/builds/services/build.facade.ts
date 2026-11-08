@@ -1,6 +1,7 @@
 // Domain service orchestrating build.facade business logic.
 import {
   Injectable,
+  Optional,
   Inject,
   BadRequestException,
   NotFoundException,
@@ -19,6 +20,12 @@ import { SCHEDULE_VERSION_REPOSITORY } from '../repositories/schedule-version.re
 import type { IScheduleVersionRepository } from '../repositories/schedule-version.repository.interface';
 import { EventBus } from '../../../common/events/event-bus.service';
 import { AuditService } from '../../../common/audit/audit.service';
+import { TransactionHelper } from '../../../common/database/transaction.helper';
+import { ScheduleEntryRepository } from '../../schedules/repositories/schedule-entry.repository';
+import { ScheduleOccupancyRepository } from '../../schedules/repositories/schedule-occupancy.repository';
+import { ScheduleEntry } from '../../schedules/schemas/schedule-entry.schema';
+import { ScheduleOccupancy } from '../../schedules/schemas/schedule-occupancy.schema';
+import { randomUUID } from 'crypto';
 
 /** Injectable service providing build facade logic. */
 @Injectable()
@@ -38,6 +45,9 @@ export class BuildFacade {
     private readonly versionRepo: IScheduleVersionRepository,
     private readonly eventBus: EventBus,
     private readonly auditService: AuditService,
+    @Optional() private readonly entryRepo?: ScheduleEntryRepository,
+    @Optional() private readonly occupancyRepo?: ScheduleOccupancyRepository,
+    @Optional() private readonly transactionHelper?: TransactionHelper,
   ) {}
 
   /**
@@ -160,6 +170,110 @@ export class BuildFacade {
         revision: 1,
         status: 'ready',
       });
+
+      // Persist ScheduleEntry and ScheduleOccupancy records in DB
+      if (
+        this.entryRepo &&
+        this.occupancyRepo &&
+        alt.slots &&
+        alt.slots.length > 0
+      ) {
+        const entries: ScheduleEntry[] = [];
+        const occupancies: ScheduleOccupancy[] = [];
+
+        for (const slot of alt.slots) {
+          const entryId = slot.id || randomUUID();
+          const span = slot.span || 1;
+          const sectionId = slot.sectionId;
+          const batchId = slot.batchId;
+          const facultyId = slot.facultyId;
+          const roomId = slot.roomId;
+          const day = slot.day;
+          const startPeriod = slot.period;
+
+          entries.push({
+            _id: entryId,
+            versionId: created.id,
+            sectionId,
+            batchId,
+            day,
+            startPeriod,
+            span,
+            type: slot.type || 'theory',
+            subjectId: slot.subjectId,
+            facultyId,
+            roomId,
+            locked: slot.isLocked || false,
+            revision: 1,
+          });
+
+          for (let p = startPeriod; p < startPeriod + span; p++) {
+            occupancies.push({
+              _id: randomUUID(),
+              versionId: created.id,
+              resourceType: 'section',
+              resourceId: sectionId,
+              day,
+              period: p,
+              entryId,
+            });
+
+            if (batchId) {
+              occupancies.push({
+                _id: randomUUID(),
+                versionId: created.id,
+                resourceType: 'batch',
+                resourceId: batchId,
+                day,
+                period: p,
+                entryId,
+              });
+            }
+
+            if (facultyId) {
+              occupancies.push({
+                _id: randomUUID(),
+                versionId: created.id,
+                resourceType: 'faculty',
+                resourceId: facultyId,
+                day,
+                period: p,
+                entryId,
+              });
+            }
+
+            if (roomId) {
+              occupancies.push({
+                _id: randomUUID(),
+                versionId: created.id,
+                resourceType: 'room',
+                resourceId: roomId,
+                day,
+                period: p,
+                entryId,
+              });
+            }
+          }
+        }
+
+        try {
+          if (this.transactionHelper) {
+            await this.transactionHelper.withTransaction(async (session) => {
+              await this.entryRepo!.createMany(entries, session);
+              await this.occupancyRepo!.createMany(occupancies, session);
+            });
+          } else {
+            await this.entryRepo.createMany(entries);
+            await this.occupancyRepo.createMany(occupancies);
+          }
+        } catch (err) {
+          this.logger.warn(
+            `Transaction write failed for entries/occupancies, falling back: ${(err as Error).message}`,
+          );
+          await this.entryRepo.createMany(entries);
+          await this.occupancyRepo.createMany(occupancies);
+        }
+      }
 
       savedVersions.push(created);
     }

@@ -163,6 +163,22 @@
 - **Type** `CreateBuildDto` - TypeScript type inferred from create build dto Zod schema.
 - **Type** `BuildJobStatus` - TypeScript type inferred from build job status Zod schema.
 - **Type** `BuildProgressPayload` - TypeScript type inferred from build progress payload Zod schema.
+- **Type** `ScheduleResourceType` - TypeScript type inferred from schedule resource type Zod schema.
+- **Type** `ScheduleEntryDto` - TypeScript type inferred from schedule entry dto Zod schema.
+- **Type** `ScheduleOccupancyDto` - TypeScript type inferred from schedule occupancy dto Zod schema.
+- **Type** `ScheduleOperationDto` - TypeScript type inferred from schedule operation dto Zod schema.
+- **Type** `MoveSlotDto` - TypeScript type inferred from move slot dto Zod schema.
+- **Type** `SwapSlotsDto` - TypeScript type inferred from swap slots dto Zod schema.
+- **Type** `EditSlotDto` - TypeScript type inferred from edit slot dto Zod schema.
+- **Type** `BulkSlotActionType` - TypeScript type inferred from bulk slot action type Zod schema.
+- **Type** `BulkSlotsDto` - TypeScript type inferred from bulk slots dto Zod schema.
+- **Type** `MergeSlotDto` - TypeScript type inferred from merge slot dto Zod schema.
+- **Type** `SplitSlotDto` - TypeScript type inferred from split slot dto Zod schema.
+- **Type** `LockScope` - TypeScript type inferred from lock scope Zod schema.
+- **Type** `LockSlotDto` - TypeScript type inferred from lock slot dto Zod schema.
+- **Type** `UpdatePeriodsDto` - TypeScript type inferred from update periods dto Zod schema.
+- **Type** `PeriodsChangeResultDto` - TypeScript type inferred from periods change result dto Zod schema.
+- **Type** `MoveValidationResultDto` - TypeScript type inferred from move validation result dto Zod schema.
 - **Function** `normalizeReasonCode(code: string)`: `"REVISION_CONFLICT" | "PARENT_MISSING" | "PARENT_INCOMPLETE" | "PARENT_TYPE_NOT_ALLOWED" | "DUPLICATE_NAME" | "CAPACITY_EXCEEDED" | "CYCLE" | "ENDPOINT_INCOMPLETE" | "NOT_QUALIFIED" | "PROJECT_LOCKED" | "PERMISSION_DENIED" | "SINGLE_PARENT_VIOLATION" | "INVALID_OPERATION" | "INSUFFICIENT_LAB_CAPACITY" | "MISSING_ALLOCATION" | "FACULTY_OVERLOAD" | "INVALID_GRAPH"` - Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation.
 - **Function** `normalizeAvailabilityMatrix(matrix: boolean[][] | null | undefined, daysCount: number, periodsCount: number)`: `boolean[][]` - Function normalizing availability matrix dimensions according to days and periods per day.
 - **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse` - Zod schema validating api error response.
@@ -322,4 +338,21 @@
 - **Zod Schema** `CreateBuildDtoSchema` -> `CreateBuildDto` - Zod schema validating create build dto.
 - **Zod Schema** `BuildJobStatusSchema` -> `BuildJobStatus` - Zod schema validating build job status.
 - **Zod Schema** `BuildProgressPayloadSchema` -> `BuildProgressPayload` - Zod schema validating build progress payload.
+- **Zod Schema** `ScheduleResourceTypeSchema` -> `ScheduleResourceType` - Zod schema validating schedule resource type.
+- **Zod Schema** `ScheduleEntryDtoSchema` -> `ScheduleEntryDto` - Zod schema validating schedule entry dto.
+- **Zod Schema** `ScheduleOccupancyDtoSchema` -> `ScheduleOccupancyDto` - Zod schema validating schedule occupancy dto.
+- **Zod Schema** `ScheduleOperationDtoSchema` -> `ScheduleOperationDto` - Zod schema validating schedule operation dto.
+- **Zod Schema** `MoveSlotDtoSchema` -> `MoveSlotDto` - Zod schema validating move slot dto.
+- **Zod Schema** `SwapSlotsDtoSchema` -> `SwapSlotsDto` - Zod schema validating swap slots dto.
+- **Zod Schema** `EditSlotDtoSchema` -> `EditSlotDto` - Zod schema validating edit slot dto.
+- **Zod Schema** `BulkSlotActionTypeSchema` -> `BulkSlotActionType` - Zod schema validating bulk slot action type.
+- **Zod Schema** `BulkSlotsDtoSchema` -> `BulkSlotsDto` - Zod schema validating bulk slots dto.
+- **Zod Schema** `MergeSlotDtoSchema` -> `MergeSlotDto` - Zod schema validating merge slot dto.
+- **Zod Schema** `SplitSlotDtoSchema` -> `SplitSlotDto` - Zod schema validating split slot dto.
+- **Zod Schema** `LockScopeSchema` -> `LockScope` - Zod schema validating lock scope.
+- **Zod Schema** `LockSlotDtoSchema` -> `LockSlotDto` - Zod schema validating lock slot dto.
+- **Zod Schema** `UpdatePeriodsDtoSchema` -> `UpdatePeriodsDto` - Zod schema validating update periods dto.
+- **Zod Schema** `PeriodsChangeResultDtoSchema` -> `PeriodsChangeResultDto` - Zod schema validating periods change result dto.
+- **Zod Schema** `MoveValidationResultDtoSchema` -> `MoveValidationResultDto` - Zod schema validating move validation result dto.
+- **Const** `ScheduleSocketEvents`: `{ readonly JOIN_SCHEDULE: "schedule:join"; read...` - Constant socket events for schedule namespace.
 

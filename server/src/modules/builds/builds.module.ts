@@ -19,6 +19,8 @@ import { EngineModule } from '../engine/engine.module';
 import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
 import { AuditModule } from '../../common/audit/audit.module';
+import { DatabaseModule } from '../../common/database/database.module';
+import { SchedulesModule } from '../schedules/schedules.module';
 import { EventBus } from '../../common/events/event-bus.service';
 
 /** Class implementing builds module. */
@@ -29,6 +31,8 @@ import { EventBus } from '../../common/events/event-bus.service';
     ]),
     CacheModule,
     AuditModule,
+    DatabaseModule,
+    forwardRef(() => SchedulesModule),
     forwardRef(() => BlueprintModule),
     forwardRef(() => ProjectsModule),
     forwardRef(() => EngineModule),

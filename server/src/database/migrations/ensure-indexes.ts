@@ -83,6 +83,41 @@ export function getIndexDefinitions(): IndexDefinition[] {
       collection: 'schedule_versions',
       fields: { projectId: 1, status: 1 },
     },
+    // Schedule Entries
+    {
+      collection: 'schedule_entries',
+      fields: { versionId: 1, sectionId: 1, day: 1, startPeriod: 1 },
+    },
+    {
+      collection: 'schedule_entries',
+      fields: { versionId: 1, facultyId: 1, day: 1 },
+    },
+    {
+      collection: 'schedule_entries',
+      fields: { versionId: 1, roomId: 1, day: 1 },
+    },
+    // Schedule Occupancies
+    {
+      collection: 'schedule_occupancies',
+      fields: {
+        versionId: 1,
+        resourceType: 1,
+        resourceId: 1,
+        day: 1,
+        period: 1,
+      },
+      options: { unique: true },
+    },
+    {
+      collection: 'schedule_occupancies',
+      fields: { versionId: 1, entryId: 1 },
+    },
+    // Schedule Operations
+    {
+      collection: 'schedule_operations',
+      fields: { versionId: 1, seq: 1 },
+      options: { unique: true },
+    },
     // Faculties
     {
       collection: 'faculties',

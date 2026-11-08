@@ -83,6 +83,11 @@
 
 - **Class** `CachedRepository` implements `BaseRepository<T>` - Class implementing cached repository.
 
+### `server/src/common/database/database.module.ts`
+*Core implementation for database.module in server/src/common/database.*
+
+- **Class** `DatabaseModule` - Database module exporting TransactionHelper.
+
 ### `server/src/common/database/mongo-base.repository.ts`
 *Database repository managing mongo-base.repository persistence.*
 

@@ -1014,3 +1014,68 @@
 - [x] WebSocket load test (50 concurrent clients, 500 events) executed with 0 dropped events.
 - [x] Full workspace verification passes: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
 - [x] Comprehensive `docs/AUDIT_REPORT.md` generated.
+
+
+## Phase 10: Board and Studio (In Progress)
+
+### What Was Built
+- **Pass 0: Engine Extraction (Committed `3e21568`)**:
+  - Extracted pure constraint engine core (`types`, `ScheduleState`, constraints, `SuggestionStrategy`, `PreBuildChecker`, `ValidationService`) into framework-free package `@slotly/engine`.
+  - Built with `tsup` supporting ESM, CJS, and DTS.
+  - Server and client import from `@slotly/engine`.
+- **Pass 1: Contracts and Server Schedules Implementation**:
+  - **Contracts (`packages/contracts`)**:
+    - Added `ScheduleResourceTypeSchema` (`faculty`, `room`, `section`, `batch`).
+    - Added DTOs: `ScheduleEntryDto`, `ScheduleOccupancyDto`, `ScheduleOperationDto`, `MoveSlotDto`, `SwapSlotsDto`, `EditSlotDto`, `BulkSlotsDto`, `MergeSlotDto`, `SplitSlotDto`, `LockSlotDto`, `UpdatePeriodsDto`, `PeriodsChangeResultDto`, `MoveValidationResultDto`.
+    - Added `ScheduleSocketEvents` contract for `/schedule` gateway.
+  - **Storage & Indexes (`server/src/modules/schedules`)**:
+    - `ScheduleEntry`: models granular timetable slot cells with sectionId, batchId, facultyId, roomId, subjectId, day, startPeriod, span, type, locked, revision.
+    - `ScheduleOccupancy`: unique compound index on `(versionId, resourceType, resourceId, day, period)` guaranteeing zero double-booking at DB level.
+    - `ScheduleOperation`: audit log sequence storing forward and inverse payloads for undo/redo.
+    - Updated index migration `ensure-indexes.ts` with compound unique index specifications.
+  - **MoveValidator Chain of Responsibility (`server/src/modules/schedules/validators`)**:
+    - 10 handlers: `VersionEditableValidator`, `LockValidator`, `BreakValidator`, `LabBlockValidator`, `TargetFreeValidator`, `FacultyFreeValidator`, `RoomFreeValidator`, `FacultyAvailabilityValidator`, `RoomAvailabilityValidator`, `WorkloadValidator`.
+    - `MoveValidatorChain`: coordinates sequential validation and returns structured failure codes with resolution suggestions.
+  - **Operations Command Registry (`server/src/modules/schedules/operations`)**:
+    - Implemented `IScheduleCommand` with `apply()` and `revert()` for: `edit`, `move`, `swap`, `bulk` (atomic batch), `clear`, `merge`, `split`, `lock`, `applySuggestion`, `changePeriodConfig`, `copyPaste`.
+    - `ScheduleOperationRegistry`: injectable registry managing command dispatch.
+  - **Transactional Execution & Copy-on-Write (`server/src/modules/schedules/services`)**:
+    - `SchedulesService`: coordinates execution inside MongoDB replica set transactions via `TransactionHelper`.
+    - Optimistic concurrency: verifies `If-Match` revision header, throwing 409 `RevisionConflictException` on mismatch.
+    - Conflict Catching: catches MongoDB 11000 duplicate key errors on unique occupancy index and maps to 409 `OCCUPANCY_CONFLICT` with structured swap/reschedule suggestions.
+    - Copy-on-Write: editing a published version creates a new draft version, clones entries and occupancies, remaps slot ID references, and applies changes to the fork.
+    - Redis Cache-aside: reads cached under tag `project:{id}:schedule` with immediate invalidation on mutation.
+    - Undo/Redo: reverts most recent operation from `ScheduleOperation` log and syncs occupancies.
+  - **WebSocket Gateway (`server/src/modules/schedules/gateways/schedule.gateway.ts`)**:
+    - Namespace `/schedule` with JWT handshake auth and Redis session verification.
+    - Room presence tracking: `join:schedule`, `leave:schedule`, `presence:changed`.
+    - Real-time event broadcasts: `slot:moved`, `slot:updated`, `slot:locked`, `slot:cleared`, `revision:conflict`.
+  - **Migration Service (`server/src/modules/schedules/migrations/schedule-migration.service.ts`)**:
+    - Idempotent migration from legacy `ScheduleVersion.slots` embedded arrays to `ScheduleEntry` and `ScheduleOccupancy` collections.
+    - Full support for `--dry-run`.
+  - **BuildFacade Integration (`server/src/modules/builds/services/build.facade.ts`)**:
+    - Automatically persists generated alternatives into `ScheduleEntry` and `ScheduleOccupancy` collections within transactions.
+
+### Decisions
+1. **Synchronous Chain Validation**: Validator handlers evaluate pure in-memory business rules over `MoveValidationContext`, eliminating unnecessary async overhead while returning standard Promises from the root coordinator.
+2. **Copy-on-Write Slot Remapping**: When published schedules fork to a new draft revision, cloned entries receive new UUIDs and input parameter slot IDs are automatically remapped to the fork's cloned entries so operations complete without requiring client re-query.
+3. **Double-Booking Prevention at Database Level**: Compound unique index on `(versionId, resourceType, resourceId, day, period)` guarantees zero double bookings even under concurrent race conditions. Collisions are intercepted and converted to structured 409 `OCCUPANCY_CONFLICT` responses with alternative slot suggestions.
+
+### Test Evidence
+- 9 dedicated test suites in `server/src/modules/schedules/tests/`:
+  - `move-validators.spec.ts` (18 tests): validates all 10 rules and chain short-circuiting.
+  - `unique-occupancy-concurrency.spec.ts` (2 tests): tests concurrent moves and 11000 duplicate key catch to `OCCUPANCY_CONFLICT`.
+  - `merge-split.spec.ts` (4 tests): tests multi-period merge and split round-trip.
+  - `bulk-atomic.spec.ts` (4 tests): tests atomic batch operations and rollback on error.
+  - `swap-operation.spec.ts` (3 tests): tests atomic slot swaps across days/periods and revert.
+  - `undo-redo.spec.ts` (2 tests): tests undo and redo from audit log.
+  - `revision-conflict.spec.ts` (2 tests): tests `If-Match` revision check throwing 409.
+  - `published-copy-on-write.spec.ts` (1 test): tests published immutability and draft fork.
+  - `migration-idempotency.spec.ts` (3 tests): tests legacy slot migration accuracy and idempotency.
+- All 46 server test suites pass (232 tests passing, 5 todo).
+- Monorepo verification: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm codemap:check` all pass with 0 errors.
+
+### Next Steps (Pass 2: Client)
+- Timetable Board & Studio UI (FEATURES §9, CLIENT_UX §5.7 & §5.8).
+- Interactive drag-and-drop timetable grid using `@dnd-kit/core` with instant client-side validation using `@slotly/engine`.
+- Undo/redo shortcuts, bulk selection, period timing manager modal, conflict inspector panel.
