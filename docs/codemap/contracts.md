@@ -163,6 +163,7 @@
 - **Type** `CreateBuildDto` - TypeScript type inferred from create build dto Zod schema.
 - **Type** `BuildJobStatus` - TypeScript type inferred from build job status Zod schema.
 - **Type** `BuildProgressPayload` - TypeScript type inferred from build progress payload Zod schema.
+- **Function** `normalizeReasonCode(code: string)`: `"REVISION_CONFLICT" | "PARENT_MISSING" | "PARENT_INCOMPLETE" | "PARENT_TYPE_NOT_ALLOWED" | "DUPLICATE_NAME" | "CAPACITY_EXCEEDED" | "CYCLE" | "ENDPOINT_INCOMPLETE" | "NOT_QUALIFIED" | "PROJECT_LOCKED" | "PERMISSION_DENIED" | "SINGLE_PARENT_VIOLATION" | "INVALID_OPERATION" | "INSUFFICIENT_LAB_CAPACITY" | "MISSING_ALLOCATION" | "FACULTY_OVERLOAD" | "INVALID_GRAPH"` - Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation.
 - **Function** `normalizeAvailabilityMatrix(matrix: boolean[][] | null | undefined, daysCount: number, periodsCount: number)`: `boolean[][]` - Function normalizing availability matrix dimensions according to days and periods per day.
 - **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse` - Zod schema validating api error response.
 - **Zod Schema** `PaginationQuerySchema` -> `PaginationQuery` - Zod schema validating pagination query.
@@ -187,6 +188,8 @@
 - **Zod Schema** `DeviceDtoSchema` -> `DeviceDto` - Zod schema validating device dto.
 - **Zod Schema** `SecurityActivityDtoSchema` -> `SecurityActivityDto` - Zod schema validating security activity dto.
 - **Zod Schema** `ReasonCodeSchema` -> `ReasonCode` - Zod schema validating reason code.
+- **Const** `REASON_CODE_ALIASES`: `Record<string, "REVISION_CONFLICT" | "PARENT_MI...` - Alias dictionary mapping alternative or legacy reason code variations to canonical codes.
+- **Const** `REASON_CODE_MESSAGES`: `Record<"REVISION_CONFLICT" | "PARENT_MISSING" |...` - User-friendly explanations for every canonical reason code.
 - **Zod Schema** `FixHintSchema` -> `FixHint` - Zod schema validating fix hint.
 - **Zod Schema** `GateFailureSchema` -> `GateFailure` - Zod schema validating gate failure.
 - **Zod Schema** `NodeStatusSchema` -> `NodeStatus` - Zod schema validating node status.

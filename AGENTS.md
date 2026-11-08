@@ -174,3 +174,40 @@ FINISH
     "Phase <NN>: <title>" with the PROGRESS entry and the manual test checklist
     as the body. Do NOT merge it.
 11. Report: branch name, list of commits, tag, PR link, test results.
+
+PHASE RUN RULES (every phase)
+
+BEFORE CODING
+- Read AGENTS.md, docs/CODEMAP.md (reuse first), docs/ARCHITECTURE.md,
+  docs/PROGRESS.md, docs/ROUTES.md, docs/CLIENT_UX.md, docs/CLIENT_ROUTES.md and
+  the FEATURES sections named in the phase.
+- Prerequisite check: confirm the previous phase's DONE WHEN criteria still pass
+  (run its tests). If something is broken, stop and report; do not build on it.
+- Write a short plan (docs/PROGRESS.md "in progress" entry): files you will add or
+  change, new names for routes/events/queues/keys (add them to docs/ROUTES.md
+  first), and any decision you need from me.
+
+TWO PASSES
+- Pass 1 is the server (and contracts). Finish it with tests, commit, push, then
+  stop and report. Pass 2 is the client, started only when I say so.
+- If a pass is too large, split it and report where you split.
+
+QUALITY BAR
+- Every new endpoint: zod DTO from packages/contracts, permission guard, audit
+  entry (queue), tag-based cache invalidation, revision check where data is
+  edited, uniform errors with reason codes.
+- Every new screen: loading, empty, error, permission-denied and offline states;
+  keyboard and screen-reader support; optimistic updates per the policy in
+  docs/CLIENT_UX.md; skeletons that match the layout.
+- Pure logic goes in framework-free modules with unit tests. Integration tests use
+  real MongoDB (replica set) and Redis.
+- No new `any`, `@ts-ignore` or `eslint-disable`. No duplicated helpers (check
+  CODEMAP first).
+
+CLOSEOUT
+- Verify each DONE WHEN item with an automated test or script and list the
+  evidence. Update docs/PROGRESS.md, docs/ROUTES.md, docs/ARCHITECTURE.md (status
+  and any changed names) and run `pnpm codemap`. Write a manual test checklist in
+  the PR.
+- Follow the GIT WORKFLOW: branch, small commits, safety scan, push, tag, PR. Do
+  not merge.

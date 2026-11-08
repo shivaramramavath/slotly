@@ -337,9 +337,82 @@ export const ReasonCodeSchema = z.enum([
   'PERMISSION_DENIED',
   'SINGLE_PARENT_VIOLATION',
   'INVALID_OPERATION',
+  'REVISION_CONFLICT',
+  'INSUFFICIENT_LAB_CAPACITY',
+  'MISSING_ALLOCATION',
+  'FACULTY_OVERLOAD',
+  'INVALID_GRAPH',
 ]);
 /** TypeScript type inferred from reason code Zod schema. */
 export type ReasonCode = z.infer<typeof ReasonCodeSchema>;
+
+/** Alias dictionary mapping alternative or legacy reason code variations to canonical codes. */
+export const REASON_CODE_ALIASES: Record<string, ReasonCode> = {
+  parent_missing: 'PARENT_MISSING',
+  'parent-missing': 'PARENT_MISSING',
+  parent_not_found: 'PARENT_MISSING',
+  parentincomplete: 'PARENT_INCOMPLETE',
+  parent_incomplete: 'PARENT_INCOMPLETE',
+  'parent-incomplete': 'PARENT_INCOMPLETE',
+  parent_type_invalid: 'PARENT_TYPE_NOT_ALLOWED',
+  parent_type_not_allowed: 'PARENT_TYPE_NOT_ALLOWED',
+  duplicate_code: 'DUPLICATE_NAME',
+  duplicate_name: 'DUPLICATE_NAME',
+  capacity_exceeded: 'CAPACITY_EXCEEDED',
+  circular_dependency: 'CYCLE',
+  cycle: 'CYCLE',
+  endpoint_incomplete: 'ENDPOINT_INCOMPLETE',
+  not_qualified: 'NOT_QUALIFIED',
+  unqualified: 'NOT_QUALIFIED',
+  project_locked: 'PROJECT_LOCKED',
+  permission_denied: 'PERMISSION_DENIED',
+  unauthorized: 'PERMISSION_DENIED',
+  forbidden: 'PERMISSION_DENIED',
+  single_parent_violation: 'SINGLE_PARENT_VIOLATION',
+  invalid_operation: 'INVALID_OPERATION',
+  stale_revision: 'REVISION_CONFLICT',
+  revision_conflict: 'REVISION_CONFLICT',
+  insufficient_lab_capacity: 'INSUFFICIENT_LAB_CAPACITY',
+  missing_allocation: 'MISSING_ALLOCATION',
+  faculty_overload: 'FACULTY_OVERLOAD',
+  invalid_graph: 'INVALID_GRAPH',
+};
+
+/** User-friendly explanations for every canonical reason code. */
+export const REASON_CODE_MESSAGES: Record<ReasonCode, string> = {
+  PARENT_MISSING: 'Parent node is required before this item can be created.',
+  PARENT_INCOMPLETE: 'Please complete all required fields on the parent node first.',
+  PARENT_TYPE_NOT_ALLOWED: 'Connection between these types is not allowed in the hierarchy.',
+  DUPLICATE_NAME: 'An item with this name or code already exists in this scope.',
+  CAPACITY_EXCEEDED: 'The combined student count exceeds parent capacity.',
+  CYCLE: 'Circular dependency detected in graph hierarchy.',
+  ENDPOINT_INCOMPLETE: 'Both connected items must be fully configured.',
+  NOT_QUALIFIED: 'Faculty lacks the required qualifications for this subject.',
+  PROJECT_LOCKED: 'Project is locked or currently undergoing build generation.',
+  PERMISSION_DENIED: 'You do not have permission to perform this action.',
+  SINGLE_PARENT_VIOLATION: 'Node already has a parent and multiple parents are not permitted.',
+  INVALID_OPERATION: 'The requested operation violates blueprint graph invariants.',
+  REVISION_CONFLICT: 'The document was updated elsewhere. Please refresh to see latest changes.',
+  INSUFFICIENT_LAB_CAPACITY: 'Lab capacity is insufficient for the assigned section strength.',
+  MISSING_ALLOCATION: 'Required faculty or room allocation is missing for this subject.',
+  FACULTY_OVERLOAD: 'Assigned teaching hours exceed maximum allowed faculty hours.',
+  INVALID_GRAPH: 'Graph structure contains detached, cyclic, or invalid nodes.',
+};
+
+/** Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation. */
+export function normalizeReasonCode(code: string): ReasonCode {
+  if (!code) return 'INVALID_OPERATION';
+  const clean = code.trim().toLowerCase().replace(/-/g, '_');
+  if (REASON_CODE_ALIASES[clean]) {
+    return REASON_CODE_ALIASES[clean];
+  }
+  const upper = code.trim().toUpperCase().replace(/-/g, '_');
+  const valid = ReasonCodeSchema.safeParse(upper);
+  if (valid.success) {
+    return valid.data;
+  }
+  return 'INVALID_OPERATION';
+}
 
 /** Zod schema validating fix hint. */
 export const FixHintSchema = z.object({
