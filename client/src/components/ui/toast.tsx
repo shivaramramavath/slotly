@@ -48,11 +48,13 @@ export const toast = {
   warning: (title: string, description?: string) =>
     useToastStore.getState().addToast({ title, description, variant: 'warning' }),
   fromErrorCode: (code: string, fallbackMessage?: string) => {
-    const canonical = normalizeReasonCode(code);
-    const message =
-      REASON_CODE_MESSAGES[canonical] ||
-      fallbackMessage ||
-      `Operation failed (${code})`;
+    let message = fallbackMessage;
+    if (!message) {
+      const canonical = normalizeReasonCode(code);
+      message =
+        REASON_CODE_MESSAGES[canonical] ||
+        (code ? `Operation failed (${code})` : 'An unexpected error occurred.');
+    }
     useToastStore
       .getState()
       .addToast({ title: 'Action Failed', description: message, variant: 'error' });
@@ -69,39 +71,41 @@ export function ToastContainer() {
     <div className="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 max-w-sm w-full">
       {toasts.map((t) => {
         const icons = {
-          success: <CheckCircle2 className="h-4 w-4 text-[#22C55E] shrink-0" />,
-          error: <AlertCircle className="h-4 w-4 text-[#EF4444] shrink-0" />,
-          info: <Info className="h-4 w-4 text-[#3B82F6] shrink-0" />,
-          warning: <AlertCircle className="h-4 w-4 text-[#FACC15] shrink-0" />,
+          success: <CheckCircle2 className="w-4 h-4 text-[#22C55E]" />,
+          error: <AlertCircle className="w-4 h-4 text-[#EF4444]" />,
+          warning: <AlertCircle className="w-4 h-4 text-[#FACC15]" />,
+          info: <Info className="w-4 h-4 text-[#3B82F6]" />,
         };
 
         const borders = {
-          success: 'border-[#22C55E]/30',
-          error: 'border-[#EF4444]/30',
-          info: 'border-[#3B82F6]/30',
-          warning: 'border-[#FACC15]/30',
+          success: 'border-[#22C55E]/20 bg-[#111111]',
+          error: 'border-[#EF4444]/20 bg-[#111111]',
+          warning: 'border-[#FACC15]/20 bg-[#111111]',
+          info: 'border-[#3B82F6]/20 bg-[#111111]',
         };
 
         return (
           <div
             key={t.id}
             className={cn(
-              'flex items-start justify-between rounded-lg border bg-[#111111] p-3 shadow-lg text-[#FAFAFA]',
-              borders[t.variant || 'info'],
+              'flex items-start gap-3 p-3 rounded-lg border text-sm shadow-lg text-[#FAFAFA]',
+              borders[t.variant || 'info']
             )}
           >
-            <div className="flex items-start gap-2.5">
-              {icons[t.variant || 'info']}
-              <div className="space-y-0.5">
-                <p className="text-xs font-semibold">{t.title}</p>
-                {t.description && <p className="text-xs text-[#8A8A8A]">{t.description}</p>}
-              </div>
+            {icons[t.variant || 'info']}
+            <div className="flex-1">
+              <div className="font-medium text-xs font-mono">{t.title}</div>
+              {t.description && (
+                <div className="text-xs text-[#8A8A8A] mt-0.5">
+                  {t.description}
+                </div>
+              )}
             </div>
             <button
               onClick={() => removeToast(t.id)}
-              className="text-[#8A8A8A] hover:text-[#FAFAFA] ml-2"
+              className="text-[#8A8A8A] hover:text-[#FAFAFA] p-0.5"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         );

@@ -9,7 +9,7 @@
 *React component for app-layout.*
 
 - **Interface** `AppLayoutProps` - Interface defining structure for app layout props.
-- **Component** `AppLayout({ children, activePath = '/dashboard' }: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/app-layout").AppLayoutProps)` - React component rendering app layout.
+- **Component** `AppLayout({ children, activePath = '/dashboard' }: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/app-layout").AppLayoutProps)` - React component rendering app layout with authentication route protection.
 
 ### `client/src/components/layouts/auth-layout.tsx`
 *React component for auth-layout.*

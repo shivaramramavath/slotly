@@ -3,10 +3,11 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Bell, Plus, Settings, LayoutGrid, LogOut, User as UserIcon } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/features/auth/store/auth.store';
 import { authApi } from '@/features/auth/services/auth.api';
 
@@ -16,14 +17,24 @@ export interface AppLayoutProps {
   activePath?: string;
 }
 
-/** React component rendering app layout. */
+/** React component rendering app layout with authentication route protection. */
 export function AppLayout({ children, activePath = '/dashboard' }: AppLayoutProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
+  const status = useAuthStore((s) => s.status);
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
   const [hasNotifications] = React.useState(true);
+
+  React.useEffect(() => {
+    if (status === 'unauthenticated') {
+      const nextQuery =
+        pathname && pathname !== '/' ? `?next=${encodeURIComponent(pathname)}` : '';
+      router.replace(`/login${nextQuery}`);
+    }
+  }, [status, router, pathname]);
 
   const handleLogout = async () => {
     setUserMenuOpen(false);
@@ -34,6 +45,37 @@ export function AppLayout({ children, activePath = '/dashboard' }: AppLayoutProp
       router.push('/login');
     }
   };
+
+  // Render shell skeleton while checking/restoring authentication
+  if (status === 'idle' || status === 'loading') {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#0A0A0A] text-[#FAFAFA]" aria-busy="true">
+        <header className="h-14 border-b border-[#232323] px-6 flex items-center justify-between bg-[#0A0A0A] sticky top-0 z-40">
+          <div className="flex items-center gap-8">
+            <Logo href="/dashboard" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-20 bg-[#181818]" />
+              <Skeleton className="h-6 w-20 bg-[#181818]" />
+              <Skeleton className="h-6 w-20 bg-[#181818]" />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-8 w-28 bg-[#181818]" />
+            <Skeleton className="h-8 w-8 rounded-full bg-[#181818]" />
+          </div>
+        </header>
+        <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-4">
+          <Skeleton className="h-8 w-48 bg-[#181818]" />
+          <Skeleton className="h-64 w-full bg-[#181818]" />
+        </main>
+      </div>
+    );
+  }
+
+  // If unauthenticated, don't flash content while redirecting
+  if (status === 'unauthenticated') {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0A0A0A] text-[#FAFAFA]">

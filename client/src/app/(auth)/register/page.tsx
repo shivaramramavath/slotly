@@ -8,6 +8,7 @@ import { AuthLayout } from '@/components/layouts/auth-layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { authApi } from '@/features/auth/services/auth.api';
+import { useAuthStore } from '@/features/auth/store/auth.store';
 import { toast } from '@/components/ui/toast';
 import { OAuthButtons } from '@/features/auth/components/oauth-buttons';
 import { getOAuthErrorMessage } from '@/features/auth/utils/oauth-errors';
@@ -40,12 +41,20 @@ function OAuthErrorBanner() {
 
 function RegisterForm() {
   const router = useRouter();
+  const status = useAuthStore((s) => s.status);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [institutionName, setInstitutionName] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/dashboard');
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

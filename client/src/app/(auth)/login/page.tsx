@@ -41,12 +41,26 @@ function OAuthErrorBanner() {
 
 function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
   const setMfaPending = useAuthStore((s) => s.setMfaPending);
+  const status = useAuthStore((s) => s.status);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // If already authenticated, redirect to dashboard or intended next URL
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const nextParam = searchParams.get('next');
+      const destination =
+        nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')
+          ? nextParam
+          : '/dashboard';
+      router.replace(destination);
+    }
+  }, [status, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +82,12 @@ function LoginForm() {
       if (res.user && res.accessToken) {
         setAuth(res.user, res.accessToken);
         toast.success('Signed in', `Welcome back, ${res.user.name}`);
-        router.push('/dashboard');
+        const nextParam = searchParams.get('next');
+        const destination =
+          nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')
+            ? nextParam
+            : '/dashboard';
+        router.push(destination);
       }
     } catch {
       // toast error is already mapped by apiClient
