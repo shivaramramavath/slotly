@@ -28,6 +28,19 @@ describe('WriteBehindService', () => {
     expect(job?.id).toBe('node-123');
   });
 
+  it('should not leak pending writes counter when coalescing multiple edits for the same entity', async () => {
+    for (let i = 0; i < 5; i++) {
+      await service.enqueue('node', 'node-1', { x: i }, 'proj-leak');
+    }
+
+    const pendingBefore = await service.getPendingWrites('proj-leak');
+    expect(pendingBefore).toBe(1);
+
+    await service.decrementPendingWrites('proj-leak', 'node:node-1');
+    const pendingAfter = await service.getPendingWrites('proj-leak');
+    expect(pendingAfter).toBe(0);
+  });
+
   it('should track pending writes per project', async () => {
     await service.enqueue('node', 'n1', { x: 1 }, 'proj-alpha');
     await service.enqueue('node', 'n2', { x: 2 }, 'proj-alpha');

@@ -1,11 +1,14 @@
+// Strategy implementation for file-parser.strategy.
 import * as XLSX from 'xlsx';
 
+/** Interface defining structure for file parser. */
 export interface IFileParser {
   supports(format: string): boolean;
   parse(buffer: Buffer): Promise<Record<string, unknown>[]>;
   export(data: Record<string, unknown>[]): Buffer;
 }
 
+/** Class implementing csv file parser strategy. */
 export class CsvFileParserStrategy implements IFileParser {
   supports(format: string): boolean {
     const f = format.toLowerCase().trim();
@@ -32,6 +35,7 @@ export class CsvFileParserStrategy implements IFileParser {
   }
 }
 
+/** Class implementing excel file parser strategy. */
 export class ExcelFileParserStrategy implements IFileParser {
   supports(format: string): boolean {
     const f = format.toLowerCase().trim();

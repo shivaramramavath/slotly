@@ -1,3 +1,4 @@
+// React component for can.
 'use client';
 
 import React from 'react';
@@ -13,6 +14,7 @@ interface CanProps {
   fallback?: React.ReactNode;
 }
 
+/** React component rendering can. */
 export function Can({
   permission,
   permissions,

@@ -1,3 +1,4 @@
+// Core implementation for global-exception.filter in server/src/common/filters.
 import {
   ArgumentsHost,
   Catch,
@@ -11,6 +12,7 @@ import { ApiErrorResponse } from '@slotly/contracts';
 import { ZodError } from 'zod';
 import { RevisionConflictException } from '../concurrency/revision.helper';
 
+/** Class implementing global exception filter. */
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);

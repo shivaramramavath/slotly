@@ -1,3 +1,4 @@
+// Database repository managing user.repository persistence.
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -5,13 +6,16 @@ import { MongoBaseRepository } from '../../../common/database/mongo-base.reposit
 import type { BaseRepository } from '../../../common/database/base.repository';
 import { User, UserDocument } from '../schemas/user.schema';
 
+/** Constant representing user repository. */
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
 
+/** Interface defining structure for user repository. */
 export interface UserRepository extends BaseRepository<User> {
   findByEmail(email: string): Promise<User | null>;
   countByInstitution(institutionId?: string): Promise<number>;
 }
 
+/** Injectable service providing mongo user repository logic. */
 @Injectable()
 export class MongoUserRepository
   extends MongoBaseRepository<User, UserDocument>

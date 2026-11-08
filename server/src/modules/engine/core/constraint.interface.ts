@@ -1,6 +1,8 @@
+// Core implementation for constraint.interface in server/src/modules/engine/core.
 import type { Move, Violation } from './types';
 import type { ScheduleState } from './schedule-state';
 
+/** Interface defining structure for constraint. */
 export interface IConstraint {
   readonly id: string;
   readonly name: string;

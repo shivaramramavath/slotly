@@ -1,3 +1,4 @@
+// Strategy implementation for faculty-qualifier.strategy.
 import { Injectable } from '@nestjs/common';
 import type {
   FacultyQualificationRequest,
@@ -5,8 +6,10 @@ import type {
 } from '@slotly/contracts';
 import { Faculty } from '../schemas/faculty.schema';
 
+/** Constant representing faculty qualifier. */
 export const FACULTY_QUALIFIER = Symbol('FACULTY_QUALIFIER');
 
+/** Interface defining structure for faculty qualifier. */
 export interface IFacultyQualifier {
   qualify(
     faculty: Faculty,
@@ -18,6 +21,7 @@ export interface IFacultyQualifier {
   ): FacultyQualificationResult[];
 }
 
+/** Injectable service providing standard faculty qualifier logic. */
 @Injectable()
 export class StandardFacultyQualifier implements IFacultyQualifier {
   qualify(

@@ -1,9 +1,11 @@
+// React component for sheet.
 'use client';
 
 import * as React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+/** Interface defining structure for sheet props. */
 export interface SheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -11,6 +13,7 @@ export interface SheetProps {
   children: React.ReactNode;
 }
 
+/** React component rendering sheet. */
 export function Sheet({ open, onOpenChange, side = 'right', children }: SheetProps) {
   if (!open) return null;
 
@@ -41,16 +44,19 @@ export function Sheet({ open, onOpenChange, side = 'right', children }: SheetPro
   );
 }
 
+/** React component rendering sheet header. */
 export function SheetHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn('flex flex-col space-y-1.5 pb-4', className)} {...props} />;
 }
 
+/** React component rendering sheet title. */
 export function SheetTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3 className={cn('text-lg font-semibold tracking-tight text-[#FAFAFA]', className)} {...props} />
   );
 }
 
+/** React component rendering sheet description. */
 export function SheetDescription({
   className,
   ...props

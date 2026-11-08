@@ -1,6 +1,8 @@
+// React component for kbd.
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+/** React component rendering kbd. */
 export function Kbd({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
   return (
     <kbd

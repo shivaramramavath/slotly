@@ -1,3 +1,4 @@
+// React component for error-boundary.
 'use client';
 
 import * as React from 'react';
@@ -13,6 +14,7 @@ interface ErrorBoundaryState {
   error?: Error | undefined;
 }
 
+/** Class implementing error boundary. */
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);

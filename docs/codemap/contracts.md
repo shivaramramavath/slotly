@@ -1,0 +1,325 @@
+# Shared Contracts Code Map
+
+### `packages/contracts/src/index.ts`
+*Shared TypeScript contracts, Zod schemas, DTOs, and event constants.*
+
+- **Interface** `PaginatedResult` - Interface defining structure for paginated result.
+- **Interface** `SectionNode` extends `SectionDto` - Interface defining structure for section node.
+- **Interface** `SemesterNode` extends `SemesterDto` - Interface defining structure for semester node.
+- **Interface** `AcademicYearNode` extends `AcademicYearDto` - Interface defining structure for academic year node.
+- **Interface** `ProgramNode` extends `ProgramDto` - Interface defining structure for program node.
+- **Interface** `DepartmentNode` extends `DepartmentDto` - Interface defining structure for department node.
+- **Interface** `InstitutionStructureDto` - Interface defining structure for institution structure dto.
+- **Type** `ApiErrorResponse` - TypeScript type inferred from api error response Zod schema.
+- **Type** `PaginationQuery` - TypeScript type inferred from pagination query Zod schema.
+- **Type** `RevisionConflict` - TypeScript type inferred from revision conflict Zod schema.
+- **Type** `UserRole` - TypeScript type inferred from user role Zod schema.
+- **Type** `Permission` - TypeScript type inferred from permission Zod schema.
+- **Type** `UserDto` - TypeScript type inferred from user dto Zod schema.
+- **Type** `RegisterDto` - TypeScript type inferred from register dto Zod schema.
+- **Type** `LoginDto` - TypeScript type inferred from login dto Zod schema.
+- **Type** `AuthResponse` - TypeScript type inferred from auth response Zod schema.
+- **Type** `VerifyEmailDto` - TypeScript type inferred from verify email dto Zod schema.
+- **Type** `ResendEmailDto` - TypeScript type inferred from resend email dto Zod schema.
+- **Type** `ForgotPasswordDto` - TypeScript type inferred from forgot password dto Zod schema.
+- **Type** `ResetPasswordDto` - TypeScript type inferred from reset password dto Zod schema.
+- **Type** `ChangePasswordDto` - TypeScript type inferred from change password dto Zod schema.
+- **Type** `MfaEnrollResponse` - TypeScript type inferred from mfa enroll response Zod schema.
+- **Type** `MfaVerifyDto` - TypeScript type inferred from mfa verify dto Zod schema.
+- **Type** `MfaRecoveryDto` - TypeScript type inferred from mfa recovery dto Zod schema.
+- **Type** `StepUpDto` - TypeScript type inferred from step up dto Zod schema.
+- **Type** `SessionDto` - TypeScript type inferred from session dto Zod schema.
+- **Type** `DeviceDto` - TypeScript type inferred from device dto Zod schema.
+- **Type** `SecurityActivityDto` - TypeScript type inferred from security activity dto Zod schema.
+- **Type** `ReasonCode` - TypeScript type inferred from reason code Zod schema.
+- **Type** `FixHint` - TypeScript type inferred from fix hint Zod schema.
+- **Type** `GateFailure` - TypeScript type inferred from gate failure Zod schema.
+- **Type** `NodeStatus` - TypeScript type inferred from node status Zod schema.
+- **Type** `BlueprintNodeType` - TypeScript type inferred from blueprint node type Zod schema.
+- **Type** `NodeType` - TypeScript type inferred from node type Zod schema.
+- **Type** `MissingField` - TypeScript type inferred from missing field Zod schema.
+- **Type** `NodeComputedStatus` - TypeScript type inferred from node computed status Zod schema.
+- **Type** `ProjectLifecycleStatus` - TypeScript type inferred from project lifecycle status Zod schema.
+- **Type** `HealthResponse` - TypeScript type inferred from health response Zod schema.
+- **Type** `PeriodBreak` - TypeScript type inferred from period break Zod schema.
+- **Type** `PeriodConfig` - TypeScript type inferred from period config Zod schema.
+- **Type** `InstitutionDto` - TypeScript type inferred from institution dto Zod schema.
+- **Type** `CreateInstitutionDto` - TypeScript type inferred from create institution dto Zod schema.
+- **Type** `UpdateInstitutionDto` - TypeScript type inferred from update institution dto Zod schema.
+- **Type** `DepartmentDto` - TypeScript type inferred from department dto Zod schema.
+- **Type** `CreateDepartmentDto` - TypeScript type inferred from create department dto Zod schema.
+- **Type** `UpdateDepartmentDto` - TypeScript type inferred from update department dto Zod schema.
+- **Type** `ProgramDto` - TypeScript type inferred from program dto Zod schema.
+- **Type** `CreateProgramDto` - TypeScript type inferred from create program dto Zod schema.
+- **Type** `UpdateProgramDto` - TypeScript type inferred from update program dto Zod schema.
+- **Type** `AcademicYearDto` - TypeScript type inferred from academic year dto Zod schema.
+- **Type** `CreateAcademicYearDto` - TypeScript type inferred from create academic year dto Zod schema.
+- **Type** `UpdateAcademicYearDto` - TypeScript type inferred from update academic year dto Zod schema.
+- **Type** `SemesterDto` - TypeScript type inferred from semester dto Zod schema.
+- **Type** `CreateSemesterDto` - TypeScript type inferred from create semester dto Zod schema.
+- **Type** `UpdateSemesterDto` - TypeScript type inferred from update semester dto Zod schema.
+- **Type** `BatchDto` - TypeScript type inferred from batch dto Zod schema.
+- **Type** `SectionDto` - TypeScript type inferred from section dto Zod schema.
+- **Type** `CreateSectionDto` - TypeScript type inferred from create section dto Zod schema.
+- **Type** `UpdateSectionDto` - TypeScript type inferred from update section dto Zod schema.
+- **Type** `HolidayDto` - TypeScript type inferred from holiday dto Zod schema.
+- **Type** `CreateHolidayDto` - TypeScript type inferred from create holiday dto Zod schema.
+- **Type** `UpdateHolidayDto` - TypeScript type inferred from update holiday dto Zod schema.
+- **Type** `SlotCoordinate` - TypeScript type inferred from slot coordinate Zod schema.
+- **Type** `FacultyDto` - TypeScript type inferred from faculty dto Zod schema.
+- **Type** `CreateFacultyDto` - TypeScript type inferred from create faculty dto Zod schema.
+- **Type** `UpdateFacultyDto` - TypeScript type inferred from update faculty dto Zod schema.
+- **Type** `FacultyWorkloadDto` - TypeScript type inferred from faculty workload dto Zod schema.
+- **Type** `SubjectType` - TypeScript type inferred from subject type Zod schema.
+- **Type** `RoomType` - TypeScript type inferred from room type Zod schema.
+- **Type** `SubjectRequirements` - TypeScript type inferred from subject requirements Zod schema.
+- **Type** `SubjectDto` - TypeScript type inferred from subject dto Zod schema.
+- **Type** `CreateSubjectDto` - TypeScript type inferred from create subject dto Zod schema.
+- **Type** `UpdateSubjectDto` - TypeScript type inferred from update subject dto Zod schema.
+- **Type** `ElectiveGroupDto` - TypeScript type inferred from elective group dto Zod schema.
+- **Type** `CreateElectiveGroupDto` - TypeScript type inferred from create elective group dto Zod schema.
+- **Type** `UpdateElectiveGroupDto` - TypeScript type inferred from update elective group dto Zod schema.
+- **Type** `RoomDto` - TypeScript type inferred from room dto Zod schema.
+- **Type** `CreateRoomDto` - TypeScript type inferred from create room dto Zod schema.
+- **Type** `UpdateRoomDto` - TypeScript type inferred from update room dto Zod schema.
+- **Type** `RoomMatchRequest` - TypeScript type inferred from room match request Zod schema.
+- **Type** `RoomMatchResult` - TypeScript type inferred from room match result Zod schema.
+- **Type** `FacultyQualificationRequest` - TypeScript type inferred from faculty qualification request Zod schema.
+- **Type** `FacultyQualificationResult` - TypeScript type inferred from faculty qualification result Zod schema.
+- **Type** `ImportEntity` - TypeScript type inferred from import entity Zod schema.
+- **Type** `ImportRowError` - TypeScript type inferred from import row error Zod schema.
+- **Type** `ImportValidationReport` - TypeScript type inferred from import validation report Zod schema.
+- **Type** `ImportJobStatus` - TypeScript type inferred from import job status Zod schema.
+- **Type** `TermKind` - TypeScript type inferred from term kind Zod schema.
+- **Type** `ProjectTerm` - TypeScript type inferred from project term Zod schema.
+- **Type** `PerDayOverride` - TypeScript type inferred from per day override Zod schema.
+- **Type** `ProjectSettings` - TypeScript type inferred from project settings Zod schema.
+- **Type** `ProjectStrictness` - TypeScript type inferred from project strictness Zod schema.
+- **Type** `ProjectDto` - TypeScript type inferred from project dto Zod schema.
+- **Type** `CreateProjectDto` - TypeScript type inferred from create project dto Zod schema.
+- **Type** `UpdateProjectDto` - TypeScript type inferred from update project dto Zod schema.
+- **Type** `DuplicateProjectDto` - TypeScript type inferred from duplicate project dto Zod schema.
+- **Type** `NodePosition` - TypeScript type inferred from node position Zod schema.
+- **Type** `BlueprintNodeDto` - TypeScript type inferred from blueprint node dto Zod schema.
+- **Type** `BlueprintEdgeDto` - TypeScript type inferred from blueprint edge dto Zod schema.
+- **Type** `BlueprintGraphDto` - TypeScript type inferred from blueprint graph dto Zod schema.
+- **Type** `BlueprintOpType` - TypeScript type inferred from blueprint op type Zod schema.
+- **Type** `BlueprintOp` - TypeScript type inferred from blueprint op Zod schema.
+- **Type** `ApplyOperationsDto` - TypeScript type inferred from apply operations dto Zod schema.
+- **Type** `OperationResultApplied` - TypeScript type inferred from operation result applied Zod schema.
+- **Type** `OperationResultSkipped` - TypeScript type inferred from operation result skipped Zod schema.
+- **Type** `BatchOperationResult` - TypeScript type inferred from batch operation result Zod schema.
+- **Type** `BlueprintMissingItem` - TypeScript type inferred from blueprint missing item Zod schema.
+- **Type** `BlueprintReadinessDto` - TypeScript type inferred from blueprint readiness dto Zod schema.
+- **Type** `BlueprintImpactDto` - TypeScript type inferred from blueprint impact dto Zod schema.
+- **Type** `BlueprintRecommendationType` - TypeScript type inferred from blueprint recommendation type Zod schema.
+- **Type** `BlueprintRecommendationDto` - TypeScript type inferred from blueprint recommendation dto Zod schema.
+- **Type** `GraphTemplateSubtree` - TypeScript type inferred from graph template subtree Zod schema.
+- **Type** `GraphTemplateDto` - TypeScript type inferred from graph template dto Zod schema.
+- **Type** `CreateGraphTemplateDto` - TypeScript type inferred from create graph template dto Zod schema.
+- **Type** `ApplyTemplateDto` - TypeScript type inferred from apply template dto Zod schema.
+- **Type** `BlueprintHistoryEntryDto` - TypeScript type inferred from blueprint history entry dto Zod schema.
+- **Type** `BlueprintSnapshotDto` - TypeScript type inferred from blueprint snapshot dto Zod schema.
+- **Type** `CreateBlueprintSnapshotDto` - TypeScript type inferred from create blueprint snapshot dto Zod schema.
+- **Type** `BlueprintCommentDto` - TypeScript type inferred from blueprint comment dto Zod schema.
+- **Type** `CreateBlueprintCommentDto` - TypeScript type inferred from create blueprint comment dto Zod schema.
+- **Type** `ProjectJoinPayload` - TypeScript type inferred from project join payload Zod schema.
+- **Type** `ProjectLeavePayload` - TypeScript type inferred from project leave payload Zod schema.
+- **Type** `CursorUpdatePayload` - TypeScript type inferred from cursor update payload Zod schema.
+- **Type** `NodeLockPayload` - TypeScript type inferred from node lock payload Zod schema.
+- **Type** `NodeUnlockPayload` - TypeScript type inferred from node unlock payload Zod schema.
+- **Type** `PresenceUser` - TypeScript type inferred from presence user Zod schema.
+- **Type** `PresenceChangedPayload` - TypeScript type inferred from presence changed payload Zod schema.
+- **Type** `NodeStatusChangedPayload` - TypeScript type inferred from node status changed payload Zod schema.
+- **Type** `OpsAppliedPayload` - TypeScript type inferred from ops applied payload Zod schema.
+- **Type** `NodeLockedPayload` - TypeScript type inferred from node locked payload Zod schema.
+- **Type** `NodeUnlockedPayload` - TypeScript type inferred from node unlocked payload Zod schema.
+- **Type** `RevisionConflictPayload` - TypeScript type inferred from revision conflict payload Zod schema.
+- **Type** `NodeMovePayload` - TypeScript type inferred from node move payload Zod schema.
+- **Type** `NodeUpdatePayload` - TypeScript type inferred from node update payload Zod schema.
+- **Type** `NodeAddPayload` - TypeScript type inferred from node add payload Zod schema.
+- **Type** `NodeDeletePayload` - TypeScript type inferred from node delete payload Zod schema.
+- **Type** `EdgeAddPayload` - TypeScript type inferred from edge add payload Zod schema.
+- **Type** `EdgeDeletePayload` - TypeScript type inferred from edge delete payload Zod schema.
+- **Type** `SlotType` - TypeScript type inferred from slot type Zod schema.
+- **Type** `SlotDto` - TypeScript type inferred from slot dto Zod schema.
+- **Type** `ViolationSeverity` - TypeScript type inferred from violation severity Zod schema.
+- **Type** `ViolationSuggestion` - TypeScript type inferred from violation suggestion Zod schema.
+- **Type** `ViolationDto` - TypeScript type inferred from violation dto Zod schema.
+- **Type** `PreBuildCheckError` - TypeScript type inferred from pre build check error Zod schema.
+- **Type** `ValidationReportDto` - TypeScript type inferred from validation report dto Zod schema.
+- **Type** `ValidateProjectDto` - TypeScript type inferred from validate project dto Zod schema.
+- **Type** `ValidateVersionDto` - TypeScript type inferred from validate version dto Zod schema.
+- **Type** `ConstraintScope` - TypeScript type inferred from constraint scope Zod schema.
+- **Type** `HardConstraintsConfig` - TypeScript type inferred from hard constraints config Zod schema.
+- **Type** `SoftConstraintsConfig` - TypeScript type inferred from soft constraints config Zod schema.
+- **Type** `ConstraintGroupConfig` - TypeScript type inferred from constraint group config Zod schema.
+- **Type** `ScheduleVersionKind` - TypeScript type inferred from schedule version kind Zod schema.
+- **Type** `ScheduleVersionStatus` - TypeScript type inferred from schedule version status Zod schema.
+- **Type** `ScheduleVersionStats` - TypeScript type inferred from schedule version stats Zod schema.
+- **Type** `ScheduleVersionDto` - TypeScript type inferred from schedule version dto Zod schema.
+- **Type** `BuildProfile` - TypeScript type inferred from build profile Zod schema.
+- **Type** `BuildMode` - TypeScript type inferred from build mode Zod schema.
+- **Type** `CreateBuildDto` - TypeScript type inferred from create build dto Zod schema.
+- **Type** `BuildJobStatus` - TypeScript type inferred from build job status Zod schema.
+- **Type** `BuildProgressPayload` - TypeScript type inferred from build progress payload Zod schema.
+- **Function** `normalizeReasonCode(code: string)`: `"REVISION_CONFLICT" | "PARENT_MISSING" | "PARENT_INCOMPLETE" | "PARENT_TYPE_NOT_ALLOWED" | "DUPLICATE_NAME" | "CAPACITY_EXCEEDED" | "CYCLE" | "ENDPOINT_INCOMPLETE" | "NOT_QUALIFIED" | "PROJECT_LOCKED" | "PERMISSION_DENIED" | "SINGLE_PARENT_VIOLATION" | "INVALID_OPERATION" | "INSUFFICIENT_LAB_CAPACITY" | "MISSING_ALLOCATION" | "FACULTY_OVERLOAD" | "INVALID_GRAPH"` - Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation.
+- **Function** `normalizeAvailabilityMatrix(matrix: boolean[][] | null | undefined, daysCount: number, periodsCount: number)`: `boolean[][]` - Function normalizing availability matrix dimensions according to days and periods per day.
+- **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse` - Zod schema validating api error response.
+- **Zod Schema** `PaginationQuerySchema` -> `PaginationQuery` - Zod schema validating pagination query.
+- **Zod Schema** `RevisionConflictSchema` -> `RevisionConflict` - Zod schema validating revision conflict.
+- **Zod Schema** `UserRoleSchema` -> `UserRole` - Zod schema validating user role.
+- **Zod Schema** `PermissionSchema` -> `Permission` - Zod schema validating permission.
+- **Const** `RolePermissions`: `Record<"SUPER_ADMIN" | "ADMIN" | "DESIGNER" | "...` - Constant representing role permissions.
+- **Zod Schema** `UserDtoSchema` -> `UserDto` - Zod schema validating user dto.
+- **Zod Schema** `RegisterDtoSchema` -> `RegisterDto` - Zod schema validating register dto.
+- **Zod Schema** `LoginDtoSchema` -> `LoginDto` - Zod schema validating login dto.
+- **Zod Schema** `AuthResponseSchema` -> `AuthResponse` - Zod schema validating auth response.
+- **Zod Schema** `VerifyEmailDtoSchema` -> `VerifyEmailDto` - Zod schema validating verify email dto.
+- **Zod Schema** `ResendEmailDtoSchema` -> `ResendEmailDto` - Zod schema validating resend email dto.
+- **Zod Schema** `ForgotPasswordDtoSchema` -> `ForgotPasswordDto` - Zod schema validating forgot password dto.
+- **Zod Schema** `ResetPasswordDtoSchema` -> `ResetPasswordDto` - Zod schema validating reset password dto.
+- **Zod Schema** `ChangePasswordDtoSchema` -> `ChangePasswordDto` - Zod schema validating change password dto.
+- **Zod Schema** `MfaEnrollResponseSchema` -> `MfaEnrollResponse` - Zod schema validating mfa enroll response.
+- **Zod Schema** `MfaVerifyDtoSchema` -> `MfaVerifyDto` - Zod schema validating mfa verify dto.
+- **Zod Schema** `MfaRecoveryDtoSchema` -> `MfaRecoveryDto` - Zod schema validating mfa recovery dto.
+- **Zod Schema** `StepUpDtoSchema` -> `StepUpDto` - Zod schema validating step up dto.
+- **Zod Schema** `SessionDtoSchema` -> `SessionDto` - Zod schema validating session dto.
+- **Zod Schema** `DeviceDtoSchema` -> `DeviceDto` - Zod schema validating device dto.
+- **Zod Schema** `SecurityActivityDtoSchema` -> `SecurityActivityDto` - Zod schema validating security activity dto.
+- **Zod Schema** `ReasonCodeSchema` -> `ReasonCode` - Zod schema validating reason code.
+- **Const** `REASON_CODE_ALIASES`: `Record<string, "REVISION_CONFLICT" | "PARENT_MI...` - Alias dictionary mapping alternative or legacy reason code variations to canonical codes.
+- **Const** `REASON_CODE_MESSAGES`: `Record<"REVISION_CONFLICT" | "PARENT_MISSING" |...` - User-friendly explanations for every canonical reason code.
+- **Zod Schema** `FixHintSchema` -> `FixHint` - Zod schema validating fix hint.
+- **Zod Schema** `GateFailureSchema` -> `GateFailure` - Zod schema validating gate failure.
+- **Zod Schema** `NodeStatusSchema` -> `NodeStatus` - Zod schema validating node status.
+- **Zod Schema** `BlueprintNodeTypeSchema` -> `BlueprintNodeType` - Zod schema validating blueprint node type.
+- **Zod Schema** `NodeTypeSchema` -> `NodeType` - Zod schema validating node type.
+- **Zod Schema** `MissingFieldSchema` -> `MissingField` - Zod schema validating missing field.
+- **Zod Schema** `NodeComputedStatusSchema` -> `NodeComputedStatus` - Zod schema validating node computed status.
+- **Zod Schema** `ProjectLifecycleStatusSchema` -> `ProjectLifecycleStatus` - Zod schema validating project lifecycle status.
+- **Const** `SocketEvents`: `{ readonly NODE_STATUS_CHANGED: "node:status-ch...` - Constant representing socket events.
+- **Zod Schema** `HealthResponseSchema` -> `HealthResponse` - Zod schema validating health response.
+- **Zod Schema** `PeriodBreakSchema` -> `PeriodBreak` - Zod schema validating period break.
+- **Zod Schema** `PeriodConfigSchema` -> `PeriodConfig` - Zod schema validating period config.
+- **Zod Schema** `InstitutionDtoSchema` -> `InstitutionDto` - Zod schema validating institution dto.
+- **Zod Schema** `CreateInstitutionDtoSchema` -> `CreateInstitutionDto` - Zod schema validating create institution dto.
+- **Zod Schema** `UpdateInstitutionDtoSchema` -> `UpdateInstitutionDto` - Zod schema validating update institution dto.
+- **Zod Schema** `DepartmentDtoSchema` -> `DepartmentDto` - Zod schema validating department dto.
+- **Zod Schema** `CreateDepartmentDtoSchema` -> `CreateDepartmentDto` - Zod schema validating create department dto.
+- **Zod Schema** `UpdateDepartmentDtoSchema` -> `UpdateDepartmentDto` - Zod schema validating update department dto.
+- **Zod Schema** `ProgramDtoSchema` -> `ProgramDto` - Zod schema validating program dto.
+- **Zod Schema** `CreateProgramDtoSchema` -> `CreateProgramDto` - Zod schema validating create program dto.
+- **Zod Schema** `UpdateProgramDtoSchema` -> `UpdateProgramDto` - Zod schema validating update program dto.
+- **Zod Schema** `AcademicYearDtoSchema` -> `AcademicYearDto` - Zod schema validating academic year dto.
+- **Zod Schema** `CreateAcademicYearDtoSchema` -> `CreateAcademicYearDto` - Zod schema validating create academic year dto.
+- **Zod Schema** `UpdateAcademicYearDtoSchema` -> `UpdateAcademicYearDto` - Zod schema validating update academic year dto.
+- **Zod Schema** `SemesterDtoSchema` -> `SemesterDto` - Zod schema validating semester dto.
+- **Zod Schema** `CreateSemesterDtoSchema` -> `CreateSemesterDto` - Zod schema validating create semester dto.
+- **Zod Schema** `UpdateSemesterDtoSchema` -> `UpdateSemesterDto` - Zod schema validating update semester dto.
+- **Zod Schema** `BatchDtoSchema` -> `BatchDto` - Zod schema validating batch dto.
+- **Zod Schema** `SectionDtoSchema` -> `SectionDto` - Zod schema validating section dto.
+- **Zod Schema** `CreateSectionDtoSchema` -> `CreateSectionDto` - Zod schema validating create section dto.
+- **Zod Schema** `UpdateSectionDtoSchema` -> `UpdateSectionDto` - Zod schema validating update section dto.
+- **Zod Schema** `HolidayDtoSchema` -> `HolidayDto` - Zod schema validating holiday dto.
+- **Zod Schema** `CreateHolidayDtoSchema` -> `CreateHolidayDto` - Zod schema validating create holiday dto.
+- **Zod Schema** `UpdateHolidayDtoSchema` -> `UpdateHolidayDto` - Zod schema validating update holiday dto.
+- **Zod Schema** `SlotCoordinateSchema` -> `SlotCoordinate` - Zod schema validating slot coordinate.
+- **Zod Schema** `FacultyDtoSchema` -> `FacultyDto` - Zod schema validating faculty dto.
+- **Zod Schema** `CreateFacultyDtoSchema` -> `CreateFacultyDto` - Zod schema validating create faculty dto.
+- **Zod Schema** `UpdateFacultyDtoSchema` -> `UpdateFacultyDto` - Zod schema validating update faculty dto.
+- **Zod Schema** `FacultyWorkloadDtoSchema` -> `FacultyWorkloadDto` - Zod schema validating faculty workload dto.
+- **Zod Schema** `SubjectTypeSchema` -> `SubjectType` - Zod schema validating subject type.
+- **Zod Schema** `RoomTypeSchema` -> `RoomType` - Zod schema validating room type.
+- **Zod Schema** `SubjectRequirementsSchema` -> `SubjectRequirements` - Zod schema validating subject requirements.
+- **Zod Schema** `SubjectDtoSchema` -> `SubjectDto` - Zod schema validating subject dto.
+- **Zod Schema** `CreateSubjectDtoSchema` -> `CreateSubjectDto` - Zod schema validating create subject dto.
+- **Zod Schema** `UpdateSubjectDtoSchema` -> `UpdateSubjectDto` - Zod schema validating update subject dto.
+- **Zod Schema** `ElectiveGroupDtoSchema` -> `ElectiveGroupDto` - Zod schema validating elective group dto.
+- **Zod Schema** `CreateElectiveGroupDtoSchema` -> `CreateElectiveGroupDto` - Zod schema validating create elective group dto.
+- **Zod Schema** `UpdateElectiveGroupDtoSchema` -> `UpdateElectiveGroupDto` - Zod schema validating update elective group dto.
+- **Zod Schema** `RoomDtoSchema` -> `RoomDto` - Zod schema validating room dto.
+- **Zod Schema** `CreateRoomDtoSchema` -> `CreateRoomDto` - Zod schema validating create room dto.
+- **Zod Schema** `UpdateRoomDtoSchema` -> `UpdateRoomDto` - Zod schema validating update room dto.
+- **Zod Schema** `RoomMatchRequestSchema` -> `RoomMatchRequest` - Zod schema validating room match request.
+- **Zod Schema** `RoomMatchResultSchema` -> `RoomMatchResult` - Zod schema validating room match result.
+- **Zod Schema** `FacultyQualificationRequestSchema` -> `FacultyQualificationRequest` - Zod schema validating faculty qualification request.
+- **Zod Schema** `FacultyQualificationResultSchema` -> `FacultyQualificationResult` - Zod schema validating faculty qualification result.
+- **Zod Schema** `ImportEntitySchema` -> `ImportEntity` - Zod schema validating import entity.
+- **Zod Schema** `ImportRowErrorSchema` -> `ImportRowError` - Zod schema validating import row error.
+- **Zod Schema** `ImportValidationReportSchema` -> `ImportValidationReport` - Zod schema validating import validation report.
+- **Zod Schema** `ImportJobStatusSchema` -> `ImportJobStatus` - Zod schema validating import job status.
+- **Zod Schema** `TermKindSchema` -> `TermKind` - Zod schema validating term kind.
+- **Zod Schema** `ProjectTermSchema` -> `ProjectTerm` - Zod schema validating project term.
+- **Zod Schema** `PerDayOverrideSchema` -> `PerDayOverride` - Zod schema validating per day override.
+- **Zod Schema** `ProjectSettingsSchema` -> `ProjectSettings` - Zod schema validating project settings.
+- **Zod Schema** `ProjectStrictnessSchema` -> `ProjectStrictness` - Zod schema validating project strictness.
+- **Zod Schema** `ProjectDtoSchema` -> `ProjectDto` - Zod schema validating project dto.
+- **Zod Schema** `CreateProjectDtoSchema` -> `CreateProjectDto` - Zod schema validating create project dto.
+- **Zod Schema** `UpdateProjectDtoSchema` -> `UpdateProjectDto` - Zod schema validating update project dto.
+- **Zod Schema** `DuplicateProjectDtoSchema` -> `DuplicateProjectDto` - Zod schema validating duplicate project dto.
+- **Zod Schema** `NodePositionSchema` -> `NodePosition` - Zod schema validating node position.
+- **Zod Schema** `BlueprintNodeDtoSchema` -> `BlueprintNodeDto` - Zod schema validating blueprint node dto.
+- **Zod Schema** `BlueprintEdgeDtoSchema` -> `BlueprintEdgeDto` - Zod schema validating blueprint edge dto.
+- **Zod Schema** `BlueprintGraphDtoSchema` -> `BlueprintGraphDto` - Zod schema validating blueprint graph dto.
+- **Zod Schema** `BlueprintOpTypeSchema` -> `BlueprintOpType` - Zod schema validating blueprint op type.
+- **Zod Schema** `BlueprintOpSchema` -> `BlueprintOp` - Zod schema validating blueprint op.
+- **Zod Schema** `ApplyOperationsDtoSchema` -> `ApplyOperationsDto` - Zod schema validating apply operations dto.
+- **Zod Schema** `OperationResultAppliedSchema` -> `OperationResultApplied` - Zod schema validating operation result applied.
+- **Zod Schema** `OperationResultSkippedSchema` -> `OperationResultSkipped` - Zod schema validating operation result skipped.
+- **Zod Schema** `BatchOperationResultSchema` -> `BatchOperationResult` - Zod schema validating batch operation result.
+- **Zod Schema** `BlueprintMissingItemSchema` -> `BlueprintMissingItem` - Zod schema validating blueprint missing item.
+- **Zod Schema** `BlueprintReadinessDtoSchema` -> `BlueprintReadinessDto` - Zod schema validating blueprint readiness dto.
+- **Zod Schema** `BlueprintImpactDtoSchema` -> `BlueprintImpactDto` - Zod schema validating blueprint impact dto.
+- **Zod Schema** `BlueprintRecommendationTypeSchema` -> `BlueprintRecommendationType` - Zod schema validating blueprint recommendation type.
+- **Zod Schema** `BlueprintRecommendationDtoSchema` -> `BlueprintRecommendationDto` - Zod schema validating blueprint recommendation dto.
+- **Zod Schema** `GraphTemplateSubtreeSchema` -> `GraphTemplateSubtree` - Zod schema validating graph template subtree.
+- **Zod Schema** `GraphTemplateDtoSchema` -> `GraphTemplateDto` - Zod schema validating graph template dto.
+- **Zod Schema** `CreateGraphTemplateDtoSchema` -> `CreateGraphTemplateDto` - Zod schema validating create graph template dto.
+- **Zod Schema** `ApplyTemplateDtoSchema` -> `ApplyTemplateDto` - Zod schema validating apply template dto.
+- **Zod Schema** `BlueprintHistoryEntryDtoSchema` -> `BlueprintHistoryEntryDto` - Zod schema validating blueprint history entry dto.
+- **Zod Schema** `BlueprintSnapshotDtoSchema` -> `BlueprintSnapshotDto` - Zod schema validating blueprint snapshot dto.
+- **Zod Schema** `CreateBlueprintSnapshotDtoSchema` -> `CreateBlueprintSnapshotDto` - Zod schema validating create blueprint snapshot dto.
+- **Zod Schema** `BlueprintCommentDtoSchema` -> `BlueprintCommentDto` - Zod schema validating blueprint comment dto.
+- **Zod Schema** `CreateBlueprintCommentDtoSchema` -> `CreateBlueprintCommentDto` - Zod schema validating create blueprint comment dto.
+- **Zod Schema** `ProjectJoinPayloadSchema` -> `ProjectJoinPayload` - Zod schema validating project join payload.
+- **Zod Schema** `ProjectLeavePayloadSchema` -> `ProjectLeavePayload` - Zod schema validating project leave payload.
+- **Zod Schema** `CursorUpdatePayloadSchema` -> `CursorUpdatePayload` - Zod schema validating cursor update payload.
+- **Zod Schema** `NodeLockPayloadSchema` -> `NodeLockPayload` - Zod schema validating node lock payload.
+- **Zod Schema** `NodeUnlockPayloadSchema` -> `NodeUnlockPayload` - Zod schema validating node unlock payload.
+- **Zod Schema** `PresenceUserSchema` -> `PresenceUser` - Zod schema validating presence user.
+- **Zod Schema** `PresenceChangedPayloadSchema` -> `PresenceChangedPayload` - Zod schema validating presence changed payload.
+- **Zod Schema** `NodeStatusChangedPayloadSchema` -> `NodeStatusChangedPayload` - Zod schema validating node status changed payload.
+- **Zod Schema** `OpsAppliedPayloadSchema` -> `OpsAppliedPayload` - Zod schema validating ops applied payload.
+- **Zod Schema** `NodeLockedPayloadSchema` -> `NodeLockedPayload` - Zod schema validating node locked payload.
+- **Zod Schema** `NodeUnlockedPayloadSchema` -> `NodeUnlockedPayload` - Zod schema validating node unlocked payload.
+- **Zod Schema** `RevisionConflictPayloadSchema` -> `RevisionConflictPayload` - Zod schema validating revision conflict payload.
+- **Zod Schema** `NodeMovePayloadSchema` -> `NodeMovePayload` - Zod schema validating node move payload.
+- **Zod Schema** `NodeUpdatePayloadSchema` -> `NodeUpdatePayload` - Zod schema validating node update payload.
+- **Zod Schema** `NodeAddPayloadSchema` -> `NodeAddPayload` - Zod schema validating node add payload.
+- **Zod Schema** `NodeDeletePayloadSchema` -> `NodeDeletePayload` - Zod schema validating node delete payload.
+- **Zod Schema** `EdgeAddPayloadSchema` -> `EdgeAddPayload` - Zod schema validating edge add payload.
+- **Zod Schema** `EdgeDeletePayloadSchema` -> `EdgeDeletePayload` - Zod schema validating edge delete payload.
+- **Zod Schema** `SlotTypeSchema` -> `SlotType` - Zod schema validating slot type.
+- **Zod Schema** `SlotDtoSchema` -> `SlotDto` - Zod schema validating slot dto.
+- **Zod Schema** `ViolationSeveritySchema` -> `ViolationSeverity` - Zod schema validating violation severity.
+- **Zod Schema** `ViolationSuggestionSchema` -> `ViolationSuggestion` - Zod schema validating violation suggestion.
+- **Zod Schema** `ViolationDtoSchema` -> `ViolationDto` - Zod schema validating violation dto.
+- **Zod Schema** `PreBuildCheckErrorSchema` -> `PreBuildCheckError` - Zod schema validating pre build check error.
+- **Zod Schema** `ValidationReportDtoSchema` -> `ValidationReportDto` - Zod schema validating validation report dto.
+- **Zod Schema** `ValidateProjectDtoSchema` -> `ValidateProjectDto` - Zod schema validating validate project dto.
+- **Zod Schema** `ValidateVersionDtoSchema` -> `ValidateVersionDto` - Zod schema validating validate version dto.
+- **Zod Schema** `ConstraintScopeSchema` -> `ConstraintScope` - Zod schema validating constraint scope.
+- **Zod Schema** `HardConstraintsConfigSchema` -> `HardConstraintsConfig` - Zod schema validating hard constraints config.
+- **Zod Schema** `SoftConstraintsConfigSchema` -> `SoftConstraintsConfig` - Zod schema validating soft constraints config.
+- **Zod Schema** `ConstraintGroupConfigSchema` -> `ConstraintGroupConfig` - Zod schema validating constraint group config.
+- **Zod Schema** `ScheduleVersionKindSchema` -> `ScheduleVersionKind` - Zod schema validating schedule version kind.
+- **Zod Schema** `ScheduleVersionStatusSchema` -> `ScheduleVersionStatus` - Zod schema validating schedule version status.
+- **Zod Schema** `ScheduleVersionStatsSchema` -> `ScheduleVersionStats` - Zod schema validating schedule version stats.
+- **Zod Schema** `ScheduleVersionDtoSchema` -> `ScheduleVersionDto` - Zod schema validating schedule version dto.
+- **Zod Schema** `BuildProfileSchema` -> `BuildProfile` - Zod schema validating build profile.
+- **Zod Schema** `BuildModeSchema` -> `BuildMode` - Zod schema validating build mode.
+- **Zod Schema** `CreateBuildDtoSchema` -> `CreateBuildDto` - Zod schema validating create build dto.
+- **Zod Schema** `BuildJobStatusSchema` -> `BuildJobStatus` - Zod schema validating build job status.
+- **Zod Schema** `BuildProgressPayloadSchema` -> `BuildProgressPayload` - Zod schema validating build progress payload.
+

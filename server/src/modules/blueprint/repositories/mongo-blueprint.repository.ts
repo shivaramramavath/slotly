@@ -1,3 +1,4 @@
+// Database repository managing mongo-blueprint.repository persistence.
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -6,6 +7,7 @@ import { Blueprint, BlueprintDocument } from '../schemas/blueprint.schema';
 import type { IBlueprintRepository } from './blueprint.repository.interface';
 import type { BlueprintGraphDto, NodePosition } from '@slotly/contracts';
 
+/** Injectable service providing mongo blueprint repository logic. */
 @Injectable()
 export class MongoBlueprintRepository
   extends MongoBaseRepository<Blueprint, BlueprintDocument>

@@ -1,8 +1,10 @@
+// Domain service orchestrating faculty-workload.service business logic.
 import { Injectable } from '@nestjs/common';
 import type { FacultyWorkloadDto } from '@slotly/contracts';
 import { Faculty } from '../schemas/faculty.schema';
 import { Subject } from '../schemas/subject.schema';
 
+/** Injectable service providing faculty workload service logic. */
 @Injectable()
 export class FacultyWorkloadService {
   computeWorkload(

@@ -6,13 +6,26 @@ describe('PreBuildChecker', () => {
 
   it('detects INSUFFICIENT_LAB_CAPACITY when no lab rooms exist for lab subjects', () => {
     const input: EngineInput = {
-      settings: { days: ['Mon', 'Tue'], periodsPerDay: 5, periodDuration: 50, breaks: [] },
+      settings: {
+        days: ['Mon', 'Tue'],
+        periodsPerDay: 5,
+        periodDuration: 50,
+        breaks: [],
+      },
       calendar: { holidays: [] },
       sections: [{ id: 'sec_1', name: 'CSE A', strength: 60 }],
       batches: [],
       faculty: [],
       rooms: [{ id: 'r1', name: 'Lecture 1', type: 'lecture', capacity: 60 }],
-      subjects: [{ id: 'sub_lab', code: 'CSL', name: 'Operating Systems Lab', type: 'lab', weeklyHours: 3 }],
+      subjects: [
+        {
+          id: 'sub_lab',
+          code: 'CSL',
+          name: 'Operating Systems Lab',
+          type: 'lab',
+          weeklyHours: 3,
+        },
+      ],
       electiveGroups: [],
       lockedSlots: [],
     };
@@ -25,13 +38,27 @@ describe('PreBuildChecker', () => {
 
   it('detects MISSING_ALLOCATION when a subject has no faculty assigned', () => {
     const input: EngineInput = {
-      settings: { days: ['Mon'], periodsPerDay: 4, periodDuration: 50, breaks: [] },
+      settings: {
+        days: ['Mon'],
+        periodsPerDay: 4,
+        periodDuration: 50,
+        breaks: [],
+      },
       calendar: { holidays: [] },
       sections: [{ id: 'sec_1', name: 'CSE A', strength: 60 }],
       batches: [],
       faculty: [],
       rooms: [],
-      subjects: [{ id: 'sub_1', code: 'CS1', name: 'Data Structures', type: 'theory', weeklyHours: 3, facultyIds: [] }],
+      subjects: [
+        {
+          id: 'sub_1',
+          code: 'CS1',
+          name: 'Data Structures',
+          type: 'theory',
+          weeklyHours: 3,
+          facultyIds: [],
+        },
+      ],
       electiveGroups: [],
       lockedSlots: [],
     };
@@ -45,15 +72,36 @@ describe('PreBuildChecker', () => {
 
   it('detects FACULTY_OVERLOAD when faculty assigned hours exceed maxHoursPerWeek', () => {
     const input: EngineInput = {
-      settings: { days: ['Mon'], periodsPerDay: 4, periodDuration: 50, breaks: [] },
+      settings: {
+        days: ['Mon'],
+        periodsPerDay: 4,
+        periodDuration: 50,
+        breaks: [],
+      },
       calendar: { holidays: [] },
       sections: [{ id: 'sec_1', name: 'CSE A', strength: 60 }],
       batches: [],
-      faculty: [{ id: 'fac_1', name: 'Dr. Turing', code: 'TUR', maxHoursPerWeek: 10 }],
+      faculty: [
+        { id: 'fac_1', name: 'Dr. Turing', code: 'TUR', maxHoursPerWeek: 10 },
+      ],
       rooms: [],
       subjects: [
-        { id: 'sub_1', code: 'CS1', name: 'AI', type: 'theory', weeklyHours: 6, facultyIds: ['fac_1'] },
-        { id: 'sub_2', code: 'CS2', name: 'ML', type: 'theory', weeklyHours: 6, facultyIds: ['fac_1'] }, // 12 hours > 10
+        {
+          id: 'sub_1',
+          code: 'CS1',
+          name: 'AI',
+          type: 'theory',
+          weeklyHours: 6,
+          facultyIds: ['fac_1'],
+        },
+        {
+          id: 'sub_2',
+          code: 'CS2',
+          name: 'ML',
+          type: 'theory',
+          weeklyHours: 6,
+          facultyIds: ['fac_1'],
+        }, // 12 hours > 10
       ],
       electiveGroups: [],
       lockedSlots: [],
@@ -68,7 +116,12 @@ describe('PreBuildChecker', () => {
 
   it('detects INVALID_GRAPH when section count is zero', () => {
     const input: EngineInput = {
-      settings: { days: ['Mon'], periodsPerDay: 4, periodDuration: 50, breaks: [] },
+      settings: {
+        days: ['Mon'],
+        periodsPerDay: 4,
+        periodDuration: 50,
+        breaks: [],
+      },
       calendar: { holidays: [] },
       sections: [],
       batches: [],

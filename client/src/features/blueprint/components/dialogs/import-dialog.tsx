@@ -1,3 +1,4 @@
+// React component for import-dialog.
 'use client';
 
 import { useState } from 'react';
@@ -19,6 +20,7 @@ interface ImportDialogProps {
   onImportCompleted: () => Promise<void>;
 }
 
+/** React component rendering import dialog. */
 export function ImportDialog({ onImportCompleted }: ImportDialogProps) {
   const isImportOpen = useBlueprintStore((s) => s.isImportOpen);
   const setIsImportOpen = useBlueprintStore((s) => s.setIsImportOpen);

@@ -1,9 +1,11 @@
+// Custom React hook for use-blueprint-socket.
 import { useEffect, useRef, useCallback } from 'react';
 import { BlueprintSocketService } from '../services/blueprint-socket.service';
 import { useBlueprintStore } from '../store/blueprint.store';
 import { toast } from '@/components/ui/toast';
 import type { BlueprintNodeType } from '@slotly/contracts';
 
+/** Custom React hook for use blueprint socket. */
 export function useBlueprintSocket(projectId: string) {
   const socketRef = useRef<BlueprintSocketService | null>(null);
 

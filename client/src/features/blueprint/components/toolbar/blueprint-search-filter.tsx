@@ -1,3 +1,4 @@
+// React component for blueprint-search-filter.
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -33,6 +34,7 @@ const ICONS: Record<string, React.ElementType> = {
   room: DoorOpen,
 };
 
+/** React component rendering blueprint search filter. */
 export function BlueprintSearchFilter() {
   const { setCenter } = useReactFlow();
 

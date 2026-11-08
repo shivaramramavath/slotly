@@ -1,3 +1,4 @@
+// Data schema and persistence model for blueprint.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 import type {
@@ -8,8 +9,10 @@ import type {
   NodeStatus,
 } from '@slotly/contracts';
 
+/** Type alias for blueprint document. */
 export type BlueprintDocument = Blueprint & Document;
 
+/** Class implementing blueprint node schema class. */
 @Schema({ _id: false })
 export class BlueprintNodeSchemaClass {
   @Prop({ required: true })
@@ -75,6 +78,7 @@ export class BlueprintNodeSchemaClass {
   constraints?: Record<string, unknown>;
 }
 
+/** Class implementing blueprint edge schema class. */
 @Schema({ _id: false })
 export class BlueprintEdgeSchemaClass {
   @Prop({ required: true })
@@ -90,6 +94,7 @@ export class BlueprintEdgeSchemaClass {
   type!: string;
 }
 
+/** Class implementing blueprint. */
 @Schema({ timestamps: true, collection: 'blueprints' })
 export class Blueprint {
   _id?: string;
@@ -122,4 +127,5 @@ export class Blueprint {
   viewport!: { x: number; y: number; zoom: number };
 }
 
+/** Zod schema validating blueprint. */
 export const BlueprintSchema = SchemaFactory.createForClass(Blueprint);

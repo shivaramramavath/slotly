@@ -1,8 +1,10 @@
+// Domain service orchestrating completion.service business logic.
 import { Injectable } from '@nestjs/common';
 import type { BlueprintNodeDto, NodeStatus } from '@slotly/contracts';
 import { NodeTypeRegistry } from '../model/node-type.registry';
 import type { CompletionContext } from '../model/completion-rule.strategy';
 
+/** Interface defining structure for node status change event. */
 export interface NodeStatusChangeEvent {
   nodeId: string;
   status: NodeStatus;
@@ -10,6 +12,7 @@ export interface NodeStatusChangeEvent {
   missing: Array<{ field: string; message: string }>;
 }
 
+/** Injectable service providing completion service logic. */
 @Injectable()
 export class CompletionService {
   constructor(private readonly nodeTypeRegistry: NodeTypeRegistry) {}

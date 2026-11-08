@@ -1,7 +1,9 @@
+// Core implementation for balance-faculty-load.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing balance faculty load constraint. */
 export class BalanceFacultyLoadConstraint implements IConstraint {
   readonly id = 'balance-faculty-load';
   readonly name = 'Balance Faculty Load';
@@ -20,7 +22,12 @@ export class BalanceFacultyLoadConstraint implements IConstraint {
 
     const facultySlots = new Map<string, Slot[]>();
     for (const slot of currentState.slots) {
-      if (!slot.facultyId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.facultyId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
       const list = facultySlots.get(slot.facultyId) || [];

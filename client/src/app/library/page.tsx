@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import { useState } from 'react';
@@ -38,6 +39,7 @@ import {
   Layers,
 } from 'lucide-react';
 
+/** React component rendering library page. */
 export default function LibraryPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'faculty' | 'subjects' | 'rooms'>('faculty');

@@ -1,7 +1,9 @@
+// Core implementation for room-availability.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing room availability constraint. */
 export class RoomAvailabilityConstraint implements IConstraint {
   readonly id = 'room-availability';
   readonly name = 'Room Availability';
@@ -13,7 +15,12 @@ export class RoomAvailabilityConstraint implements IConstraint {
     const violations: Violation[] = [];
 
     for (const slot of currentState.slots) {
-      if (!slot.roomId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.roomId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -31,7 +38,11 @@ export class RoomAvailabilityConstraint implements IConstraint {
           );
         }
 
-        if (!isUnavailable && room.availability && room.availability[slot.day]) {
+        if (
+          !isUnavailable &&
+          room.availability &&
+          room.availability[slot.day]
+        ) {
           const dayAvailability = room.availability[slot.day];
           if (dayAvailability && dayAvailability[period - 1] === false) {
             isUnavailable = true;
@@ -39,7 +50,8 @@ export class RoomAvailabilityConstraint implements IConstraint {
         }
 
         if (isUnavailable) {
-          const dayName = currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
+          const dayName =
+            currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
           violations.push({
             id: `viol:room-avail:${slot.roomId}:${slot.day}:${period}:${slot.id}`,
             constraintId: this.id,

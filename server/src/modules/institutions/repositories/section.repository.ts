@@ -1,3 +1,4 @@
+// Database repository managing section.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,8 +9,10 @@ import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import { Section, SectionDocument } from '../schemas/section.schema';
 
+/** Constant representing section repository. */
 export const SECTION_REPOSITORY = Symbol('SECTION_REPOSITORY');
 
+/** Interface defining structure for section repository. */
 export interface SectionRepository extends BaseRepository<Section> {
   findBySemester(semesterId: string): Promise<Section[]>;
   findByInstitution(institutionId: string): Promise<Section[]>;
@@ -19,6 +22,7 @@ export interface SectionRepository extends BaseRepository<Section> {
   countActiveByInstitution(institutionId: string): Promise<number>;
 }
 
+/** Injectable service providing mongo section repository logic. */
 @Injectable()
 export class MongoSectionRepository
   extends MongoBaseRepository<Section, SectionDocument>
@@ -70,6 +74,7 @@ export class MongoSectionRepository
   }
 }
 
+/** Injectable service providing cached section repository logic. */
 @Injectable()
 export class CachedSectionRepository
   extends CachedRepository<Section>

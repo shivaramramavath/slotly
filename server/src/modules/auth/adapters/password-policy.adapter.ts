@@ -1,10 +1,13 @@
+// Core implementation for password-policy.adapter in server/src/modules/auth/adapters.
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { BREACHED_PASSWORD_CHECKER } from './breached-password.adapter';
 import type { BreachedPasswordChecker } from './breached-password.adapter';
 
+/** Constant representing password policy. */
 export const PASSWORD_POLICY = Symbol('PASSWORD_POLICY');
 
+/** Interface defining structure for password policy. */
 export interface PasswordPolicy {
   validate(password: string): Promise<void>;
   assertNotReused(password: string, history: string[]): Promise<void>;
@@ -12,6 +15,7 @@ export interface PasswordPolicy {
   verify(hash: string, plain: string): Promise<boolean>;
 }
 
+/** Injectable service providing standard password policy logic. */
 @Injectable()
 export class StandardPasswordPolicy implements PasswordPolicy {
   constructor(

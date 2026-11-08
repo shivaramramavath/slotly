@@ -1,3 +1,4 @@
+// Domain service orchestrating library.api business logic.
 import { apiClient } from '@/lib/api-client';
 import type {
   FacultyDto,
@@ -21,6 +22,7 @@ import type {
   ImportValidationReport,
 } from '@slotly/contracts';
 
+/** Constant representing library api. */
 export const libraryApi = {
   // ==========================================
   // FACULTY

@@ -1,9 +1,12 @@
+// Data schema and persistence model for room.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import type { RoomType } from '@slotly/contracts';
 
+/** Type alias for room document. */
 export type RoomDocument = Room & Document;
 
+/** Class implementing room. */
 @Schema({ timestamps: true, collection: 'rooms' })
 export class Room {
   id?: string | undefined;
@@ -56,12 +59,13 @@ export class Room {
   @Prop({ default: false, index: true })
   isDeleted!: boolean;
 
-  @Prop()
+  @Prop({ type: Date })
   deletedAt?: Date | undefined;
 }
 
+/** Zod schema validating room. */
 export const RoomSchema = SchemaFactory.createForClass(Room);
-RoomSchema.index({ institutionId: 1, code: 1 }, { unique: true });
+RoomSchema.index({ institutionId: 1, code: 1, isDeleted: 1 }, { unique: true });
 RoomSchema.index({ institutionId: 1, type: 1 });
 RoomSchema.index({ institutionId: 1, departmentId: 1 });
 RoomSchema.index({ institutionId: 1, archived: 1, isDeleted: 1 });

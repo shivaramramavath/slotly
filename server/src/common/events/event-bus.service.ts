@@ -1,7 +1,10 @@
+// Domain service orchestrating event-bus.service business logic.
 import { Injectable, Logger } from '@nestjs/common';
 
+/** Type alias for event handler. */
 export type EventHandler<T = unknown> = (payload: T) => void | Promise<void>;
 
+/** Injectable service providing event bus logic. */
 @Injectable()
 export class EventBus {
   private readonly logger = new Logger(EventBus.name);

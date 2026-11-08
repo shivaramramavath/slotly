@@ -1,3 +1,4 @@
+// Domain service orchestrating institutions.service business logic.
 import {
   Injectable,
   Inject,
@@ -7,6 +8,7 @@ import {
 import { Types } from 'mongoose';
 import type {
   InstitutionDto,
+  CreateInstitutionDto,
   UpdateInstitutionDto,
   DepartmentDto,
   CreateDepartmentDto,
@@ -48,9 +50,15 @@ import type { CacheService } from '../../../common/cache/cache.interface';
 import { EventBus } from '../../../common/events/event-bus.service';
 import { AuditService } from '../../../common/audit/audit.service';
 
+/** Constant representing nstitutions service. */
 export const INSTITUTIONS_SERVICE = Symbol('INSTITUTIONS_SERVICE');
 
+/** Interface defining structure for institutions service. */
 export interface InstitutionsService {
+  createInstitution(
+    dto: CreateInstitutionDto,
+    actorId: string,
+  ): Promise<InstitutionDto>;
   getInstitution(id: string): Promise<InstitutionDto>;
   updateInstitution(
     id: string,
@@ -139,6 +147,7 @@ export interface InstitutionsService {
   deleteHoliday(id: string, actorId: string): Promise<{ message: string }>;
 }
 
+/** Injectable service providing default institutions service logic. */
 @Injectable()
 export class DefaultInstitutionsService implements InstitutionsService {
   constructor(
@@ -197,6 +206,42 @@ export class DefaultInstitutionsService implements InstitutionsService {
   // ==========================================
   // INSTITUTION
   // ==========================================
+  async createInstitution(
+    dto: CreateInstitutionDto,
+    actorId: string,
+  ): Promise<InstitutionDto> {
+    const existing = await this.institutionRepo.findByCode(dto.code);
+    if (existing && !existing.isDeleted) {
+      throw new BadRequestException(
+        `Institution code "${dto.code}" is already in use.`,
+      );
+    }
+
+    const created = await this.institutionRepo.create({
+      name: dto.name.trim(),
+      code: dto.code.trim().toUpperCase(),
+      address: dto.address?.trim() || '',
+      workingDays: dto.workingDays || [1, 2, 3, 4, 5],
+      defaultPeriodConfig: dto.defaultPeriodConfig || {
+        startTime: '09:00',
+        periodDuration: 50,
+        periodsPerDay: 7,
+        breaks: [{ name: 'Lunch Break', afterPeriod: 4, durationMinutes: 50 }],
+      },
+      isComplete: true,
+      isDeleted: false,
+    });
+
+    const instId = this.toId(created);
+    await this.notifyAcademicChanged(instId, actorId, 'INSTITUTION_CREATED', {
+      id: instId,
+      name: created.name,
+      code: created.code,
+    });
+
+    return this.getInstitution(instId);
+  }
+
   async getInstitution(id: string): Promise<InstitutionDto> {
     const inst = await this.institutionRepo.findById(id);
     if (!inst || inst.isDeleted)

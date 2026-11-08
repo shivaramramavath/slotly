@@ -1,3 +1,4 @@
+// Core implementation for blueprint-completion.rules in server/src/modules/blueprint/model/rules.
 import type { MissingField } from '@slotly/contracts';
 import type {
   CompletionContext,
@@ -13,6 +14,7 @@ function num(val: unknown): number {
   return typeof val === 'number' ? val : 0;
 }
 
+/** Class implementing institution completion rule. */
 export class InstitutionCompletionRule implements CompletionRuleStrategy {
   compute(data: Record<string, unknown>): CompletionResult {
     const missing: MissingField[] = [];
@@ -64,6 +66,7 @@ export class InstitutionCompletionRule implements CompletionRuleStrategy {
   }
 }
 
+/** Class implementing department completion rule. */
 export class DepartmentCompletionRule implements CompletionRuleStrategy {
   compute(data: Record<string, unknown>): CompletionResult {
     const missing: MissingField[] = [];
@@ -87,6 +90,7 @@ export class DepartmentCompletionRule implements CompletionRuleStrategy {
   }
 }
 
+/** Class implementing program completion rule. */
 export class ProgramCompletionRule implements CompletionRuleStrategy {
   compute(data: Record<string, unknown>): CompletionResult {
     const missing: MissingField[] = [];
@@ -115,6 +119,7 @@ export class ProgramCompletionRule implements CompletionRuleStrategy {
   }
 }
 
+/** Class implementing academic year completion rule. */
 export class AcademicYearCompletionRule implements CompletionRuleStrategy {
   compute(data: Record<string, unknown>): CompletionResult {
     const missing: MissingField[] = [];
@@ -144,6 +149,7 @@ export class AcademicYearCompletionRule implements CompletionRuleStrategy {
   }
 }
 
+/** Class implementing semester completion rule. */
 export class SemesterCompletionRule implements CompletionRuleStrategy {
   compute(data: Record<string, unknown>): CompletionResult {
     const missing: MissingField[] = [];
@@ -180,6 +186,7 @@ export class SemesterCompletionRule implements CompletionRuleStrategy {
   }
 }
 
+/** Class implementing section completion rule. */
 export class SectionCompletionRule implements CompletionRuleStrategy {
   compute(data: Record<string, unknown>): CompletionResult {
     const missing: MissingField[] = [];
@@ -209,6 +216,7 @@ export class SectionCompletionRule implements CompletionRuleStrategy {
   }
 }
 
+/** Class implementing batch completion rule. */
 export class BatchCompletionRule implements CompletionRuleStrategy {
   compute(
     data: Record<string, unknown>,
@@ -258,6 +266,7 @@ export class BatchCompletionRule implements CompletionRuleStrategy {
   }
 }
 
+/** Class implementing subject assignment completion rule. */
 export class SubjectAssignmentCompletionRule implements CompletionRuleStrategy {
   compute(data: Record<string, unknown>): CompletionResult {
     const missing: MissingField[] = [];
@@ -315,6 +324,7 @@ export class SubjectAssignmentCompletionRule implements CompletionRuleStrategy {
   }
 }
 
+/** Class implementing elective group completion rule. */
 export class ElectiveGroupCompletionRule implements CompletionRuleStrategy {
   compute(data: Record<string, unknown>): CompletionResult {
     const missing: MissingField[] = [];
@@ -353,6 +363,7 @@ export class ElectiveGroupCompletionRule implements CompletionRuleStrategy {
   }
 }
 
+/** Class implementing faculty completion rule. */
 export class FacultyCompletionRule implements CompletionRuleStrategy {
   compute(data: Record<string, unknown>): CompletionResult {
     const missing: MissingField[] = [];
@@ -392,6 +403,7 @@ export class FacultyCompletionRule implements CompletionRuleStrategy {
   }
 }
 
+/** Class implementing room completion rule. */
 export class RoomCompletionRule implements CompletionRuleStrategy {
   compute(data: Record<string, unknown>): CompletionResult {
     const missing: MissingField[] = [];

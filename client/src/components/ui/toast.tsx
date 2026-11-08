@@ -1,11 +1,15 @@
+// React component for toast.
 'use client';
 
 import { create } from 'zustand';
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { normalizeReasonCode, REASON_CODE_MESSAGES } from '@slotly/contracts';
 
+/** Type alias for toast variant. */
 export type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 
+/** Interface defining structure for toast item. */
 export interface ToastItem {
   id: string;
   title: string;
@@ -19,6 +23,7 @@ interface ToastStore {
   removeToast: (id: string) => void;
 }
 
+/** Zustand store managing use toast store state. */
 export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
   addToast: (toast) => {
@@ -32,6 +37,7 @@ export const useToastStore = create<ToastStore>((set) => ({
     set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 }));
 
+/** Constant representing toast. */
 export const toast = {
   success: (title: string, description?: string) =>
     useToastStore.getState().addToast({ title, description, variant: 'success' }),
@@ -42,24 +48,18 @@ export const toast = {
   warning: (title: string, description?: string) =>
     useToastStore.getState().addToast({ title, description, variant: 'warning' }),
   fromErrorCode: (code: string, fallbackMessage?: string) => {
-    const errorMap: Record<string, string> = {
-      PARENT_MISSING: 'Parent node is required before this item can be created.',
-      PARENT_INCOMPLETE: 'Please complete all required fields on the parent node first.',
-      PARENT_TYPE_NOT_ALLOWED: 'Connection between these types is not allowed in the hierarchy.',
-      DUPLICATE_NAME: 'An item with this name or code already exists.',
-      CAPACITY_EXCEEDED: 'The combined student count exceeds parent capacity.',
-      CYCLE: 'Circular dependency detected.',
-      ENDPOINT_INCOMPLETE: 'Both connected items must be fully configured.',
-      NOT_QUALIFIED: 'Faculty lacks the required qualifications for this subject.',
-      PROJECT_LOCKED: 'Project is locked or currently being built.',
-      PERMISSION_DENIED: 'You do not have permission to perform this action.',
-      REVISION_CONFLICT: 'The document was updated elsewhere. Please refresh to see latest changes.',
-    };
-    const message = errorMap[code] || fallbackMessage || `Operation failed (${code})`;
-    useToastStore.getState().addToast({ title: 'Action Failed', description: message, variant: 'error' });
+    const canonical = normalizeReasonCode(code);
+    const message =
+      REASON_CODE_MESSAGES[canonical] ||
+      fallbackMessage ||
+      `Operation failed (${code})`;
+    useToastStore
+      .getState()
+      .addToast({ title: 'Action Failed', description: message, variant: 'error' });
   },
 };
 
+/** React component rendering toast container. */
 export function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
 

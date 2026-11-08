@@ -1,3 +1,4 @@
+// React component for blueprint-workspace.
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -34,6 +35,7 @@ interface BlueprintWorkspaceProps {
   projectId: string;
 }
 
+/** React component rendering blueprint workspace. */
 export function BlueprintWorkspace({ projectId }: BlueprintWorkspaceProps) {
   const router = useRouter();
   const [showValidation, setShowValidation] = useState(false);
@@ -120,7 +122,7 @@ export function BlueprintWorkspace({ projectId }: BlueprintWorkspaceProps) {
   };
 
   const handleBuildSchedule = () => {
-    router.push(`/projects/${projectId}/editor`);
+    router.push(`/projects/${projectId}/build`);
   };
 
   if (loadError) {

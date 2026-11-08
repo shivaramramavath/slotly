@@ -1,7 +1,9 @@
+// React component for availability-grid.
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { normalizeAvailabilityMatrix } from '@slotly/contracts';
 
 interface AvailabilityGridProps {
   value: boolean[][];
@@ -13,22 +15,20 @@ interface AvailabilityGridProps {
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+/** React component rendering availability grid. */
 export function AvailabilityGrid({
   value,
   onChange,
-  daysCount = 7,
-  periodsCount = 8,
+  daysCount = 5,
+  periodsCount = 7,
   readOnly = false,
 }: AvailabilityGridProps) {
   // Normalize matrix dimensions
-  const matrix: boolean[][] = Array.from({ length: daysCount }, (_, d) => {
-    return Array.from({ length: periodsCount }, (_, p) => {
-      if (value && value[d] && value[d][p] !== undefined) {
-        return value[d][p];
-      }
-      return true;
-    });
-  });
+  const matrix: boolean[][] = normalizeAvailabilityMatrix(
+    value,
+    daysCount,
+    periodsCount,
+  );
 
   const handleCellClick = (d: number, p: number) => {
     if (readOnly) return;

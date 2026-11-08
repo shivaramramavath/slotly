@@ -1,5 +1,7 @@
-import { Module } from '@nestjs/common';
+// Core implementation for institutions.module in server/src/modules/institutions.
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { UsersModule } from '../users/users.module';
 import { Institution, InstitutionSchema } from './schemas/institution.schema';
 import { Department, DepartmentSchema } from './schemas/department.schema';
 import { Program, ProgramSchema } from './schemas/program.schema';
@@ -54,9 +56,9 @@ import {
 import { InstitutionsController } from './controllers/institutions.controller';
 import { CACHE_SERVICE } from '../../common/cache/cache.interface';
 import type { CacheService } from '../../common/cache/cache.interface';
-import { AuthModule } from '../auth/auth.module';
 import { AuditModule } from '../../common/audit/audit.module';
 
+/** Class implementing institutions module. */
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -68,8 +70,8 @@ import { AuditModule } from '../../common/audit/audit.module';
       { name: Section.name, schema: SectionSchema },
       { name: Holiday.name, schema: HolidaySchema },
     ]),
-    AuthModule,
     AuditModule,
+    forwardRef(() => UsersModule),
   ],
   controllers: [InstitutionsController],
   providers: [

@@ -1,3 +1,4 @@
+// Core implementation for blueprint-gates in server/src/modules/blueprint/gates.
 import type {
   BlueprintNodeDto,
   ProjectLifecycleStatus,
@@ -14,6 +15,7 @@ function getNodeName(node?: BlueprintNodeDto | null, fallback = ''): string {
     : node.id || fallback;
 }
 
+/** Class implementing project not locked gate. */
 export class ProjectNotLockedGate implements IGate {
   readonly name = 'ProjectNotLockedGate';
 
@@ -41,6 +43,7 @@ export class ProjectNotLockedGate implements IGate {
   }
 }
 
+/** Class implementing permission gate. */
 export class PermissionGate implements IGate {
   readonly name = 'PermissionGate';
 
@@ -69,6 +72,7 @@ export class PermissionGate implements IGate {
   }
 }
 
+/** Class implementing parent exists gate. */
 export class ParentExistsGate implements IGate {
   readonly name = 'ParentExistsGate';
 
@@ -97,6 +101,7 @@ export class ParentExistsGate implements IGate {
   }
 }
 
+/** Class implementing parent type allowed gate. */
 export class ParentTypeAllowedGate implements IGate {
   readonly name = 'ParentTypeAllowedGate';
   constructor(private readonly registry: NodeTypeRegistry) {}
@@ -166,6 +171,7 @@ export class ParentTypeAllowedGate implements IGate {
   }
 }
 
+/** Class implementing parent complete gate. */
 export class ParentCompleteGate implements IGate {
   readonly name = 'ParentCompleteGate';
   constructor(private readonly registry: NodeTypeRegistry) {}
@@ -210,6 +216,7 @@ export class ParentCompleteGate implements IGate {
   }
 }
 
+/** Class implementing single parent gate. */
 export class SingleParentGate implements IGate {
   readonly name = 'SingleParentGate';
 
@@ -254,6 +261,7 @@ export class SingleParentGate implements IGate {
   }
 }
 
+/** Class implementing no cycle gate. */
 export class NoCycleGate implements IGate {
   readonly name = 'NoCycleGate';
 
@@ -309,6 +317,7 @@ export class NoCycleGate implements IGate {
   }
 }
 
+/** Class implementing duplicate name gate. */
 export class DuplicateNameGate implements IGate {
   readonly name = 'DuplicateNameGate';
 
@@ -355,6 +364,7 @@ export class DuplicateNameGate implements IGate {
   }
 }
 
+/** Class implementing capacity gate. */
 export class CapacityGate implements IGate {
   readonly name = 'CapacityGate';
 
@@ -415,6 +425,7 @@ export class CapacityGate implements IGate {
   }
 }
 
+/** Class implementing connection endpoint gate. */
 export class ConnectionEndpointGate implements IGate {
   readonly name = 'ConnectionEndpointGate';
 
@@ -479,6 +490,7 @@ export class ConnectionEndpointGate implements IGate {
   }
 }
 
+/** Class implementing qualification gate. */
 export class QualificationGate implements IGate {
   readonly name = 'QualificationGate';
 

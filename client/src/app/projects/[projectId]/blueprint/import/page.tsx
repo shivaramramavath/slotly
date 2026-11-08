@@ -1,8 +1,10 @@
+// React component for page.
 import Link from 'next/link';
 import { ArrowLeft, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
+/** React component rendering blueprint import page. */
 export default async function BlueprintImportPage({
   params,
 }: {

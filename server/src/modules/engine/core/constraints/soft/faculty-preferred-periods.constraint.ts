@@ -1,7 +1,9 @@
+// Core implementation for faculty-preferred-periods.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing faculty preferred periods constraint. */
 export class FacultyPreferredPeriodsConstraint implements IConstraint {
   readonly id = 'faculty-preferred-periods';
   readonly name = 'Faculty Preferred Periods';
@@ -17,19 +19,26 @@ export class FacultyPreferredPeriodsConstraint implements IConstraint {
     const violations: Violation[] = [];
 
     for (const slot of currentState.slots) {
-      if (!slot.facultyId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.facultyId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
       const faculty = currentState.findFaculty(slot.facultyId);
-      if (!faculty?.preferredPeriods || faculty.preferredPeriods.length === 0) continue;
+      if (!faculty?.preferredPeriods || faculty.preferredPeriods.length === 0)
+        continue;
 
       const isPreferred = faculty.preferredPeriods.some(
         (pref) => pref.day === slot.day && pref.period === slot.period,
       );
 
       if (!isPreferred) {
-        const dayName = currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
+        const dayName =
+          currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
         violations.push({
           id: `viol:soft:faculty-preferred:${slot.facultyId}:${slot.id}`,
           constraintId: this.id,

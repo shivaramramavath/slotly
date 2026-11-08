@@ -1,3 +1,4 @@
+// React component for validation-panel.
 'use client';
 
 import {
@@ -17,6 +18,7 @@ interface ValidationPanelProps {
   onClose: () => void;
 }
 
+/** React component rendering validation panel. */
 export function ValidationPanel({ isOpen, onClose }: ValidationPanelProps) {
   const nodes = useBlueprintStore((s) => s.nodes);
   const selectNode = useBlueprintStore((s) => s.selectNode);

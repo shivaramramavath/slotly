@@ -1,3 +1,4 @@
+// React component for templates-dialog.
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -20,6 +21,7 @@ interface TemplatesDialogProps {
   onTemplateApplied: () => Promise<void>;
 }
 
+/** React component rendering templates dialog. */
 export function TemplatesDialog({ onTemplateApplied }: TemplatesDialogProps) {
   const isTemplatesOpen = useBlueprintStore((s) => s.isTemplatesOpen);
   const setIsTemplatesOpen = useBlueprintStore((s) => s.setIsTemplatesOpen);

@@ -1,15 +1,18 @@
+// React component for dialog.
 'use client';
 
 import * as React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+/** Interface defining structure for dialog props. */
 export interface DialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
 }
 
+/** React component rendering dialog. */
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
   if (!open) return null;
 
@@ -35,16 +38,19 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   );
 }
 
+/** React component rendering dialog header. */
 export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn('flex flex-col space-y-1.5 pb-4', className)} {...props} />;
 }
 
+/** React component rendering dialog title. */
 export function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2 className={cn('text-lg font-semibold tracking-tight text-[#FAFAFA]', className)} {...props} />
   );
 }
 
+/** React component rendering dialog description. */
 export function DialogDescription({
   className,
   ...props
@@ -52,6 +58,7 @@ export function DialogDescription({
   return <p className={cn('text-xs text-[#8A8A8A]', className)} {...props} />;
 }
 
+/** React component rendering dialog footer. */
 export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div

@@ -121,6 +121,15 @@ ENGINEERING RULES
 - Unit tests for all pure logic (gates, completion rules, validators, engine,
   factories, cache, state machines).
 
+CODE MAP RULES
+- Before writing ANY new class, service, hook, component, repository or utility,
+  search docs/CODEMAP.md and docs/codemap/*.md for existing solutions.
+- Reuse first. Do NOT duplicate functionality that already exists.
+- Every source file MUST have a line 1 purpose comment.
+- Every exported symbol MUST have a one-line JSDoc.
+- Internal / unexported helpers MUST NOT have export keywords.
+- Run `pnpm codemap` before committing to keep the map in sync.
+
 DEFINITION OF DONE (every phase)
 1. `build`, `lint` and `typecheck` pass in client, server and contracts.
 2. New pure logic has tests.
@@ -129,3 +138,76 @@ DEFINITION OF DONE (every phase)
 
 Do only the current phase. If something is ambiguous choose the simplest option
 and record it in docs/PROGRESS.md under "Decisions". Do not start the next phase.
+
+GIT WORKFLOW (every phase)
+
+START
+1. Run `git status`. The working tree must be clean. If not, stop and tell me.
+2. Make sure you are on main and up to date (`git pull --ff-only` if a remote
+   named origin exists).
+3. Create a branch: phase/<NN>-<slug> (for example phase/10-board-studio).
+
+DURING
+4. Commit in small logical commits (Conventional Commits):
+   feat(server): ..., feat(client): ..., feat(contracts): ..., test(server): ...,
+   fix: ..., refactor: ..., docs: ..., chore: ...
+   A typical phase has separate commits for contracts, server, client, tests, docs.
+   Before step 5 run `pnpm codemap` and commit the result.
+
+BEFORE THE FINAL COMMIT
+5. At the repo root run `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+   All must pass. Never skip hooks, never disable or delete tests to pass.
+6. Safety check: never commit .env files, secrets, tokens, node_modules, build
+   output, uploads or logs. Check .gitignore. Review `git diff --cached --stat`
+   and scan staged files for secret patterns; abort and tell me if anything looks
+   like a secret.
+7. Append the phase entry to docs/PROGRESS.md (what was built, decisions, what was
+   skipped, manual test checklist) and include it in the last commit.
+
+FINISH
+8. Push: `git push -u origin <branch>`. If rejected, `git pull --rebase origin
+   <branch>` and push again. NEVER force-push. If there is no remote, stop and
+   tell me.
+9. Tag: `git tag -a phase-<NN>-done -m "Phase <NN>: <title>"` and `git push origin
+   phase-<NN>-done`.
+10. If the GitHub CLI is available, open a pull request into main titled
+    "Phase <NN>: <title>" with the PROGRESS entry and the manual test checklist
+    as the body. Do NOT merge it.
+11. Report: branch name, list of commits, tag, PR link, test results.
+
+PHASE RUN RULES (every phase)
+
+BEFORE CODING
+- Read AGENTS.md, docs/CODEMAP.md (reuse first), docs/ARCHITECTURE.md,
+  docs/PROGRESS.md, docs/ROUTES.md, docs/CLIENT_UX.md, docs/CLIENT_ROUTES.md and
+  the FEATURES sections named in the phase.
+- Prerequisite check: confirm the previous phase's DONE WHEN criteria still pass
+  (run its tests). If something is broken, stop and report; do not build on it.
+- Write a short plan (docs/PROGRESS.md "in progress" entry): files you will add or
+  change, new names for routes/events/queues/keys (add them to docs/ROUTES.md
+  first), and any decision you need from me.
+
+TWO PASSES
+- Pass 1 is the server (and contracts). Finish it with tests, commit, push, then
+  stop and report. Pass 2 is the client, started only when I say so.
+- If a pass is too large, split it and report where you split.
+
+QUALITY BAR
+- Every new endpoint: zod DTO from packages/contracts, permission guard, audit
+  entry (queue), tag-based cache invalidation, revision check where data is
+  edited, uniform errors with reason codes.
+- Every new screen: loading, empty, error, permission-denied and offline states;
+  keyboard and screen-reader support; optimistic updates per the policy in
+  docs/CLIENT_UX.md; skeletons that match the layout.
+- Pure logic goes in framework-free modules with unit tests. Integration tests use
+  real MongoDB (replica set) and Redis.
+- No new `any`, `@ts-ignore` or `eslint-disable`. No duplicated helpers (check
+  CODEMAP first).
+
+CLOSEOUT
+- Verify each DONE WHEN item with an automated test or script and list the
+  evidence. Update docs/PROGRESS.md, docs/ROUTES.md, docs/ARCHITECTURE.md (status
+  and any changed names) and run `pnpm codemap`. Write a manual test checklist in
+  the PR.
+- Follow the GIT WORKFLOW: branch, small commits, safety scan, push, tag, PR. Do
+  not merge.

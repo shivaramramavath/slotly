@@ -1,7 +1,9 @@
+// Zustand store managing application state for auth.store.
 import { create } from 'zustand';
 import type { UserDto } from '@slotly/contracts';
 import { setAccessToken } from '@/lib/api-client';
 
+/** Type alias for auth status. */
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
 interface AuthState {
@@ -22,6 +24,7 @@ interface AuthState {
   setStepUpRequired: (required: boolean) => void;
 }
 
+/** Zustand store managing use auth store state. */
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accessToken: null,

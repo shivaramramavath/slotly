@@ -1,9 +1,12 @@
+// React component for select.
 import * as React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+/** Type alias for select props. */
 export type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement>;
 
+/** Constant representing select. */
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, children, ...props }, ref) => {
     return (

@@ -1,3 +1,4 @@
+// Database repository managing elective-group.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -11,13 +12,16 @@ import {
   ElectiveGroupDocument,
 } from '../schemas/elective-group.schema';
 
+/** Constant representing elective group repository. */
 export const ELECTIVE_GROUP_REPOSITORY = Symbol('ELECTIVE_GROUP_REPOSITORY');
 
+/** Interface defining structure for elective group repository. */
 export interface ElectiveGroupRepository extends BaseRepository<ElectiveGroup> {
   findByInstitution(institutionId: string): Promise<ElectiveGroup[]>;
   softDelete(id: string): Promise<boolean>;
 }
 
+/** Injectable service providing mongo elective group repository logic. */
 @Injectable()
 export class MongoElectiveGroupRepository
   extends MongoBaseRepository<ElectiveGroup, ElectiveGroupDocument>
@@ -45,6 +49,7 @@ export class MongoElectiveGroupRepository
   }
 }
 
+/** Injectable service providing cached elective group repository logic. */
 @Injectable()
 export class CachedElectiveGroupRepository
   extends CachedRepository<ElectiveGroup>

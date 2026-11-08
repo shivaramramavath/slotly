@@ -1,3 +1,4 @@
+// HTTP controller handling users.controller endpoints.
 import {
   Controller,
   Get,
@@ -11,10 +12,12 @@ import { USERS_SERVICE } from './users.service';
 import type { UsersService } from './users.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import type { RequestUser } from '../auth/guards/auth.guard';
+import { PermissionsGuard } from '../../common/rbac/permissions.guard';
 import type { Request } from 'express';
 
+/** Controller handling users security controller HTTP endpoints. */
 @Controller('users/me/security')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 export class UsersSecurityController {
   constructor(
     @Inject(USERS_SERVICE) private readonly usersService: UsersService,

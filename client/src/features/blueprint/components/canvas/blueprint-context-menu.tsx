@@ -1,3 +1,4 @@
+// React component for blueprint-context-menu.
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -28,6 +29,7 @@ interface BlueprintContextMenuProps {
   onPaste: (targetParentId?: string) => void;
 }
 
+/** React component rendering blueprint context menu. */
 export function BlueprintContextMenu({
   onAddChild,
   onDuplicate,

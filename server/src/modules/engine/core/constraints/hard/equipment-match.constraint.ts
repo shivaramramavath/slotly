@@ -1,7 +1,9 @@
+// Core implementation for equipment-match.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing equipment match constraint. */
 export class EquipmentMatchConstraint implements IConstraint {
   readonly id = 'equipment-match';
   readonly name = 'Equipment Match';
@@ -13,7 +15,13 @@ export class EquipmentMatchConstraint implements IConstraint {
     const violations: Violation[] = [];
 
     for (const slot of currentState.slots) {
-      if (!slot.roomId || !slot.subjectId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.roomId ||
+        !slot.subjectId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -24,7 +32,9 @@ export class EquipmentMatchConstraint implements IConstraint {
       const requiredEquipment = subject.requirements?.equipment || [];
       if (requiredEquipment.length === 0) continue;
 
-      const roomEquipment = new Set(room.equipment?.map((e) => e.toLowerCase()) || []);
+      const roomEquipment = new Set(
+        room.equipment?.map((e) => e.toLowerCase()) || [],
+      );
       const missingEquipment = requiredEquipment.filter(
         (req) => !roomEquipment.has(req.toLowerCase()),
       );

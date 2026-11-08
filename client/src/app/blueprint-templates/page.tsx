@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import { useState } from 'react';
@@ -18,6 +19,7 @@ import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } fr
 import { blueprintApi } from '@/features/projects/services/blueprint.api';
 import type { GraphTemplateDto } from '@slotly/contracts';
 
+/** React component rendering blueprint templates page. */
 export default function BlueprintTemplatesPage() {
   const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');

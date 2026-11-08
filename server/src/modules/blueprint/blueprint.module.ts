@@ -1,3 +1,4 @@
+// Core implementation for blueprint.module in server/src/modules/blueprint.
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Blueprint, BlueprintSchema } from './schemas/blueprint.schema';
@@ -44,6 +45,7 @@ import { ProjectsModule } from '../projects/projects.module';
 import { CacheModule } from '../../common/cache/cache.module';
 import { UsersModule } from '../users/users.module';
 
+/** Class implementing blueprint module. */
 @Module({
   imports: [
     MongooseModule.forFeature([

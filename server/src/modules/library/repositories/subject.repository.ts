@@ -1,3 +1,4 @@
+// Database repository managing subject.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,8 +9,10 @@ import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import { Subject, SubjectDocument } from '../schemas/subject.schema';
 
+/** Constant representing subject repository. */
 export const SUBJECT_REPOSITORY = Symbol('SUBJECT_REPOSITORY');
 
+/** Interface defining structure for subject filter options. */
 export interface SubjectFilterOptions {
   departmentId?: string;
   type?: string;
@@ -21,6 +24,7 @@ export interface SubjectFilterOptions {
   limit?: number;
 }
 
+/** Interface defining structure for subject repository. */
 export interface SubjectRepository extends BaseRepository<Subject> {
   findByInstitution(
     institutionId: string,
@@ -37,6 +41,7 @@ export interface SubjectRepository extends BaseRepository<Subject> {
   countByInstitution(institutionId: string): Promise<number>;
 }
 
+/** Injectable service providing mongo subject repository logic. */
 @Injectable()
 export class MongoSubjectRepository
   extends MongoBaseRepository<Subject, SubjectDocument>
@@ -167,6 +172,7 @@ export class MongoSubjectRepository
   }
 }
 
+/** Injectable service providing cached subject repository logic. */
 @Injectable()
 export class CachedSubjectRepository
   extends CachedRepository<Subject>

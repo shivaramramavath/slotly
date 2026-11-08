@@ -1,3 +1,4 @@
+// React component for step-up-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -14,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast';
 
+/** React component rendering step up dialog. */
 export function StepUpDialog() {
   const stepUpRequired = useAuthStore((s) => s.stepUpRequired);
   const setStepUpRequired = useAuthStore((s) => s.setStepUpRequired);

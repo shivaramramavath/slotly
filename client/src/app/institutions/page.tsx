@@ -1,6 +1,7 @@
+// React component for page.
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { AppLayout } from '@/components/layouts/app-layout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { institutionApi } from '@/features/institution/services/institution.api';
 import {
+  useInstitutionStructure,
   StructureTree,
   DepartmentDialog,
   ProgramDialog,
@@ -19,7 +21,6 @@ import {
   WorkingDaysConfig,
 } from '@/features/institution';
 import type {
-  InstitutionStructureDto,
   DepartmentDto,
   ProgramDto,
   AcademicYearDto,
@@ -36,9 +37,13 @@ import {
   Trash2,
 } from 'lucide-react';
 
+/** React component rendering institutions page. */
 export default function InstitutionsPage() {
-  const [structure, setStructure] = useState<InstitutionStructureDto | null>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: structure = null,
+    isLoading: loading,
+    refetch: fetchStructure,
+  } = useInstitutionStructure();
 
   // Dialog open states
   const [deptDialogOpen, setDeptDialogOpen] = useState(false);
@@ -62,32 +67,7 @@ export default function InstitutionsPage() {
 
   const [holidayDialogOpen, setHolidayDialogOpen] = useState(false);
 
-  const fetchStructure = useCallback(async () => {
-    try {
-      const data = await institutionApi.getStructure();
-      setStructure(data);
-    } catch {
-      // error handled
-    }
-  }, []);
 
-  useEffect(() => {
-    let ignore = false;
-    institutionApi
-      .getStructure()
-      .then((data) => {
-        if (!ignore) {
-          setStructure(data);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!ignore) setLoading(false);
-      });
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   // Handlers for Add Child
   const handleOpenAddDepartment = () => {

@@ -1,7 +1,9 @@
+// Core implementation for max-classes-per-day.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing max classes per day constraint. */
 export class MaxClassesPerDayConstraint implements IConstraint {
   readonly id = 'max-classes-per-day';
   readonly name = 'Max Classes Per Day';
@@ -11,13 +13,18 @@ export class MaxClassesPerDayConstraint implements IConstraint {
   check(state: ScheduleState, move?: Move): Violation[] {
     const currentState = move ? state.cloneWithMove(move) : state;
     const violations: Violation[] = [];
-    const maxClasses = currentState.input.effectiveConstraints?.maxClassesPerDay ?? 5;
+    const maxClasses =
+      currentState.input.effectiveConstraints?.maxClassesPerDay ?? 5;
 
     // sectionId:day -> Slots
     const sectionDaySlots = new Map<string, Slot[]>();
 
     for (const slot of currentState.slots) {
-      if (slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
       const key = `${slot.sectionId}:${slot.day}`;
@@ -41,7 +48,8 @@ export class MaxClassesPerDayConstraint implements IConstraint {
       }
 
       if (periods.size > maxClasses) {
-        const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
+        const dayName =
+          currentState.input.settings.days[day] || `Day ${day + 1}`;
         violations.push({
           id: `viol:max-classes-per-day:${sectionId}:${day}`,
           constraintId: this.id,

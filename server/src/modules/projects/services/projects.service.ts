@@ -1,7 +1,9 @@
+// Domain service orchestrating projects.service business logic.
 import {
   ConflictException,
   Injectable,
   Inject,
+  Optional,
   NotFoundException,
 } from '@nestjs/common';
 import type {
@@ -16,6 +18,8 @@ import { TemplateService } from '../../blueprint/services/template.service';
 import { GraphFromInstitutionBuilder } from '../../blueprint/services/graph-from-institution.builder';
 import { INSTITUTIONS_SERVICE } from '../../institutions/services/institutions.service';
 import type { InstitutionsService } from '../../institutions/services/institutions.service';
+import { INSTITUTION_REPOSITORY } from '../../institutions/repositories/institution.repository';
+import type { InstitutionRepository } from '../../institutions/repositories/institution.repository';
 import { ProjectStateFactory } from '../lifecycle/project-state.factory';
 import { AuditService } from '../../../common/audit/audit.service';
 import type { Project } from '../schemas/project.schema';
@@ -30,6 +34,7 @@ function getId(
   return typeof doc._id === 'string' ? doc._id : doc._id.toString();
 }
 
+/** Injectable service providing projects service logic. */
 @Injectable()
 export class ProjectsService {
   constructor(
@@ -40,6 +45,9 @@ export class ProjectsService {
     @Inject(INSTITUTIONS_SERVICE)
     private readonly institutionsService: InstitutionsService,
     private readonly auditService: AuditService,
+    @Optional()
+    @Inject(INSTITUTION_REPOSITORY)
+    private readonly institutionRepo?: InstitutionRepository,
   ) {}
 
   private toDto(doc: Project): ProjectDto {
@@ -65,7 +73,18 @@ export class ProjectsService {
     userId: string,
     userInstitutionId?: string,
   ): Promise<ProjectDto> {
-    const institutionId = dto.institutionId || userInstitutionId;
+    let institutionId = dto.institutionId || userInstitutionId;
+    if (!institutionId && this.institutionRepo) {
+      const firstInst = await this.institutionRepo.findOne({
+        isDeleted: false,
+      });
+      if (firstInst) {
+        institutionId = (
+          firstInst.id ||
+          (firstInst as unknown as { _id?: { toString(): string } })._id
+        )?.toString();
+      }
+    }
     if (!institutionId) {
       throw new ConflictException(
         'Institution ID is required to create a project',
@@ -254,6 +273,17 @@ export class ProjectsService {
     const updated = await this.projectRepo.update(projectId, updatePayload);
 
     return this.toDto(updated!);
+  }
+
+  async updateStatus(
+    projectId: string,
+    status: Project['status'],
+  ): Promise<ProjectDto> {
+    const updated = await this.projectRepo.update(projectId, { status });
+    if (!updated) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+    return this.toDto(updated);
   }
 
   async delete(projectId: string, userId: string): Promise<boolean> {

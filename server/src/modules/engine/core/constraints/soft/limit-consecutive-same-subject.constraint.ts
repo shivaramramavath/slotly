@@ -1,7 +1,9 @@
+// Core implementation for limit-consecutive-same-subject.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing limit consecutive same subject constraint. */
 export class LimitConsecutiveSameSubjectConstraint implements IConstraint {
   readonly id = 'limit-consecutive-same-subject';
   readonly name = 'Limit Consecutive Same Subject';
@@ -46,12 +48,16 @@ export class LimitConsecutiveSameSubjectConstraint implements IConstraint {
         const prev = slots[i - 1]!;
         const curr = slots[i]!;
 
-        if (curr.subjectId === currentSubjectId && curr.period === prev.period + 1) {
+        if (
+          curr.subjectId === currentSubjectId &&
+          curr.period === prev.period + 1
+        ) {
           runCount++;
           if (runCount > 2) {
             const subject = currentState.findSubject(currentSubjectId!);
             const section = currentState.findSection(sectionId!);
-            const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
+            const dayName =
+              currentState.input.settings.days[day] || `Day ${day + 1}`;
 
             violations.push({
               id: `viol:soft:consecutive-subject:${sectionId}:${currentSubjectId}:${day}:${curr.period}`,

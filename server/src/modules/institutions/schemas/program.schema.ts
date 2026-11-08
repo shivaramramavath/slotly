@@ -1,8 +1,11 @@
+// Data schema and persistence model for program.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
+/** Type alias for program document. */
 export type ProgramDocument = Program & Document;
 
+/** Class implementing program. */
 @Schema({ timestamps: true, collection: 'programs' })
 export class Program {
   id?: string | undefined;
@@ -36,9 +39,13 @@ export class Program {
   @Prop({ default: false, index: true })
   isDeleted!: boolean;
 
-  @Prop()
+  @Prop({ type: Date })
   deletedAt?: Date | undefined;
 }
 
+/** Zod schema validating program. */
 export const ProgramSchema = SchemaFactory.createForClass(Program);
-ProgramSchema.index({ departmentId: 1, code: 1, isDeleted: 1 });
+ProgramSchema.index(
+  { departmentId: 1, code: 1, isDeleted: 1 },
+  { unique: true },
+);

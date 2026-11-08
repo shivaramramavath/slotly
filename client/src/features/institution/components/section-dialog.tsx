@@ -1,3 +1,4 @@
+// React component for section-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -25,6 +26,7 @@ interface SectionDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering section dialog. */
 export function SectionDialog({
   open,
   onOpenChange,

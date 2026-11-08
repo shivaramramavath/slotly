@@ -1,3 +1,4 @@
+// React component for readiness-dialog.
 'use client';
 
 import {
@@ -16,6 +17,7 @@ interface ReadinessDialogProps {
   onBuildSchedule: () => void;
 }
 
+/** React component rendering readiness dialog. */
 export function ReadinessDialog({ onBuildSchedule }: ReadinessDialogProps) {
   const isReadinessOpen = useBlueprintStore((s) => s.isReadinessOpen);
   const setIsReadinessOpen = useBlueprintStore((s) => s.setIsReadinessOpen);

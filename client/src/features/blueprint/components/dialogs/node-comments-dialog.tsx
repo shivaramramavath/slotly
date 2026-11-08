@@ -1,3 +1,4 @@
+// React component for node-comments-dialog.
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,6 +16,7 @@ import { blueprintApi } from '@/features/projects/services/blueprint.api';
 import { toast } from '@/components/ui/toast';
 import type { BlueprintCommentDto } from '@slotly/contracts';
 
+/** React component rendering node comments dialog. */
 export function NodeCommentsDialog() {
   const activeNodeId = useBlueprintStore((s) => s.activeCommentsNodeId);
   const setActiveNodeId = useBlueprintStore((s) => s.setActiveCommentsNodeId);

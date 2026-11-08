@@ -1,7 +1,9 @@
+// Core implementation for spread-subjects-across-days.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing spread subjects across days constraint. */
 export class SpreadSubjectsAcrossDaysConstraint implements IConstraint {
   readonly id = 'spread-subjects-across-days';
   readonly name = 'Spread Subjects Across Days';
@@ -41,7 +43,8 @@ export class SpreadSubjectsAcrossDaysConstraint implements IConstraint {
         const day = parseInt(dayStr!, 10);
         const section = currentState.findSection(sectionId!);
         const subject = currentState.findSubject(subjectId!);
-        const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
+        const dayName =
+          currentState.input.settings.days[day] || `Day ${day + 1}`;
 
         violations.push({
           id: `viol:soft:spread-subjects:${sectionId}:${subjectId}:${day}`,

@@ -1,3 +1,4 @@
+// HTTP controller handling auth.controller endpoints.
 import {
   Controller,
   Post,
@@ -50,6 +51,7 @@ import { Public } from './guards/public.decorator';
 import { StepUpGuard } from './guards/step-up.guard';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 
+/** Controller handling auth controller HTTP endpoints. */
 @Controller('auth')
 export class AuthController {
   constructor(

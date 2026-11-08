@@ -1,3 +1,4 @@
+// Domain service orchestrating blueprint.service business logic.
 import {
   ConflictException,
   Injectable,
@@ -40,6 +41,7 @@ function getId(
   return typeof doc._id === 'string' ? doc._id : doc._id.toString();
 }
 
+/** Injectable service providing blueprint service logic. */
 @Injectable()
 export class BlueprintService {
   constructor(

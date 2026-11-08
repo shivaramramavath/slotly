@@ -1,3 +1,4 @@
+// Domain service orchestrating audit.service business logic.
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -5,6 +6,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { AuditLog, AuditLogDocument } from './audit-log.schema';
 
+/** Interface defining structure for audit payload. */
 export interface AuditPayload {
   action: string;
   actorId: string;
@@ -15,6 +17,7 @@ export interface AuditPayload {
   timestamp?: Date | undefined;
 }
 
+/** Injectable service providing audit service logic. */
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);

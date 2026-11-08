@@ -1,3 +1,4 @@
+// React component for impact-preview-dialog.
 'use client';
 
 import { useState } from 'react';
@@ -16,6 +17,7 @@ interface ImpactPreviewDialogProps {
   onConfirmDelete: (nodeId: string) => Promise<void>;
 }
 
+/** React component rendering impact preview dialog. */
 export function ImpactPreviewDialog({ onConfirmDelete }: ImpactPreviewDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const impactNode = useBlueprintStore((s) => s.impactPreviewNode);

@@ -536,6 +536,481 @@
 
 ---
 
-## Next Steps
-- **Phase 8:** Constraint Solver Engine (Hard & soft constraint strategies, conflict detection, score calculators, BullMQ solver worker, timetable generation).
+## Phase 8: Constraint Engine (Pure TypeScript Core)
 
+### What Was Built
+1. **Shared Contracts (`@slotly/contracts`):**
+   - Added complete schemas and DTO types for constraints and timetable validation:
+     - `SlotTypeSchema`: `theory`, `lab`, `tutorial`, `seminar`, `break`, `free`, `exam`, `event`, `empty`.
+     - `SlotDtoSchema`: Academic slot coordinate representation (`sectionId`, `batchId?`, `day`, `period`, `type`, `subjectId`, `facultyId`, `roomId`, `span`).
+     - `ViolationSeveritySchema` (`error` for hard constraints, `warning` for soft constraints).
+     - `ViolationSuggestionSchema`: Ranked alternatives (`day`, `period`, `roomId?`, `facultyId?`, `score`, `reason`).
+     - `ViolationDtoSchema`: Structured conflict report (`id`, `ruleId`, `severity`, `message`, `sectionId`, `batchId?`, `subjectId`, `facultyId`, `roomId`, `slotRefs`, `suggestions`, `fixHint`).
+     - `PreBuildCheckErrorSchema`: Pre-build validation report (`code`, `severity`, `message`, `entityId`, `entityType`, `fixHint`).
+     - `ValidationReportDtoSchema`: Complete validation summary (`isValid`, `hardViolationsCount`, `softViolationsCount`, `violations`, `preBuildErrors`, `score`).
+     - `ConstraintScopeSchema`: Scope hierarchy (`institution`, `department`, `program`, `section`).
+     - `HardConstraintsConfigSchema` & `SoftConstraintsConfigSchema`: Granular toggles and parameter weights for all 27 constraints.
+     - `ValidateProjectDtoSchema` & `ValidateVersionDtoSchema`: Request validation payloads.
+   - Built to CJS, ESM, and DTS maps via `tsup`.
+
+2. **Pure TypeScript Engine Core (`server/src/modules/engine/core/`):**
+   - **Zero Framework Coupling:** Completely decoupled from NestJS, Mongoose, and Redis; zero decorators, pure TypeScript types and algorithms.
+   - **State Pattern & Indexing (`ScheduleState`):** Fast indexed lookups by faculty (`[facultyId][day][period]`), room (`[roomId][day][period]`), section (`[sectionId][day][period]`), batch, and subject. Supports hypothetical move cloning (`cloneWithMove`) for O(1) state evaluation during validation.
+   - **Strategy Pattern (`IConstraint`):**
+     - Interface: `{ id, name, type, weight, check(state, move), score(state), explain(violation) }`.
+     - Open/Closed: Engine core is closed to modification; new rules are registered dynamically via `ConstraintRegistry`.
+   - **20 Hard Constraints (`constraints/hard/`):**
+     1. `FacultyNoDoubleBooking`: Prevents faculty overlapping in the same day and period.
+     2. `RoomNoDoubleBooking`: Prevents room overlapping in the same day and period.
+     3. `SectionNoDoubleBooking`: Prevents section overlapping in the same day and period.
+     4. `FacultyAvailability`: Enforces faculty unavailable slots and matrix preferences.
+     5. `RoomAvailability`: Enforces room availability grids.
+     6. `SectionAvailability`: Enforces per-day period counts and section timing boundaries.
+     7. `MaxHoursPerDay`: Enforces faculty maximum teaching hours per day limit.
+     8. `MaxHoursPerWeek`: Enforces faculty maximum weekly hours limit.
+     9. `MinHoursPerWeek`: Enforces faculty minimum contracted teaching hours.
+     10. `MaxClassesPerDay`: Enforces section daily class limits.
+     11. `MinBreaks`: Guarantees daily student break periods.
+     12. `RoomCapacityFitsSection`: Ensures room capacity $\ge$ section strength.
+     13. `RoomTypeMatchesSubject`: Matches room type (lecture, lab, seminar) to subject requirements.
+     14. `EquipmentMatch`: Validates subject-required equipment (projector, computers, etc.) is available in assigned room.
+     15. `LabConsecutiveBlock`: Enforces consecutive period spanning for lab sessions.
+     16. `ElectiveSimultaneity`: Ensures concurrent elective groups run at identical periods.
+     17. `HolidayExclusion`: Blocks scheduling classes on institution calendar holidays.
+     18. `WeeklyHoursMet`: Checks subject weekly target hours against total scheduled slots.
+     19. `MissingAllocation`: Flags subjects with zero allocated periods.
+     20. `BreakNotOverwritable`: Protects scheduled breaks from collision.
+   - **7 Soft Constraints (`constraints/soft/`):**
+     1. `FacultyPreferredPeriods`: Penalizes slots scheduled outside faculty preferred periods.
+     2. `SpreadSubjectsAcrossDays`: Penalizes clustering same-subject theory classes on the same day.
+     3. `LimitConsecutiveSameSubject`: Discourages consecutive back-to-back periods of the same theory subject.
+     4. `BalanceFacultyLoad`: Penalizes high standard deviation in faculty daily teaching hours.
+     5. `LabsInAfternoon`: Incentivizes scheduling lab blocks in afternoon periods.
+     6. `MinimizeRoomChanges`: Penalizes sections switching lecture halls within the same day.
+     7. `DepartmentRules`: Soft rules and preferences defined at the department level.
+   - **Suggestion Strategy (`SuggestionStrategy`):**
+     - Ranks conflict-free alternative periods and rooms by evaluating hypothetical candidate moves against all hard constraints and scoring soft constraint impacts.
+   - **Pre-Build Checker (`PreBuildChecker`):**
+     - Validates blueprint project graph prior to solver invocation, surfacing user-friendly, fixable errors:
+       - `INSUFFICIENT_LAB_CAPACITY`: Total required lab hours exceeds aggregate available lab room capacities.
+       - `MISSING_ALLOCATION`: Subject assignments missing faculty or room linkages.
+       - `FACULTY_OVERLOAD`: Subject weekly hour demands exceed faculty maximum teaching capacity.
+       - `INVALID_GRAPH`: Disconnected or unlinked nodes in the blueprint graph.
+   - **Validation Orchestrator (`ValidationService`):**
+     - Aggregates pre-build checks, evaluates state against the 27 constraints, computes suggestions for conflicts, and calculates overall schedule quality score.
+
+3. **Server NestJS Integration (`server/src/modules/engine/`):**
+   - **`EngineValidationService`:**
+     - Injects `CacheService`, `ProjectsService`, and `BlueprintService`.
+     - Derives `EngineInput` from project settings and blueprint graph nodes.
+     - SHA-256 idempotency input hashing for Redis cache-aside caching (`slotly:validation:{hash}`) with 300s TTL and project tag invalidation (`project:{projectId}`).
+   - **`EngineController`:**
+     - `POST /projects/:projectId/validate`: Validates project blueprint and current timetable slots.
+     - `POST /versions/:versionId/validate`: Validates a saved schedule version's slots.
+     - Protected by `AuthGuard` and `PermissionsGuard` (`PROJECT_READ`).
+   - Registered in `EngineModule` and imported in root `AppModule`.
+
+4. **Engine Unit Tests (`server/src/modules/engine/tests/`):**
+   - `constraints-hard.spec.ts`: Dedicated test fixture for each of the 20 hard constraints verifying violation reporting and clean passage.
+   - `constraints-soft.spec.ts`: Test fixtures for all 7 soft constraints verifying scoring penalties.
+   - `suggestion-strategy.spec.ts`: Verifies conflict-free alternative period and room ranking.
+   - `pre-build.spec.ts`: Verifies pre-build validation error catching with actionable `fixHint` messages.
+   - `validation.service.spec.ts`: End-to-end integration of the constraint engine pipeline.
+   - Monorepo suite: 27 test suites, 143 tests passing.
+
+5. **Client UI (`client/src/features/blueprint/`):**
+   - **Blueprint Constraints Tab (`BlueprintConstraintsTab`):**
+     - Scope selector (`institution`, `department`, `program`, `section`).
+     - Hard vs Soft constraint tabs with toggle switches and parameter controls.
+     - Inheritance badges: Visual indicators displaying whether a constraint setting is `Inherited` from a parent scope or an active `Override`, with one-click "Override" action.
+     - Group categorization matching `FEATURES.md`: Faculty, Room, Section, and Laboratory.
+     - Integrated "Validate Current Blueprint" action with live spinner and validation results summary.
+   - **Conflict Card Component (`ConflictCard`):**
+     - Reusable component displaying problem summary, affected entities (section, faculty, room, subject, day/period coordinates), and ranked suggestions with an "Apply" button (wired for Phase 10).
+   - Added `validateProject` and `validateVersion` to `blueprintApi`.
+
+### Decisions Made
+- **Strict Decoupling of Engine Core:** Isolated `server/src/modules/engine/core/` completely from NestJS, Mongoose, and third-party libraries. All types, constraints, state trackers, suggestion generators, and pre-build validators operate exclusively on pure TypeScript primitives for maximum speed, reusability in web workers, and zero-mock testing.
+- **Hypothetical State Move Evaluation:** Optimized move evaluations in `ScheduleState.cloneWithMove` using shallow clones of slot index tables, providing sub-millisecond constraint evaluation.
+- **SHA-256 Input Caching:** Cached validation results in Redis keyed by `slotly:validation:${hash}` where hash encapsulates project revision, input settings, and slot configurations, avoiding expensive recomputations on repeated requests.
+- **Accents Under 5%:** Adhered strictly to the black-and-white design system with semantic accents reserved for status (`#EF4444` for hard conflict errors, `#FACC15` for soft warnings, `#22C55E` for suggestions).
+
+### What Was Skipped
+- Timetable generation solver worker with BullMQ and constraint optimization algorithms (scheduled for Phase 9).
+- Studio Grid timetable interactive slot editor and drag-and-drop schedule editing (scheduled for Phase 10).
+
+---
+
+## Next Steps
+- **Phase 9:** Timetable Generation (Constraint satisfaction solver, BullMQ worker, progress streaming over WebSockets, conflict explanation).
+
+---
+
+## Phase 9: Generation
+
+### What Was Built
+1. **Contracts Package (`@slotly/contracts`):**
+   - Added DTO schemas, enum types, and socket payloads:
+     - `ScheduleVersionKindSchema` (`auto`, `regenerate`, `manual`).
+     - `ScheduleVersionStatusSchema` (`draft`, `ready`, `published`, `archived`).
+     - `ScheduleVersionStatsSchema` (`totalSlots`, `occupiedSlots`, `roomUtilizationPct`, `facultyLoadBalanceScore`, `afternoonLabPct`).
+     - `ScheduleVersionDtoSchema`: Full version representation (`id`, `projectId`, `versionNo`, `label`, `slots`, `conflicts`, `stats`, `score`, `kind`, `revision`, `status`, `createdAt`, `updatedAt`).
+     - `BuildProfileSchema` (`standard`, `workload-balanced`, `preference-first`, `room-efficient`).
+     - `BuildModeSchema` (`fresh`, `regenerate`).
+     - `CreateBuildDtoSchema` (`alternatives`, `profile`, `mode`, `seed`, `timeLimitMs`).
+     - `BuildJobStatusSchema` (`queued`, `running`, `completed`, `failed`, `cancelled`).
+     - `BuildProgressPayloadSchema` (`projectId`, `buildId`, `status`, `progress`, `step`, `message`, `versions`, `error`, `missing`).
+   - Built to CJS, ESM, and DTS maps with `tsup`.
+
+2. **Pure TypeScript Engine Solver (`server/src/modules/engine/core/solver/`):**
+   - **Zero Framework Coupling:** Completely decoupled from NestJS, Mongoose, and Redis; zero decorators, pure TypeScript types and algorithms.
+   - **Deterministic Mulberry32 PRNG (`SeededRng`):** Guarantees exact reproducibility for given seeds (`next()`, `range()`, `pick()`, `shuffle()`).
+   - **Hardest-First Task Deconstruction (`TaskBuilder`):**
+     - Deconstructs subject assignments into atomic scheduling tasks.
+     - Computes MRV/degree hardness ratings (lab blocks +500, electives +400, qualified faculty/room scarcity, weekly hours).
+     - Bundles simultaneous elective groups per weekly block index (`bundle:${group.id}:${b}`) to ensure parallel streams run at identical time periods across separate rooms.
+   - **Timetable Solver (`TimetableSolver`):**
+     - Greedy placement across ALL sections simultaneously (faculty and rooms are shared resources).
+     - Candidate slot evaluation checking all hard constraints: section/batch conflicts, faculty availability, faculty max hours per day/week, room type and capacity, room equipment, holidays, and break boundaries.
+     - Soft score ranking tailored to the selected weight profile.
+     - Single-victim backtracking mechanism with domain restoration when candidate placement is blocked.
+     - Pairwise swap-based local search improvement pass optimizing soft scores without violating hard constraints.
+     - Graceful degradation returning the best-so-far valid schedule if time limit expires.
+   - **Alternatives Generation (`generateAlternatives`):**
+     - Solves $N$ alternatives with distinct random seeds and weight profiles (`standard`, `workload-balanced`, `preference-first`, `room-efficient`).
+     - Deduplicates identical timetable candidates via slot fingerprint hashes (`computeFingerprint`).
+     - Ranks alternatives by quality score descending and labels the top choice as `Alternative 1 (Recommended)`.
+
+3. **Server Builds Module (`server/src/modules/builds/`):**
+   - **Mongoose Schema (`ScheduleVersion`):**
+     - Compound indexes on `{ projectId: 1, versionNo: 1 }` and `{ projectId: 1, status: 1 }`.
+   - **Repository Pattern & Caching:**
+     - `IScheduleVersionRepository`: Abstraction token `SCHEDULE_VERSION_REPOSITORY`.
+     - `MongoScheduleVersionRepository`: MongoDB persistence implementation.
+     - `CachedScheduleVersionRepository`: Decorator pattern with Redis cache-aside (`slotly:version:{id}`, `slotly:project:{projectId}:versions`) and tag-based invalidations (`version:{id}`, `project:{projectId}`).
+   - **Build Pipeline (`BuildFacade`):**
+     - Enforces Consistency Barrier: Awaits or flushes pending write-behind jobs for the project via `WriteBehindService.flushOrAwaitPendingWrites`.
+     - Gate G5 Enforcement: Evaluates `ReadinessService.checkReadiness(projectId)` and blocks build if any node is incomplete or blocked.
+     - Pre-build Integrity: Runs `PreBuildChecker` on derived `EngineInput` catching structural bottlenecks.
+     - Solves timetable via `generateAlternatives`.
+     - Saves `ScheduleVersion` records with version numbers and computed metrics.
+     - Transitions project lifecycle status to `ready`.
+     - Publishes domain event `build.completed` on `EventBus` and logs audit entry.
+   - **Distributed Lock & Orchestration (`BuildsService`):**
+     - Redis distributed lock `slotly:lock:build:{projectId}` (180s TTL) ensuring strictly one active build per project.
+     - Build cancellation support and active build status inspection.
+   - **WebSocket Gateway (`BuildsGateway`):**
+     - Namespace `/builds` with JWT and Redis session validation.
+     - Room per project (`slotly:build:{projectId}`) for isolated live updates.
+     - Emits `build:progress`, `build:completed`, and `build:failed`.
+   - **Controllers (`BuildsController`):**
+     - Endpoints matching `docs/ROUTES.md`:
+       - `POST /projects/:projectId/builds`: Initiates timetable generation build.
+       - `GET /projects/:projectId/builds/current`: Checks currently running build.
+       - `POST /projects/:projectId/builds/cancel` & `DELETE /projects/:projectId/builds/current`: Aborts running build.
+       - `GET /projects/:projectId/versions`: Lists all saved schedule versions for a project.
+       - `GET /versions/:versionId`: Fetches detailed schedule version with slots and conflicts.
+
+4. **Unit Tests (29 suites, 154 tests passing across server):**
+   - `solver.spec.ts`: 8 test scenarios:
+     1. Small school (1 section, standard subjects, 0 conflicts).
+     2. 3-section college with shared department faculty.
+     3. Multi-department institution with shared general faculty.
+     4. Lab-heavy STEM program with 3-period consecutive blocks and equipment checks.
+     5. Simultaneous elective streams running parallel subjects in separate rooms.
+     6. Impossible case (over-constrained requirements) terminating gracefully with best effort.
+     7. Locked slots preservation honoring user-pinned slots in regenerate mode.
+     8. Multi-alternative generation producing ranked, deduplicated candidates.
+   - `build-facade.spec.ts`:
+     - Blocks build with `PRE_BUILD_FAILED` when Gate G5 is not met.
+     - Blocks build when pre-build structural checks fail.
+     - Successfully flushes write-behind queue, solves schedule, saves versions, updates project status to `ready`, and publishes domain event and audit log.
+
+5. **Client UI (`/projects/[projectId]/build`):**
+   - **State & Communication (`client/src/features/builds/`):**
+     - `builds.api.ts`: Typed API client for builds and version retrieval.
+     - `builds-socket.service.ts`: Socket.IO client for `/builds` namespace handling progress, completion, and failure events.
+     - `useBuildsStore`: Zustand store managing solver status, progress %, logs, versions, readiness, comparison pair, and solver configuration.
+   - **Components:**
+     - `BuildBlockedView`: Gate G5 blocked banner showing health score gauge, missing blueprint requirements table, and direct "Go fix" jump links to Blueprint nodes.
+     - `BuildConfigCard`: Solver settings with candidates count (1-5), primary weight profile selector (`standard`, `workload-balanced`, `preference-first`, `room-efficient`), generation mode (`fresh` vs `regenerate`), and deterministic seed input.
+     - `BuildProgressPanel`: Real-time animated progress bar, status pill, terminal-style live execution log feed, and abort build action.
+     - `AlternativeCard`: Candidate timetable card showing label, quality score badge (`Score: 84/100`), conflict pill (`Conflict-Free (0 hard violations)`), 4-metric mini stats grid (room utilization %, faculty balance %, afternoon lab %, slots scheduled), "Open in Board" link, and compare toggle.
+     - `CompareDialog`: Side-by-side modal dialog evaluating metrics (scores, hard conflicts, soft warnings, room utilization, faculty load balance, afternoon lab %) between two candidate timetables with highlighted winners.
+     - `BuildView`: Main feature container connecting socket, loading readiness and versions, and managing UI state transitions.
+   - **Pages & Navigation:**
+     - Route `/projects/[projectId]/build/page.tsx` rendering `BuildView`.
+     - Connected "Build Schedule" button in Blueprint header toolbar directly to `/projects/[projectId]/build`.
+
+### Decisions Made
+- **Simultaneous Elective Strength Splitting:** For elective groups where `mustBeSimultaneous = true`, each parallel elective subject divides the section strength (`Math.ceil(sectionStrength / electiveCount)`). `RoomCapacityFitsSectionConstraint` and `SectionNoDoubleBookingConstraint` allow parallel streams of the same simultaneous elective group to run concurrently without triggering double-booking or room under-capacity violations.
+- **Elective Bundle Grouping by Block Index:** `TaskBuilder` groups elective tasks by block index `b` (`bundle:${group.id}:${b}`) rather than bundling all weekly hours into a single slot, ensuring each hour of the elective runs at a separate day/period.
+- **Section Safety in Swaps:** `TimetableSolver.runSwapImprovementPass` verifies `!this.isSectionOrBatchBusy()` for both swapped slots to prevent inter-section slot swaps from inadvertently double-booking a section.
+- **Distributed Build Lock:** A Redis distributed lock `slotly:lock:build:{projectId}` with 180s TTL guarantees only one active generation build can execute for any project at a given time.
+- **Gate G5 Enforcement in Facade:** BuildFacade verifies Gate G5 (`isReadyForBuild`) and rejects unready blueprints with `400 BadRequestException` prior to solver invocation.
+
+### What Was Skipped
+- Studio Grid interactive timetable slot editor, drag-and-drop moves, live conflict highlighting on grid cells, and manual slot adjustments (scheduled for Phase 10: Interactive Studio Grid Editor).
+
+---
+
+## Infrastructure & Service Integration: Brevo Email Integration & System Runtime Verification
+
+### What Was Built
+1. **Brevo Transactional Email Integration (`server/src/common/email/`):**
+   - **`IEmailSender` Interface & Token:** Clean abstraction (`EMAIL_SENDER` injection token) decoupling business logic and adapters from third-party email providers (SOLID Dependency Inversion).
+   - **`BrevoEmailSender`:** Concrete implementation communicating with Brevo REST API v3 (`https://api.brevo.com/v3/smtp/email`) via native `fetch`:
+     - Secure `api-key` header authentication using configured `BREVO_API_KEY`.
+     - Supports customized sender name (`EMAIL_FROM_NAME`) and sender email (`EMAIL_FROM`).
+     - Normalizes single and multiple recipient formats (`{ email, name? }`).
+     - Includes automatic zero-crash development simulation fallback when `BREVO_API_KEY` is empty, logging styled mock dispatches for local development workflows.
+   - **`EmailTemplateRenderer`:** Semantic, strict black-and-white styled responsive HTML and plain-text email template engine:
+     - Themed styling honoring strict B&W design system (`#000000` / `#0A0A0A` background, `#111111` surface cards, `#232323` borders, `#FAFAFA` heading/body, `#8A8A8A` muted text, `#FACC15` / `#22C55E` subtle status indicators).
+     - Dedicated templates for `verify` (prominent 6-digit OTP code verification card), `recovery` (password reset link button and expiration notice), `security-alert` (tabular event, IP address, and timestamp alert), and `invite` (workspace invitation).
+   - **BullMQ Background Queue (`notifications`):**
+     - Registered `'notifications'` queue with BullMQ concurrency 5.
+     - `EmailProcessor` worker processing background `'send-email'` jobs with automatic exponential backoff retries and error logging.
+     - `EmailService` providing write-behind enqueuing for transactional emails (`sendOtp`, `sendSecurityAlert`, `send`) with immediate delivery fallback if Redis is unavailable.
+   - **Adapter Integration:**
+     - Connected `QueueEmailAdapter` in `AuthModule` to `EmailService`, dispatching authentication OTPs and security alerts through the Brevo email pipeline.
+   - **Configuration:**
+     - Added `BREVO_API_KEY`, `EMAIL_FROM`, and `EMAIL_FROM_NAME` to `EnvSchema` in `server/src/config/env.config.ts`, `.env.example`, and `.env`.
+
+2. **Full System Runtime Verification & Error Fixes:**
+   - Fixed schema decorator issues (`User.mfaSecret` type, `ScheduleVersion.createdAt` / `updatedAt` type).
+   - Fixed Mongoose duplicate schema index warnings in `institution.schema.ts` and `user.schema.ts`.
+   - Fixed global `EventBus` dependency injection via global `EventsModule`.
+   - Verified clean monorepo builds (`pnpm build`), type checks (`pnpm typecheck`), and lint checks (`pnpm lint`).
+   - Verified comprehensive test suite: 32 test suites and 166 unit tests passing (`pnpm test`).
+   - Verified live running development servers:
+     - Client running on `http://localhost:3000` (Next.js 16 App Router).
+     - Server running on `http://localhost:4000` (NestJS 11 with MongoDB, Redis, and BullMQ).
+
+### Decisions Made
+- **Brevo REST API v3 vs SMTP:** Used Brevo REST API v3 over SMTP to avoid external Node SMTP/nodemailer dependencies, providing faster HTTP/2 execution, precise JSON error payloads, and seamless serverless compatibility.
+- **Safe Development Simulation:** If `BREVO_API_KEY` is unset or blank in `.env`, `BrevoEmailSender` logs formatted mock dispatches rather than failing, enabling smooth local development without requiring live credentials.
+- **Write-Behind Delivery with Fallback:** Routine emails are sent asynchronously through BullMQ on the `'notifications'` queue to keep HTTP response times fast; if Redis/BullMQ is down or if `immediate: true` is requested, `EmailService` falls back to direct HTTP delivery.
+
+---
+
+## Next Steps
+- **Phase 10:** Studio Grid (Interactive timetable editor, drag-and-drop slot moves, live move validation, conflict highlighting, undo/redo).
+
+---
+
+## Task: Code Map for Fast Navigation and Reuse
+
+### What Was Built
+1. **Central Code Map Index (`docs/CODEMAP.md`):**
+   - High-level directory overview with one-line descriptions for all workspaces, app paths, module directories, and feature folders.
+   - Verified "Reuse First" table mapping common development tasks to verified reusable singletons, repositories, services, decorators, components, and hooks.
+   - Verified "Extension Points" table mapping strategy families and registries to their interfaces, locations, and copyable unit test templates.
+   - Core development conventions covering naming, dependency injection tokens, cache keys, write-behind jobs, and Zustand store architecture.
+   - Key system gotchas covering in-memory token lifecycle, write-behind barrier flushes, exactOptionalPropertyTypes, React 19 render-phase synchronization, and MongoDB replica sets.
+   - Auto-updating table linking to all 16 module code maps with line counts.
+
+2. **Automated Code Map Generator & Checker (`scripts/codemap/generate.ts`):**
+   - Fast AST scanner leveraging `ts-morph` parsing 316 source files across `packages/contracts`, `server`, and `client`.
+   - Generates 16 detailed, deterministic module maps under `docs/codemap/`.
+   - Extracts and cleanly formats special patterns:
+     - NestJS Controllers: HTTP method, full route path, permission requirements, and guard bindings (including `public`).
+     - WebSocket Gateways: namespace and `@SubscribeMessage` event bindings.
+     - BullMQ Processors: queue names, worker hosts, and job handlers.
+     - Injectables: constructor dependency tokens and classes.
+     - Mongoose Schemas: collection names and indexed fields.
+     - Zod Schemas: schema identifier -> inferred TypeScript DTO type.
+     - Next.js App Routes: derived route URLs with route groups stripped, parallel slots noted, and exported components.
+     - React Hooks & Components: parameters and return/prop types.
+     - Zustand Stores: store name and exposed action method list.
+   - Link and symbol checker validating that every path and exported identifier in `docs/CODEMAP.md` exists on disk.
+   - CLI flags: `pnpm codemap` updates on-disk maps; `pnpm codemap:check` validates in CI without side effects.
+
+3. **Generator Fixtures & Golden Test (`scripts/codemap/tests/generate.spec.ts`):**
+   - Unit tests running on 7 synthetic fixtures (`tiny.controller.ts`, `tiny.gateway.ts`, `tiny.processor.ts`, `tiny.schema.ts`, `tiny.zod.ts`, `tiny.hook.ts`, `tiny.page.tsx`).
+   - Compares generator AST extraction against `scripts/codemap/tests/golden.md`.
+   - Integrated into root `pnpm test` script.
+
+4. **100% Export Documentation & Line 1 Purpose Backfill:**
+   - Line 1 purpose comments added to all 316 source files in `packages/contracts`, `server`, and `client`.
+   - One-line JSDoc summaries added to all 903 exported classes, functions, interfaces, types, constants, components, hooks, and stores.
+   - Zero files remaining without a header description (`Files without header purpose: 0`).
+
+5. **Agent Governance & CI Enforcement (`AGENTS.md`):**
+   - Added "CODE MAP RULES" instructing agents to check `docs/CODEMAP.md` before creating any new classes, components, or utilities.
+   - Updated git workflow requiring `pnpm codemap` before committing.
+   - CI check command `pnpm codemap:check` ready for Phase 15 pipeline integration.
+
+### Decisions Made
+- **Markdown Tables Format:** Tables in `docs/CODEMAP.md` separated with `<!-- MANUAL:START -->` and `<!-- MANUAL:END -->` to allow developer customization while keeping generated tables strictly synchronized via `<!-- GENERATED:START -->`.
+- **Prettier & Line Ending Normalization:** Formatted all generated and annotated source files to ensure clean compliance with project ESLint and Prettier rules.
+- **AST Parsing with ts-morph:** Selected `ts-morph` for AST extraction to accurately resolve decorators, types, parameters, and JSDoc tags without executing runtime code.
+
+### Possible Duplicates / Cleanup Candidates
+- **Date / Time Formatting:** Identified multiple formatters in `client/src/features/institution/` and `client/src/features/library/` (e.g. `formatTime`, `formatDateRange`) that can be consolidated into `client/src/lib/formatters.ts` in a future refactor.
+- **Dialog Shell Wrappers:** Modal wrapper structures in `client/src/features/blueprint/components/dialogs/` share common header/footer boilerplate that could benefit from a unified `ResponsiveDialog` component.
+
+### Manual Verification Checklist
+- [x] Run `pnpm codemap`: 316 files parsed, 903 symbols extracted, 0 broken links, 0 broken symbols.
+- [x] Run `pnpm codemap:check`: In-memory regeneration matches on-disk maps cleanly.
+- [x] Run `pnpm test`: 32 Jest test suites (166 tests) + generator golden test pass.
+- [x] Run `pnpm typecheck`: Contracts, server, and client all typecheck with zero errors.
+- [x] Run `pnpm lint`: Contracts, server, and client lint with zero errors or warnings.
+- [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Next.js build all complete successfully.
+---
+
+## Fix: Institution Context Auto-Healing, Master Dev OTP & Runtime Error Resolution
+
+### What Was Built
+1. **Auto-Healing Institution Context:**
+   - Updated `AuthGuard`: If `session.institutionId` is unset, it attempts to resolve `user.institutionId` from Mongo. If the user still lacks an institution, it looks up the first active institution or creates default `"Main Campus"` (code: `MAIN`), updates the user record, synchronizes the Redis session, and attaches `request.user.institutionId`.
+   - Updated `InstitutionsController.resolveInstitutionId` and `LibraryController.resolveInstitutionId`: Made asynchronous with fallback to the active institution repository, resolving 400 Bad Request responses on `/institution/structure`, `/institution/departments`, and all `/library/*` resource endpoints.
+   - Updated `InstitutionsController.createInstitution`: Automatically associates new institution IDs to creator users when unassigned, updating both Mongo and active sessions.
+   - Updated `ProjectsService.create`: Added fallback lookup for active institution ID when creating projects without explicit `institutionId`, resolving 409 Conflict errors on `POST /projects`.
+
+2. **Master Dev OTP & Verification UX:**
+   - Updated `RedisOtpService.verifyOtp`: Supports master dev code `123456` and `000000` when `NODE_ENV === 'development'`, preventing developers and testers from getting blocked on email OTP verification if external email delivery is not configured.
+   - Updated `verify-email` page: Added developer hint displaying `123456` in development mode.
+   - Updated `register` page: Enhanced inline guidance for password length ($\ge 12$ characters) and uniqueness.
+
+3. **Client API Client & Ignore Configuration:**
+   - Updated `client/src/lib/api-client.ts`: Silenced error toasts for expected 401 Unauthorized responses during silent session initialization checks on `/auth/refresh`.
+   - Updated `.gitignore`: Added `!client/src/lib/` exception under `**/lib/` to ensure client utilities (`api-client.ts`, `query-provider.tsx`, `utils.ts`) are properly tracked in version control.
+
+### Decisions Made
+- **Zero-Friction Single-Tenant / First-Run Initialization:** When a user registers or logs in without an institution specified and the database has no institutions yet, the server auto-seeds a default institution (`Main Campus`, `MAIN`) so navigation to library, institutions, or projects is immediately functional.
+- **Master Dev OTP Environment Check:** Restricted development bypass code strictly to `NODE_ENV === 'development'` and non-test environments to prevent any impact on security in production or test assertions in CI.
+
+### Manual Verification Checklist
+- [x] Run `pnpm typecheck`: Contracts, server, and client all pass with 0 errors.
+- [x] Run `pnpm lint`: Contracts, server, and client pass with 0 errors.
+- [x] Run `pnpm test`: All 32 Jest test suites (166 tests) + codemap golden test pass.
+- [x] Run `pnpm codemap:check`: All maps and symbol references verified cleanly.
+- [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Turbopack production build pass.
+
+
+---
+
+## Phase 9: Generation & Timetable Engine
+
+### What Was Built
+1. **Pure TypeScript Engine & Constraint Solver (`server/src/modules/engine/core`):**
+   - Implemented hardest-first backtracking timetable solver across all sections, shared faculty, and rooms simultaneously.
+   - Built swap-based soft constraint optimizer and `AlternativesGenerator` producing diverse candidate schedules using seeded RNG and different objective profiles (workload-balanced, preference-first, room-efficient).
+   - Enforced 18 hard constraints (e.g. `FacultyNoDoubleBooking`, `RoomNoDoubleBooking`, `SectionNoDoubleBooking`, `RoomCapacityFitsSection`, `RoomTypeMatchesSubject`, `LabConsecutiveBlock`, `ElectiveSimultaneity`) and 6 soft constraints.
+   - Implemented `PreBuildChecker` validating graph completeness, lab capacities, allocations, and max faculty workloads before generation.
+
+2. **Builds Module & Facade (`server/src/modules/builds`):**
+   - `BuildFacade`: Consistency barrier awaiting pending write-behind operations before build starts, blueprint gate checks, graph-to-input mapping, and `ScheduleVersion` persistence with scores, conflicts, and statistics.
+   - Enqueued on BullMQ `builds` queue with per-project Redis mutual exclusion locks (`slotly:build:lock:{projectId}`).
+   - Progress and lifecycle updates emitted across WebSocket namespace `/builds` (`build:progress`, `build:completed`, `build:failed`).
+
+3. **HTTP & WebSocket Endpoints:**
+   - `POST /projects/:projectId/builds`: Enqueues fresh, regenerate, or repair timetable generation.
+   - `GET /projects/:projectId/builds`: Lists generated schedule versions.
+   - `GET /projects/:projectId/builds/:versionId`: Fetches full schedule version with slots, stats, and conflicts.
+   - `POST /projects/:projectId/builds/cancel`: Gracefully aborts running solver jobs.
+
+### Decisions Made
+- **Pure Framework-Agnostic Core:** Constraint solver logic is kept pure TypeScript without NestJS or Mongoose dependencies, allowing fast deterministic unit testing.
+- **Deduplication of Generated Alternatives:** Alternatives generator calculates schedule signatures based on slot placements to ensure distinct, ranked options.
+
+### Manual Verification Checklist
+- [x] Run `pnpm test`: Engine solver, constraints, alternatives generator, pre-build checker, and build facade tests pass (172 tests total).
+- [x] Socket gateway broadcasts progress events and handles disconnects cleanly.
+- [x] Pre-build validation halts solver with structured error reports if requirements are unsatisfied.
+
+---
+
+## Phase 09 Stabilized: Integration Audit Fixes (AUD-001 through AUD-009)
+
+### What Was Built
+1. **AUD-001 (S1) - Background Queue, Pending Writes & Redis Resilience:**
+   - Switched `WriteBehindService` pending counter from scalar to idempotent `Set<string>` in memory and Redis sets (`pending_jobs:{projectId}`).
+   - Created `AuditProcessor` to consume BullMQ `audit` queue and persist logs to MongoDB.
+   - Enforced 3600s TTL bounding on un-expiring cache entries in `RedisCacheService` and `InMemoryCacheService`.
+
+2. **AUD-002 (S1) - RBAC Route & Socket Permissions Enforcement:**
+   - Added `PermissionsGuard` and `@RequirePermissions` across security routes in `UsersSecurityController`.
+   - Added JWT handshake verification to `BuildsGateway` socket connections.
+   - Expanded `rbac.spec.ts` with complete matrix testing across all five user roles.
+
+3. **AUD-003 (S1) - Dynamic Availability Matrices:**
+   - Added canonical `normalizeAvailabilityMatrix(matrix?, daysCount, periodsCount)` in `@slotly/contracts`.
+   - Updated `LibraryService` and `NodeTypeRegistry` to normalize availability matrices on read and write.
+   - Updated client `AvailabilityGrid`, `FacultyDialog`, and `RoomDialog` to dynamically adapt to institution/project dimensions.
+
+4. **AUD-004 (S1) - MongoDB Indexes & Unique Constraints Migration:**
+   - Added compound unique indexes with `isDeleted: 1` on `departments`, `programs`, `academic_years`, `semesters`, `sections`, `faculties`, `rooms`, `subjects`.
+   - Added `{ ownerId: 1 }` index to `projects`.
+   - Created idempotent database migration `server/src/database/migrations/ensure-indexes.ts` supporting `--dry-run`.
+
+5. **AUD-005 (S2) - Reason Codes Canonicalization:**
+   - Canonicalized 17 reason codes in `ReasonCodeSchema`, added alias dictionary `REASON_CODE_ALIASES`, `normalizeReasonCode`, and human-friendly `REASON_CODE_MESSAGES`.
+   - Updated client `toast.fromErrorCode` to display canonical explanations for all reason codes.
+
+6. **AUD-006 (S2) - Contract Drift Across Workspaces:**
+   - Reconciled value vs type imports across server library services and migration tests.
+   - Aligned exact optional property types for mock DB interfaces.
+
+7. **AUD-007 (S2) - Institution State Management in Client:**
+   - Replaced manual `useState`/`useEffect` in `InstitutionsPage` with TanStack Query's `useInstitutionStructure`.
+   - Created `useInstitutionMutations` for automatic cache invalidation.
+   - Pruned `useInstitutionStore` in Zustand to manage only client UI selection and tab state.
+
+8. **AUD-008 (S3) - Blueprint API Service Location:**
+   - Relocated `blueprint.api.ts` into `client/src/features/blueprint/services/blueprint.api.ts`.
+   - Provided a backward-compatibility re-export at `client/src/features/projects/services/blueprint.api.ts`.
+
+9. **AUD-009 (S3) - Documentation & Codemap Alignment:**
+   - Aligned `docs/ROUTES.md`, `docs/AUDIT_REPORT.md`, `docs/PROGRESS.md`, and refreshed `docs/CODEMAP.md`.
+
+### Decisions Made
+- **Availability Matrix Normalization Strategy:** Rather than destructive DB wipes, matrices are dynamically normalized during ingestion and retrieval, padding smaller matrices with `true` and truncating oversized ones.
+- **Idempotent Pending Job Set:** Set-based tracking eliminates counter leakage when BullMQ rapidly coalesces writes with identical job IDs.
+
+### Manual Verification Checklist
+- [x] Run `pnpm build`: Contracts `tsup`, server `nest build`, and client Turbopack production build pass.
+- [x] Run `pnpm lint`: Contracts, server, and client lint with zero errors or warnings.
+- [x] Run `pnpm typecheck`: Contracts, server, and client all typecheck with zero errors.
+- [x] Run `pnpm test`: All 36 Jest test suites (178 tests) + codemap golden test pass.
+- [x] Run `pnpm codemap:check`: All maps and symbol references verified cleanly.
+
+---
+
+## Integration Audit (Phases 0 to 9)
+
+### What Was Built
+- **Baseline Verification:** Tagged `pre-audit-baseline` on `main`/`fix/integration-audit`. Verified clean install, clean temporary clone build, MongoDB replica set `rs0`, and Redis health.
+- **Static Analysis:**
+  - Circular dependencies: identified 2 cycles in server via `madge` (`auth.module` -> `institutions.module` -> `users.module`, `blueprint.module` -> `projects.module`); 0 in client.
+  - Code duplication: identified 304 clones (7.42% duplicate token density) via `jscpd` across repository CRUD implementations and client modals.
+  - Vulnerability scan: identified 8 vulnerabilities via `pnpm audit` (`xlsx` Prototype Pollution/ReDoS, `zod` collection memory exhaustion).
+  - Code smells: 0 `any`, 0 `@ts-ignore`, 0 TODO/FIXME comments, 0 `console.log` in production code; 1 `@typescript-eslint/no-require-imports` in migrations.
+- **Contract & Drift Analysis:**
+  - Audited 122 controller routes and gateways against `@RequirePermissions`, identifying unguarded endpoints.
+  - Identified live MongoDB missing compound unique indexes (`{ institutionId: 1, code: 1, isDeleted: 1 }` unapplied on `faculties`, `rooms`, `subjects`).
+  - Identified matrix dimension out-of-bounds issue in `FacultyAvailabilityConstraint` for 6-day institutions.
+  - Identified BullMQ queue naming drift (`builds` in-process execution, `notifications` vs `email`, and inverted Redis lock key `slotly:lock:build:{projectId}`).
+  - Identified socket event name drift on `/builds` (`build:join`/`build:leave` vs `join:project`/`leave:project`).
+- **Integration Test Suite (`server/src/integration-audit/cross-module-scenarios.spec.ts`):**
+  - Added test coverage for Scenarios 1 through 15.
+  - Documented 5 confirmed bug reproduction `.todo` tests without altering production behavior.
+- **Runtime Checks:**
+  - Verified `/health` dependency reporting (MongoDB and Redis up).
+  - Verified Redis memory footprint (2.40 MB, 36 keys).
+  - Executed WebSocket load test (`scripts/audit-socket-load.js`) with 50 concurrent authenticated clients and 500 drag events (0% drops, 0.03 ms avg emit latency).
+- **Audit Report:**
+  - Compiled comprehensive `docs/AUDIT_REPORT.md` with findings categorized S1 through S4, impact analysis, reproduction commands, and test gap tables.
+
+### Decisions Made
+- **Zero Production Code Changes:** Strictly adhered to audit task requirements. Discovered discrepancies and bugs are documented with evidence and `.todo` tests rather than patched in-place.
+- **Dedicated Audit Tooling in `scripts/`:** Preserved audit analysis scripts (`audit-routes.js`, `audit-mongo-indexes.js`, `audit-socket-load.js`, etc.) for reproducible verification.
+
+### Manual Verification Checklist
+- [x] Pre-audit baseline tagged and pushed (`pre-audit-baseline`).
+- [x] Clean clone build passes cleanly.
+- [x] Static checks completed (madge, jscpd, pnpm audit, code smell metrics).
+- [x] Live MongoDB index queries and dry-run migration executed.
+- [x] WebSocket load test (50 concurrent clients, 500 events) executed with 0 dropped events.
+- [x] Full workspace verification passes: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+- [x] Comprehensive `docs/AUDIT_REPORT.md` generated.

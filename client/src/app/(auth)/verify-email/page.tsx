@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -87,6 +88,11 @@ function VerifyEmailForm() {
             required
             autoFocus
           />
+          {process.env.NODE_ENV !== 'production' && (
+            <p className="text-[11px] font-mono text-[#8A8A8A] mt-1">
+              Dev hint: check server logs or use code <code className="text-[#FACC15]">123456</code>
+            </p>
+          )}
         </div>
 
         <Button
@@ -117,6 +123,7 @@ function VerifyEmailForm() {
   );
 }
 
+/** React component rendering verify email page. */
 export default function VerifyEmailPage() {
   return (
     <Suspense fallback={<div className="p-8 text-center text-xs font-mono text-[#8A8A8A]">Loading verification...</div>}>

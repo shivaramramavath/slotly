@@ -1,3 +1,4 @@
+// HTTP controller handling engine.controller endpoints.
 import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { PermissionsGuard } from '../../../common/rbac/permissions.guard';
@@ -9,10 +10,13 @@ import type {
   ValidationReportDto,
 } from '@slotly/contracts';
 
+/** Controller handling engine controller HTTP endpoints. */
 @Controller()
 @UseGuards(AuthGuard, PermissionsGuard)
 export class EngineController {
-  constructor(private readonly engineValidationService: EngineValidationService) {}
+  constructor(
+    private readonly engineValidationService: EngineValidationService,
+  ) {}
 
   @Post('projects/:projectId/validate')
   @RequirePermissions('BLUEPRINT_READ')
@@ -20,7 +24,10 @@ export class EngineController {
     @Param('projectId') projectId: string,
     @Body() dto: ValidateProjectDto,
   ): Promise<ValidationReportDto> {
-    return this.engineValidationService.validateProject(projectId, dto?.slots || []);
+    return this.engineValidationService.validateProject(
+      projectId,
+      dto?.slots || [],
+    );
   }
 
   @Post('versions/:versionId/validate')
@@ -29,6 +36,9 @@ export class EngineController {
     @Param('versionId') versionId: string,
     @Body() dto: ValidateVersionDto,
   ): Promise<ValidationReportDto> {
-    return this.engineValidationService.validateVersion(versionId, dto?.slots || []);
+    return this.engineValidationService.validateVersion(
+      versionId,
+      dto?.slots || [],
+    );
   }
 }

@@ -1,7 +1,9 @@
+// Core implementation for min-hours-per-week.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing min hours per week constraint. */
 export class MinHoursPerWeekConstraint implements IConstraint {
   readonly id = 'min-hours-per-week';
   readonly name = 'Min Hours Per Week';
@@ -14,7 +16,12 @@ export class MinHoursPerWeekConstraint implements IConstraint {
     const facultySlots = new Map<string, Slot[]>();
 
     for (const slot of currentState.slots) {
-      if (!slot.facultyId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.facultyId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
       const list = facultySlots.get(slot.facultyId) || [];

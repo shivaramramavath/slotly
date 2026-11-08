@@ -1,3 +1,4 @@
+// Domain service orchestrating institution.api business logic.
 import { apiClient } from '@/lib/api-client';
 import type {
   InstitutionDto,
@@ -22,6 +23,7 @@ import type {
   CreateHolidayDto,
 } from '@slotly/contracts';
 
+/** Constant representing institution api. */
 export const institutionApi = {
   // Structure (cached tree)
   async getStructure(institutionId?: string): Promise<InstitutionStructureDto> {

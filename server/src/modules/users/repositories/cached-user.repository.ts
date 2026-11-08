@@ -1,3 +1,4 @@
+// Database repository managing cached-user.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
@@ -5,6 +6,7 @@ import { CachedRepository } from '../../../common/database/cached.repository';
 import type { User } from '../schemas/user.schema';
 import type { UserRepository } from './user.repository';
 
+/** Injectable service providing cached user repository logic. */
 @Injectable()
 export class CachedUserRepository
   extends CachedRepository<User>

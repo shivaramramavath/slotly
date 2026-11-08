@@ -1,7 +1,9 @@
+// Core implementation for faculty-no-double-booking.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing faculty no double booking constraint. */
 export class FacultyNoDoubleBookingConstraint implements IConstraint {
   readonly id = 'faculty-no-double-booking';
   readonly name = 'Faculty No Double Booking';
@@ -14,7 +16,12 @@ export class FacultyNoDoubleBookingConstraint implements IConstraint {
     const seen = new Map<string, Slot[]>();
 
     for (const slot of currentState.slots) {
-      if (!slot.facultyId || slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        !slot.facultyId ||
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -37,7 +44,8 @@ export class FacultyNoDoubleBookingConstraint implements IConstraint {
         const faculty = currentState.findFaculty(facultyId!);
         const facultyName = faculty?.name || facultyId;
 
-        const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
+        const dayName =
+          currentState.input.settings.days[day] || `Day ${day + 1}`;
 
         violations.push({
           id: `viol:faculty-double-book:${facultyId}:${day}:${period}`,

@@ -1,3 +1,4 @@
+// HTTP controller handling library.controller endpoints.
 import {
   Controller,
   Get,
@@ -53,19 +54,39 @@ import { PermissionsGuard } from '../../../common/rbac/permissions.guard';
 import { RequirePermissions } from '../../../common/rbac/roles.decorator';
 import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
 import { LibraryService } from '../services/library.service';
+import { INSTITUTION_REPOSITORY } from '../../institutions/repositories/institution.repository';
+import type { InstitutionRepository } from '../../institutions/repositories/institution.repository';
+import { Optional, Inject } from '@nestjs/common';
 
+/** Controller handling library controller HTTP endpoints. */
 @Controller('library')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class LibraryController {
-  constructor(private readonly libraryService: LibraryService) {}
+  constructor(
+    private readonly libraryService: LibraryService,
+    @Optional()
+    @Inject(INSTITUTION_REPOSITORY)
+    private readonly institutionRepo?: InstitutionRepository,
+  ) {}
 
-  private resolveInstitutionId(
+  private async resolveInstitutionId(
     req: Request & {
       user: RequestUser & { institutionId?: string | undefined };
     },
     queryInstId?: string,
-  ): string {
-    const id = queryInstId || req.user.institutionId;
+  ): Promise<string> {
+    let id = queryInstId || req.user.institutionId;
+    if (!id && this.institutionRepo) {
+      const inst = await this.institutionRepo.findOne({ isDeleted: false });
+      if (inst) {
+        id = (
+          inst.id || (inst as unknown as { _id?: { toString(): string } })._id
+        )?.toString();
+        if (id) {
+          req.user.institutionId = id;
+        }
+      }
+    }
     if (!id) {
       throw new BadRequestException(
         'Institution context is required. Please provide institutionId.',
@@ -91,7 +112,7 @@ export class LibraryController {
     @Query('page') pageStr?: string,
     @Query('limit') limitStr?: string,
   ): Promise<{ items: FacultyDto[]; total: number }> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     const archived =
       archivedStr === 'true'
         ? true
@@ -145,7 +166,7 @@ export class LibraryController {
     @Body(new ZodValidationPipe(CreateFacultyDtoSchema)) dto: CreateFacultyDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<FacultyDto> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     const f = await this.libraryService.createFaculty(
       institutionId,
       dto,
@@ -236,7 +257,7 @@ export class LibraryController {
     @Query('page') pageStr?: string,
     @Query('limit') limitStr?: string,
   ): Promise<{ items: SubjectDto[]; total: number }> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     const archived =
       archivedStr === 'true'
         ? true
@@ -302,7 +323,7 @@ export class LibraryController {
     @Body(new ZodValidationPipe(CreateSubjectDtoSchema)) dto: CreateSubjectDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<SubjectDto> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     const s = await this.libraryService.createSubject(
       institutionId,
       dto,
@@ -377,7 +398,7 @@ export class LibraryController {
     },
     @Query('institutionId') queryInstId?: string,
   ): Promise<ElectiveGroupDto[]> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     const groups = await this.libraryService.getElectiveGroups(institutionId);
     return groups.map((g) => ({
       ...g,
@@ -396,7 +417,7 @@ export class LibraryController {
     dto: CreateElectiveGroupDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<ElectiveGroupDto> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     const eg = await this.libraryService.createElectiveGroup(
       institutionId,
       dto,
@@ -463,7 +484,7 @@ export class LibraryController {
     @Query('page') pageStr?: string,
     @Query('limit') limitStr?: string,
   ): Promise<{ items: RoomDto[]; total: number }> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     const minCapacity = minCapacityStr
       ? parseInt(minCapacityStr, 10)
       : undefined;
@@ -523,7 +544,7 @@ export class LibraryController {
     @Body(new ZodValidationPipe(CreateRoomDtoSchema)) dto: CreateRoomDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<RoomDto> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     const r = await this.libraryService.createRoom(
       institutionId,
       dto,
@@ -596,7 +617,7 @@ export class LibraryController {
     matchReq: RoomMatchRequest,
     @Query('institutionId') queryInstId?: string,
   ): Promise<RoomMatchResult[]> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     return this.libraryService.matchRooms(institutionId, matchReq);
   }
 
@@ -611,7 +632,7 @@ export class LibraryController {
     qualReq: FacultyQualificationRequest,
     @Query('institutionId') queryInstId?: string,
   ): Promise<FacultyQualificationResult[]> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     return this.libraryService.qualifyFaculty(institutionId, qualReq);
   }
 
@@ -653,7 +674,7 @@ export class LibraryController {
     @Body('rows') rows: Record<string, unknown>[],
     @Query('institutionId') queryInstId?: string,
   ): Promise<{ inserted: number; errors: number }> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     if (!rows || !Array.isArray(rows)) {
       throw new BadRequestException(
         'Valid array of rows is required for import',
@@ -679,7 +700,7 @@ export class LibraryController {
     @Query('institutionId') queryInstId?: string,
     @Res() res?: Response,
   ): Promise<void> {
-    const institutionId = this.resolveInstitutionId(req, queryInstId);
+    const institutionId = await this.resolveInstitutionId(req, queryInstId);
     const format = formatStr === 'csv' ? 'csv' : 'xlsx';
     const { buffer, filename, mimeType } =
       await this.libraryService.exportLibrary(institutionId, entity, format);

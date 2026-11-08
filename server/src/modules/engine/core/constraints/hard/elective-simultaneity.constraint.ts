@@ -1,7 +1,9 @@
+// Core implementation for elective-simultaneity.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing elective simultaneity constraint. */
 export class ElectiveSimultaneityConstraint implements IConstraint {
   readonly id = 'elective-simultaneity';
   readonly name = 'Elective Simultaneity';
@@ -59,15 +61,21 @@ export class ElectiveSimultaneityConstraint implements IConstraint {
           );
 
           // If some group subjects are scheduled at this time but others are scheduled at a different time
-          if (scheduledSubjectIds.size < sectionGroupSubjects.length && sectionGroupSubjects.length > 1) {
-            const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
+          if (
+            scheduledSubjectIds.size < sectionGroupSubjects.length &&
+            sectionGroupSubjects.length > 1
+          ) {
+            const dayName =
+              currentState.input.settings.days[day] || `Day ${day + 1}`;
             violations.push({
               id: `viol:elective-simultaneity:${group.id}:${sectionId}:${timeKey}`,
               constraintId: this.id,
               severity: 'error',
               type: 'hard',
               sectionId,
-              slotRefs: slots.filter((s) => s.day === day && s.period === period).map((s) => s.id),
+              slotRefs: slots
+                .filter((s) => s.day === day && s.period === period)
+                .map((s) => s.id),
               message: `Elective group '${group.name}' subjects must run simultaneously, but only ${scheduledSubjectIds.size}/${sectionGroupSubjects.length} subjects are scheduled on ${dayName} at Period ${period}.`,
               suggestions: [],
             });

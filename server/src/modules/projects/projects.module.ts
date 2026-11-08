@@ -1,3 +1,4 @@
+// Core implementation for projects.module in server/src/modules/projects.
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Project, ProjectSchema } from './schemas/project.schema';
@@ -12,6 +13,7 @@ import { AppQueueModule } from '../../common/queue/queue.module';
 import { AuditModule } from '../../common/audit/audit.module';
 import { UsersModule } from '../users/users.module';
 
+/** Class implementing projects module. */
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Project.name, schema: ProjectSchema }]),

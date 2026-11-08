@@ -1,3 +1,4 @@
+// Core implementation for logging.interceptor in server/src/common/interceptors.
 import {
   CallHandler,
   ExecutionContext,
@@ -10,6 +11,7 @@ import { tap } from 'rxjs/operators';
 import type { Response } from 'express';
 import { RequestWithId } from '../middleware/request-id.middleware';
 
+/** Injectable service providing logging interceptor logic. */
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');

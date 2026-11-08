@@ -1,9 +1,11 @@
+// React component for parent-regression-banner.
 'use client';
 
 import { AlertTriangle, X } from 'lucide-react';
 import { useBlueprintStore } from '../../store/blueprint.store';
 import { Button } from '@/components/ui/button';
 
+/** React component rendering parent regression banner. */
 export function ParentRegressionBanner() {
   const regression = useBlueprintStore((s) => s.regressionBanner);
   const setRegressionBanner = useBlueprintStore((s) => s.setRegressionBanner);

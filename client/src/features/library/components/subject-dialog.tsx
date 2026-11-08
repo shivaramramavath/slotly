@@ -1,3 +1,4 @@
+// React component for subject-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -32,6 +33,7 @@ interface SubjectDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering subject dialog. */
 export function SubjectDialog({
   open,
   onOpenChange,

@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import React, { useState } from 'react';
@@ -10,6 +11,7 @@ import { authApi } from '@/features/auth/services/auth.api';
 import { useAuthStore } from '@/features/auth/store/auth.store';
 import { toast } from '@/components/ui/toast';
 
+/** React component rendering login page. */
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);

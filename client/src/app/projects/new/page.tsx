@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import { useState } from 'react';
@@ -21,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { projectsApi } from '@/features/projects/services/projects.api';
 import { blueprintApi } from '@/features/projects/services/blueprint.api';
+import { useAuthStore } from '@/features/auth/store/auth.store';
 import type { CreateProjectDto, PeriodBreak, TermKind } from '@slotly/contracts';
 
 const DAYS_OF_WEEK = [
@@ -33,6 +35,7 @@ const DAYS_OF_WEEK = [
   { id: 0, label: 'Sun' },
 ];
 
+/** React component rendering new project wizard page. */
 export default function NewProjectWizardPage() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -87,9 +90,12 @@ export default function NewProjectWizardPage() {
     setBreaks((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const user = useAuthStore((s) => s.user);
+
   const handleFinish = () => {
     const dto: CreateProjectDto = {
       name,
+      institutionId: user?.institutionId || undefined,
       term: {
         kind: termKind,
         startDate,

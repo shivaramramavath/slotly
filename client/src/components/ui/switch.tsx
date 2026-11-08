@@ -1,11 +1,14 @@
+// React component for switch.
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+/** Interface defining structure for switch props. */
 export interface SwitchProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
 }
 
+/** Constant representing switch. */
 export const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
   ({ className, checked = false, onCheckedChange, disabled, ...props }, ref) => {
     return (

@@ -28,6 +28,7 @@
 
 # Next.js generated files
 next-env.d.ts
+client/AGENTS.md
 
 # NestJS Server
 **/dist/
@@ -36,6 +37,7 @@ next-env.d.ts
 # Build Outputs
 **/build/
 **/lib/
+!client/src/lib/
 **/tmp/
 **/temp/
 

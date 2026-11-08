@@ -1,3 +1,4 @@
+// Domain service orchestrating library.service business logic.
 import {
   Injectable,
   Inject,
@@ -21,6 +22,7 @@ import type {
   ImportEntity,
   ImportValidationReport,
 } from '@slotly/contracts';
+import { normalizeAvailabilityMatrix } from '@slotly/contracts';
 import { EventBus } from '../../../common/events/event-bus.service';
 import { AuditService } from '../../../common/audit/audit.service';
 import { FACULTY_REPOSITORY } from '../repositories/faculty.repository';
@@ -49,7 +51,7 @@ function strVal(val: unknown): string {
 }
 
 function defaultAvailability(): boolean[][] {
-  return Array.from({ length: 7 }, () => Array<boolean>(10).fill(true));
+  return normalizeAvailabilityMatrix(undefined);
 }
 
 function sanitizeUpdate<T>(dto: Record<string, unknown>): Partial<T> {
@@ -62,6 +64,7 @@ function sanitizeUpdate<T>(dto: Record<string, unknown>): Partial<T> {
   return result as unknown as Partial<T>;
 }
 
+/** Injectable service providing library service logic. */
 @Injectable()
 export class LibraryService {
   constructor(
@@ -119,7 +122,7 @@ export class LibraryService {
 
     const created = await this.facultyRepo.create({
       ...dto,
-      availability: dto.availability ?? defaultAvailability(),
+      availability: normalizeAvailabilityMatrix(dto.availability),
       preferredPeriods: dto.preferredPeriods ?? [],
       unavailableSlots: dto.unavailableSlots ?? [],
       subjectIds: dto.subjectIds ?? [],
@@ -150,6 +153,9 @@ export class LibraryService {
     actorId = 'system',
   ): Promise<Faculty> {
     const f = await this.getFacultyById(id);
+    if (dto.availability) {
+      dto.availability = normalizeAvailabilityMatrix(dto.availability);
+    }
     const updated = await this.facultyRepo.update(
       id,
       sanitizeUpdate<Faculty>(dto),
@@ -452,7 +458,7 @@ export class LibraryService {
 
     const created = await this.roomRepo.create({
       ...dto,
-      availability: dto.availability ?? defaultAvailability(),
+      availability: normalizeAvailabilityMatrix(dto.availability),
       institutionId,
       code: dto.code.toUpperCase().trim(),
       isDeleted: false,
@@ -480,6 +486,9 @@ export class LibraryService {
     actorId = 'system',
   ): Promise<Room> {
     const r = await this.getRoomById(id);
+    if (dto.availability) {
+      dto.availability = normalizeAvailabilityMatrix(dto.availability);
+    }
     const updated = await this.roomRepo.update(id, sanitizeUpdate<Room>(dto));
     if (!updated) throw new NotFoundException('Room not found');
 

@@ -1,3 +1,4 @@
+// React component for blueprint-canvas.
 'use client';
 
 import React, { useCallback, useRef, useEffect } from 'react';
@@ -33,6 +34,7 @@ interface BlueprintCanvasProps {
   onCursorMove: (x: number, y: number) => void;
 }
 
+/** React component rendering blueprint canvas. */
 export function BlueprintCanvas({
   onMoveNode,
   onAddEdge,

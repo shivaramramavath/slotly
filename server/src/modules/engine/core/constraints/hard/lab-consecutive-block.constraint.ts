@@ -1,7 +1,9 @@
+// Core implementation for lab-consecutive-block.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing lab consecutive block constraint. */
 export class LabConsecutiveBlockConstraint implements IConstraint {
   readonly id = 'lab-consecutive-block';
   readonly name = 'Lab Consecutive Block';
@@ -17,8 +19,12 @@ export class LabConsecutiveBlockConstraint implements IConstraint {
     for (const slot of currentState.slots) {
       if (slot.type !== 'lab') continue;
 
-      const subject = slot.subjectId ? currentState.findSubject(slot.subjectId) : undefined;
-      const requiredConsecutive = subject?.consecutivePeriods || (slot.span && slot.span > 1 ? slot.span : 2);
+      const subject = slot.subjectId
+        ? currentState.findSubject(slot.subjectId)
+        : undefined;
+      const requiredConsecutive =
+        subject?.consecutivePeriods ||
+        (slot.span && slot.span > 1 ? slot.span : 2);
 
       const span = slot.span || 1;
 
@@ -41,7 +47,9 @@ export class LabConsecutiveBlockConstraint implements IConstraint {
       for (let p = 0; p < span; p++) {
         const currentPeriod = slot.period + p;
         const isBreak = breaks.some(
-          (b) => (b.day === undefined || b.day === slot.day) && b.period === currentPeriod,
+          (b) =>
+            (b.day === undefined || b.day === slot.day) &&
+            b.period === currentPeriod,
         );
         if (isBreak) {
           violations.push({

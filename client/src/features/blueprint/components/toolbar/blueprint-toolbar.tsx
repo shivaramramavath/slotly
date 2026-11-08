@@ -1,3 +1,4 @@
+// React component for blueprint-toolbar.
 'use client';
 
 import {
@@ -41,6 +42,7 @@ interface BlueprintToolbarProps {
   showValidation: boolean;
 }
 
+/** React component rendering blueprint toolbar. */
 export function BlueprintToolbar({ onToggleValidation, showValidation }: BlueprintToolbarProps) {
   const { fitView } = useReactFlow();
   const { undo, redo, canUndo, canRedo } = useBlueprintCommands();

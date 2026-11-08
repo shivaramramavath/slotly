@@ -1,14 +1,18 @@
+// Strategy implementation for room-matcher.strategy.
 import { Injectable } from '@nestjs/common';
 import type { RoomMatchRequest, RoomMatchResult } from '@slotly/contracts';
 import { Room } from '../schemas/room.schema';
 
+/** Constant representing room matcher. */
 export const ROOM_MATCHER = Symbol('ROOM_MATCHER');
 
+/** Interface defining structure for room matcher. */
 export interface IRoomMatcher {
   match(room: Room, req: RoomMatchRequest): RoomMatchResult;
   findMatchingRooms(rooms: Room[], req: RoomMatchRequest): RoomMatchResult[];
 }
 
+/** Injectable service providing standard room matcher logic. */
 @Injectable()
 export class StandardRoomMatcher implements IRoomMatcher {
   match(room: Room, req: RoomMatchRequest): RoomMatchResult {

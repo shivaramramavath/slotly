@@ -1,3 +1,4 @@
+// React component for faculty-dialog.
 'use client';
 
 import React, { useState } from 'react';
@@ -14,7 +15,12 @@ import { Select } from '@/components/ui/select';
 import { AvailabilityGrid } from './availability-grid';
 import { libraryApi } from '../services/library.api';
 import { toast } from '@/components/ui/toast';
-import type { FacultyDto, SubjectDto, DepartmentDto } from '@slotly/contracts';
+import {
+  type FacultyDto,
+  type SubjectDto,
+  type DepartmentDto,
+  normalizeAvailabilityMatrix,
+} from '@slotly/contracts';
 
 interface FacultyDialogProps {
   open: boolean;
@@ -26,6 +32,7 @@ interface FacultyDialogProps {
   onSuccess: () => void;
 }
 
+/** React component rendering faculty dialog. */
 export function FacultyDialog({
   open,
   onOpenChange,
@@ -56,9 +63,8 @@ export function FacultyDialog({
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>(
     faculty?.subjectIds || [],
   );
-  const [availability, setAvailability] = useState<boolean[][]>(
-    faculty?.availability ||
-      Array.from({ length: 7 }, () => Array(8).fill(true)),
+  const [availability, setAvailability] = useState<boolean[][]>(() =>
+    normalizeAvailabilityMatrix(faculty?.availability, 5, 7),
   );
   const [loading, setLoading] = useState(false);
   const [prevFaculty, setPrevFaculty] = useState(faculty);
@@ -79,8 +85,7 @@ export function FacultyDialog({
       setMaxHoursPerWeek(faculty.maxHoursPerWeek);
       setSelectedSubjects(faculty.subjectIds || []);
       setAvailability(
-        faculty.availability ||
-          Array.from({ length: 7 }, () => Array(8).fill(true)),
+        normalizeAvailabilityMatrix(faculty.availability, 5, 7),
       );
     } else {
       setName('');

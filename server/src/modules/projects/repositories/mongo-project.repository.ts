@@ -1,3 +1,4 @@
+// Database repository managing mongo-project.repository persistence.
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,6 +9,7 @@ import type {
   IProjectRepository,
 } from './project.repository.interface';
 
+/** Injectable service providing mongo project repository logic. */
 @Injectable()
 export class MongoProjectRepository
   extends MongoBaseRepository<Project, ProjectDocument>

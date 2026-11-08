@@ -1,5 +1,7 @@
+// Domain service orchestrating dependency-checker.service business logic.
 import { Injectable, BadRequestException } from '@nestjs/common';
 
+/** Interface defining structure for base entity record. */
 export interface BaseEntityRecord {
   id?: string | undefined;
   _id?: unknown;
@@ -8,6 +10,7 @@ export interface BaseEntityRecord {
   isDeleted?: boolean | undefined;
 }
 
+/** Injectable service providing dependency checker service logic. */
 @Injectable()
 export class DependencyCheckerService {
   /**

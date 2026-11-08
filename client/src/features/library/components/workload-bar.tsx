@@ -1,3 +1,4 @@
+// React component for workload-bar.
 'use client';
 
 interface WorkloadBarProps {
@@ -7,6 +8,7 @@ interface WorkloadBarProps {
   showDetails?: boolean;
 }
 
+/** React component rendering workload bar. */
 export function WorkloadBar({
   assignedHours,
   maxHours,

@@ -1,9 +1,12 @@
+// Data schema and persistence model for institution.schema.
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import type { PeriodConfig } from '@slotly/contracts';
 
+/** Type alias for institution document. */
 export type InstitutionDocument = Institution & Document;
 
+/** Class implementing institution. */
 @Schema({ timestamps: true, collection: 'institutions' })
 export class Institution {
   id?: string | undefined;
@@ -15,7 +18,7 @@ export class Institution {
   @Prop({ required: true, unique: true, uppercase: true, trim: true })
   code!: string;
 
-  @Prop({ default: '', trim: true })
+  @Prop({ type: String, default: '', trim: true })
   address?: string | undefined;
 
   @Prop({ type: [Number], default: [1, 2, 3, 4, 5] })
@@ -38,10 +41,9 @@ export class Institution {
   @Prop({ default: false, index: true })
   isDeleted!: boolean;
 
-  @Prop()
+  @Prop({ type: Date })
   deletedAt?: Date | undefined;
 }
 
+/** Zod schema validating institution. */
 export const InstitutionSchema = SchemaFactory.createForClass(Institution);
-InstitutionSchema.index({ code: 1 }, { unique: true });
-InstitutionSchema.index({ isDeleted: 1 });

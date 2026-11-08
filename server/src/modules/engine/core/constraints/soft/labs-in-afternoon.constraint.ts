@@ -1,7 +1,9 @@
+// Core implementation for labs-in-afternoon.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing labs in afternoon constraint. */
 export class LabsInAfternoonConstraint implements IConstraint {
   readonly id = 'labs-in-afternoon';
   readonly name = 'Labs In Afternoon';
@@ -25,8 +27,11 @@ export class LabsInAfternoonConstraint implements IConstraint {
 
       // If scheduled in early morning periods before lunch break
       if (slot.period < lunchBreak) {
-        const subject = slot.subjectId ? currentState.findSubject(slot.subjectId) : undefined;
-        const dayName = currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
+        const subject = slot.subjectId
+          ? currentState.findSubject(slot.subjectId)
+          : undefined;
+        const dayName =
+          currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
 
         violations.push({
           id: `viol:soft:morning-lab:${slot.id}`,

@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import Link from 'next/link';
@@ -19,6 +20,7 @@ import { ProjectStatusBadge } from '@/features/projects/components/project-statu
 import { projectsApi } from '@/features/projects/services/projects.api';
 import { blueprintApi } from '@/features/projects/services/blueprint.api';
 
+/** React component rendering home shell page. */
 export default function HomeShellPage() {
   const { data: projectsData, isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', 'home'],

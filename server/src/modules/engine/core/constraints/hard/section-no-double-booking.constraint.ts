@@ -1,7 +1,9 @@
+// Core implementation for section-no-double-booking.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing section no double booking constraint. */
 export class SectionNoDoubleBookingConstraint implements IConstraint {
   readonly id = 'section-no-double-booking';
   readonly name = 'Section No Double Booking';
@@ -15,7 +17,11 @@ export class SectionNoDoubleBookingConstraint implements IConstraint {
     const sectionSlots = new Map<string, Slot[]>();
 
     for (const slot of currentState.slots) {
-      if (slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
@@ -40,13 +46,33 @@ export class SectionNoDoubleBookingConstraint implements IConstraint {
       const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
 
       // Check if there is a conflict:
-      // A whole section class (batchId is null/undefined) conflicts with ANY other class in that period.
-      // Two classes with the SAME batchId conflict with each other.
-      // Two classes with DIFFERENT batchIds are valid parallel lab sessions.
+      // A whole section class (batchId is null/undefined) conflicts with ANY other class in that period,
+      // EXCEPT when all slots belong to the same simultaneous elective group (parallel elective classes).
       let hasConflict = false;
       const wholeSectionSlots = slots.filter((s) => !s.batchId);
 
-      if (wholeSectionSlots.length > 1) {
+      const areParallelElectives =
+        slots.length > 1 &&
+        slots.every((s) => {
+          if (!s.subjectId) return false;
+          const sub = currentState.findSubject(s.subjectId);
+          if (!sub?.electiveGroupId) return false;
+          const group = currentState.input.electiveGroups.find(
+            (eg) => eg.id === sub.electiveGroupId,
+          );
+          return group?.mustBeSimultaneous === true;
+        }) &&
+        new Set(
+          slots.map((s) =>
+            s.subjectId
+              ? currentState.findSubject(s.subjectId)?.electiveGroupId
+              : undefined,
+          ),
+        ).size === 1;
+
+      if (areParallelElectives) {
+        hasConflict = false;
+      } else if (wholeSectionSlots.length > 1) {
         hasConflict = true;
       } else if (wholeSectionSlots.length === 1 && slots.length > 1) {
         hasConflict = true;

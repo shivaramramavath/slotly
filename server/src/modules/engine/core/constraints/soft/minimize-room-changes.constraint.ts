@@ -1,7 +1,9 @@
+// Core implementation for minimize-room-changes.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation, Slot } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing minimize room changes constraint. */
 export class MinimizeRoomChangesConstraint implements IConstraint {
   readonly id = 'minimize-room-changes';
   readonly name = 'Minimize Room Changes';
@@ -38,11 +40,15 @@ export class MinimizeRoomChangesConstraint implements IConstraint {
         const curr = slots[i]!;
 
         // If consecutive periods with different classrooms
-        if (curr.period === prev.period + (prev.span || 1) && curr.roomId !== prev.roomId) {
+        if (
+          curr.period === prev.period + (prev.span || 1) &&
+          curr.roomId !== prev.roomId
+        ) {
           const prevRoom = currentState.findRoom(prev.roomId!);
           const currRoom = currentState.findRoom(curr.roomId!);
           const section = currentState.findSection(sectionId!);
-          const dayName = currentState.input.settings.days[day] || `Day ${day + 1}`;
+          const dayName =
+            currentState.input.settings.days[day] || `Day ${day + 1}`;
 
           violations.push({
             id: `viol:soft:room-change:${sectionId}:${day}:${curr.period}`,

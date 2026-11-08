@@ -1,10 +1,13 @@
+// React component for project-status-badge.
 import { Badge } from '@/components/ui/badge';
 import type { ProjectLifecycleStatus } from '@slotly/contracts';
 
+/** Interface defining structure for project status badge props. */
 export interface ProjectStatusBadgeProps {
   status: ProjectLifecycleStatus;
 }
 
+/** React component rendering project status badge. */
 export function ProjectStatusBadge({ status }: ProjectStatusBadgeProps) {
   switch (status) {
     case 'draft':

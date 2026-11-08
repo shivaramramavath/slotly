@@ -1,3 +1,4 @@
+// React component for blueprint-palette.
 'use client';
 
 import React from 'react';
@@ -116,6 +117,7 @@ interface BlueprintPaletteProps {
   onAddNode: (type: BlueprintNodeType, parentId?: string) => Promise<{ success: boolean }>;
 }
 
+/** React component rendering blueprint palette. */
 export function BlueprintPalette({ onAddNode }: BlueprintPaletteProps) {
   const nodes = useBlueprintStore((s) => s.nodes);
   const edges = useBlueprintStore((s) => s.edges);

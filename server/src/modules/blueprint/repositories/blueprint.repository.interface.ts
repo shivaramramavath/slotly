@@ -1,7 +1,9 @@
+// Database repository managing blueprint.repository.interface persistence.
 import type { BaseRepository } from '../../../common/database/base.repository';
 import type { Blueprint } from '../schemas/blueprint.schema';
 import type { BlueprintGraphDto, NodePosition } from '@slotly/contracts';
 
+/** Interface defining structure for blueprint repository. */
 export interface IBlueprintRepository extends BaseRepository<Blueprint> {
   findByProject(projectId: string): Promise<Blueprint | null>;
   saveGraph(

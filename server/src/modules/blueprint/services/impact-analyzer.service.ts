@@ -1,6 +1,8 @@
+// Domain service orchestrating impact-analyzer.service business logic.
 import { Injectable } from '@nestjs/common';
 import type { BlueprintImpactDto, BlueprintNodeDto } from '@slotly/contracts';
 
+/** Injectable service providing impact analyzer service logic. */
 @Injectable()
 export class ImpactAnalyzerService {
   analyze(nodeId: string, nodes: BlueprintNodeDto[]): BlueprintImpactDto {

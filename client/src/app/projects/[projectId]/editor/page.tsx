@@ -1,8 +1,10 @@
+// React component for page.
 import Link from 'next/link';
 import { ArrowLeft, Table, Sliders } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
+/** React component rendering studio editor page. */
 export default async function StudioEditorPage({
   params,
 }: {

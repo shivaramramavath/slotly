@@ -1,6 +1,8 @@
+// Database repository managing mongo-base.repository persistence.
 import { Model, Document } from 'mongoose';
 import { BaseRepository } from './base.repository';
 
+/** Class implementing mongo base repository. */
 export abstract class MongoBaseRepository<
   T,
   D extends Document = Document & T,

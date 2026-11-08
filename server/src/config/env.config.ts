@@ -1,5 +1,7 @@
+// Core implementation for env.config in server/src/config.
 import { z } from 'zod';
 
+/** Zod schema validating env. */
 export const EnvSchema = z.object({
   PORT: z.coerce.number().default(4000),
   NODE_ENV: z
@@ -25,15 +27,19 @@ export const EnvSchema = z.object({
   JWT_ACCESS_EXPIRATION: z.string().default('15m'),
   JWT_REFRESH_EXPIRATION: z.string().default('7d'),
   GROQ_API_KEY: z.string().optional().default(''),
+  BREVO_API_KEY: z.string().optional().default(''),
   EMAIL_FROM: z.string().default('noreply@slotly.local'),
+  EMAIL_FROM_NAME: z.string().default('Slotly'),
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().default(1025),
   SMTP_USER: z.string().optional().default(''),
   SMTP_PASS: z.string().optional().default(''),
 });
 
+/** TypeScript type inferred from env config Zod schema. */
 export type EnvConfig = z.infer<typeof EnvSchema>;
 
+/** Function performing validate env. */
 export function validateEnv(config: Record<string, unknown>): EnvConfig {
   const parsed = EnvSchema.safeParse(config);
   if (!parsed.success) {

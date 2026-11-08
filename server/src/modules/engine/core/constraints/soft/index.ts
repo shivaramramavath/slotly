@@ -1,3 +1,4 @@
+// Core implementation for index in server/src/modules/engine/core/constraints/soft.
 export * from './faculty-preferred-periods.constraint';
 export * from './spread-subjects-across-days.constraint';
 export * from './limit-consecutive-same-subject.constraint';

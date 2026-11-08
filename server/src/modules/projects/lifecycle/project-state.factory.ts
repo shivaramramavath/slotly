@@ -1,6 +1,8 @@
+// Core implementation for project-state.factory in server/src/modules/projects/lifecycle.
 import type { ProjectLifecycleStatus } from '@slotly/contracts';
 import type { IProjectState } from './project-state.interface';
 
+/** Class implementing draft state. */
 export class DraftState implements IProjectState {
   readonly status: ProjectLifecycleStatus = 'draft';
 
@@ -27,6 +29,7 @@ export class DraftState implements IProjectState {
   }
 }
 
+/** Class implementing building state. */
 export class BuildingState implements IProjectState {
   readonly status: ProjectLifecycleStatus = 'building';
 
@@ -53,6 +56,7 @@ export class BuildingState implements IProjectState {
   }
 }
 
+/** Class implementing ready state. */
 export class ReadyState implements IProjectState {
   readonly status: ProjectLifecycleStatus = 'ready';
 
@@ -85,6 +89,7 @@ export class ReadyState implements IProjectState {
   }
 }
 
+/** Class implementing pending approval state. */
 export class PendingApprovalState implements IProjectState {
   readonly status: ProjectLifecycleStatus = 'pending_approval';
 
@@ -116,6 +121,7 @@ export class PendingApprovalState implements IProjectState {
   }
 }
 
+/** Class implementing published state. */
 export class PublishedState implements IProjectState {
   readonly status: ProjectLifecycleStatus = 'published';
 
@@ -142,6 +148,7 @@ export class PublishedState implements IProjectState {
   }
 }
 
+/** Class implementing archived state. */
 export class ArchivedState implements IProjectState {
   readonly status: ProjectLifecycleStatus = 'archived';
 
@@ -168,6 +175,7 @@ export class ArchivedState implements IProjectState {
   }
 }
 
+/** Class implementing project state factory. */
 export class ProjectStateFactory {
   static create(status: ProjectLifecycleStatus): IProjectState {
     switch (status) {

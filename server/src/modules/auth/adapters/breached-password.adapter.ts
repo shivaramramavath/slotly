@@ -1,11 +1,15 @@
+// Core implementation for breached-password.adapter in server/src/modules/auth/adapters.
 import { Injectable } from '@nestjs/common';
 
+/** Constant representing breached password checker. */
 export const BREACHED_PASSWORD_CHECKER = Symbol('BREACHED_PASSWORD_CHECKER');
 
+/** Interface defining structure for breached password checker. */
 export interface BreachedPasswordChecker {
   isBreachedOrCommon(password: string): Promise<boolean>;
 }
 
+/** Injectable service providing common list password checker logic. */
 @Injectable()
 export class CommonListPasswordChecker implements BreachedPasswordChecker {
   // Built-in list of the most frequent leaked passwords

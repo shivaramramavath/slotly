@@ -1,3 +1,4 @@
+// Route guard controlling access for roles.guard.
 import {
   CanActivate,
   ExecutionContext,
@@ -8,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { UserRole, Permission, RolePermissions } from '@slotly/contracts';
 import { ROLES_KEY, PERMISSIONS_KEY } from './roles.decorator';
 
+/** Interface defining structure for authenticated user. */
 export interface AuthenticatedUser {
   id: string;
   role: UserRole;
@@ -15,6 +17,7 @@ export interface AuthenticatedUser {
   departmentId?: string;
 }
 
+/** Injectable service providing roles guard logic. */
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}

@@ -1,7 +1,9 @@
+// Core implementation for department-rules.constraint in server/src/modules/engine/core/constraints/soft.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing department rules constraint. */
 export class DepartmentRulesConstraint implements IConstraint {
   readonly id = 'department-rules';
   readonly name = 'Department Rules';
@@ -31,7 +33,8 @@ export class DepartmentRulesConstraint implements IConstraint {
         !subject.isElective;
 
       if (isCore && slot.period > 4) {
-        const dayName = currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
+        const dayName =
+          currentState.input.settings.days[slot.day] || `Day ${slot.day + 1}`;
         violations.push({
           id: `viol:soft:dept-rules:${slot.id}`,
           constraintId: this.id,

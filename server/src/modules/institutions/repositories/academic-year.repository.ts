@@ -1,3 +1,4 @@
+// Database repository managing academic-year.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -11,8 +12,10 @@ import {
   AcademicYearDocument,
 } from '../schemas/academic-year.schema';
 
+/** Constant representing academic year repository. */
 export const ACADEMIC_YEAR_REPOSITORY = Symbol('ACADEMIC_YEAR_REPOSITORY');
 
+/** Interface defining structure for academic year repository. */
 export interface AcademicYearRepository extends BaseRepository<AcademicYear> {
   findByProgram(programId: string): Promise<AcademicYear[]>;
   findByInstitution(institutionId: string): Promise<AcademicYear[]>;
@@ -25,6 +28,7 @@ export interface AcademicYearRepository extends BaseRepository<AcademicYear> {
   countActiveByInstitution(institutionId: string): Promise<number>;
 }
 
+/** Injectable service providing mongo academic year repository logic. */
 @Injectable()
 export class MongoAcademicYearRepository
   extends MongoBaseRepository<AcademicYear, AcademicYearDocument>
@@ -81,6 +85,7 @@ export class MongoAcademicYearRepository
   }
 }
 
+/** Injectable service providing cached academic year repository logic. */
 @Injectable()
 export class CachedAcademicYearRepository
   extends CachedRepository<AcademicYear>

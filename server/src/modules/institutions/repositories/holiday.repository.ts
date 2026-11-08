@@ -1,3 +1,4 @@
+// Database repository managing holiday.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,13 +9,16 @@ import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import { Holiday, HolidayDocument } from '../schemas/holiday.schema';
 
+/** Constant representing holiday repository. */
 export const HOLIDAY_REPOSITORY = Symbol('HOLIDAY_REPOSITORY');
 
+/** Interface defining structure for holiday repository. */
 export interface HolidayRepository extends BaseRepository<Holiday> {
   findByInstitution(institutionId: string): Promise<Holiday[]>;
   softDelete(id: string): Promise<boolean>;
 }
 
+/** Injectable service providing mongo holiday repository logic. */
 @Injectable()
 export class MongoHolidayRepository
   extends MongoBaseRepository<Holiday, HolidayDocument>
@@ -40,6 +44,7 @@ export class MongoHolidayRepository
   }
 }
 
+/** Injectable service providing cached holiday repository logic. */
 @Injectable()
 export class CachedHolidayRepository
   extends CachedRepository<Holiday>

@@ -1,8 +1,9 @@
+// Core implementation for library.module in server/src/modules/library.
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CacheModule } from '../../common/cache/cache.module';
 import { AuditModule } from '../../common/audit/audit.module';
-import { AuthModule } from '../auth/auth.module';
+import { InstitutionsModule } from '../institutions/institutions.module';
 import { EventBus } from '../../common/events/event-bus.service';
 import { Faculty, FacultySchema } from './schemas/faculty.schema';
 import { Subject, SubjectSchema } from './schemas/subject.schema';
@@ -44,6 +45,7 @@ import { LibraryImportService } from './services/library-import.service';
 import { LibraryService } from './services/library.service';
 import { LibraryController } from './controllers/library.controller';
 
+/** Class implementing library module. */
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -54,7 +56,7 @@ import { LibraryController } from './controllers/library.controller';
     ]),
     CacheModule,
     AuditModule,
-    AuthModule,
+    InstitutionsModule,
   ],
   controllers: [LibraryController],
   providers: [

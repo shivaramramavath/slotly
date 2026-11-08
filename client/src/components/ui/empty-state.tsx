@@ -1,6 +1,8 @@
+// React component for empty-state.
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+/** Interface defining structure for empty state props. */
 export interface EmptyStateProps {
   icon?: React.ReactNode;
   title: string;
@@ -9,6 +11,7 @@ export interface EmptyStateProps {
   className?: string;
 }
 
+/** React component rendering empty state. */
 export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
   return (
     <div

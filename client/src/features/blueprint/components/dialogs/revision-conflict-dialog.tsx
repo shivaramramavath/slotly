@@ -1,3 +1,4 @@
+// React component for revision-conflict-dialog.
 'use client';
 
 import {
@@ -16,6 +17,7 @@ interface RevisionConflictDialogProps {
   onForceOverwrite: () => Promise<void>;
 }
 
+/** React component rendering revision conflict dialog. */
 export function RevisionConflictDialog({
   onReloadServerState,
   onForceOverwrite,

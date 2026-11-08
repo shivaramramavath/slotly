@@ -1,3 +1,4 @@
+// React component for holiday-calendar.
 'use client';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -12,6 +13,7 @@ interface HolidayCalendarProps {
   onDeleteHoliday: (id: string, name: string) => void;
 }
 
+/** React component rendering holiday calendar. */
 export function HolidayCalendar({
   holidays,
   onAddHoliday,

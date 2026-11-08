@@ -1,7 +1,9 @@
+// Core implementation for holiday-exclusion.constraint in server/src/modules/engine/core/constraints/hard.
 import type { IConstraint } from '../../constraint.interface';
 import type { Move, Violation } from '../../types';
 import type { ScheduleState } from '../../schedule-state';
 
+/** Class implementing holiday exclusion constraint. */
 export class HolidayExclusionConstraint implements IConstraint {
   readonly id = 'holiday-exclusion';
   readonly name = 'Holiday Exclusion';
@@ -18,11 +20,16 @@ export class HolidayExclusionConstraint implements IConstraint {
     // Check if slots are scheduled on days labeled as holidays
     // Also, if calendar holiday dates map to days of the week, or if holiday entries contain day indices
     for (const slot of currentState.slots) {
-      if (slot.type === 'break' || slot.type === 'free' || slot.type === 'empty') {
+      if (
+        slot.type === 'break' ||
+        slot.type === 'free' ||
+        slot.type === 'empty'
+      ) {
         continue;
       }
 
-      const dayName = currentState.input.settings.days[slot.day]?.toLowerCase() || '';
+      const dayName =
+        currentState.input.settings.days[slot.day]?.toLowerCase() || '';
 
       // Check if holiday name or date matches the day name or index
       const matchingHoliday = holidays.find((h) => {

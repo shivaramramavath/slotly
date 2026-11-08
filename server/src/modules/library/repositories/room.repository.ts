@@ -1,3 +1,4 @@
+// Database repository managing room.repository persistence.
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,8 +9,10 @@ import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
 import type { CacheService } from '../../../common/cache/cache.interface';
 import { Room, RoomDocument } from '../schemas/room.schema';
 
+/** Constant representing room repository. */
 export const ROOM_REPOSITORY = Symbol('ROOM_REPOSITORY');
 
+/** Interface defining structure for room filter options. */
 export interface RoomFilterOptions {
   departmentId?: string;
   type?: string;
@@ -21,6 +24,7 @@ export interface RoomFilterOptions {
   limit?: number;
 }
 
+/** Interface defining structure for room repository. */
 export interface RoomRepository extends BaseRepository<Room> {
   findByInstitution(
     institutionId: string,
@@ -33,6 +37,7 @@ export interface RoomRepository extends BaseRepository<Room> {
   countByInstitution(institutionId: string): Promise<number>;
 }
 
+/** Injectable service providing mongo room repository logic. */
 @Injectable()
 export class MongoRoomRepository
   extends MongoBaseRepository<Room, RoomDocument>
@@ -148,6 +153,7 @@ export class MongoRoomRepository
   }
 }
 
+/** Injectable service providing cached room repository logic. */
 @Injectable()
 export class CachedRoomRepository
   extends CachedRepository<Room>

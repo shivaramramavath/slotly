@@ -1,9 +1,11 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+// Core implementation for email.adapter in server/src/modules/auth/adapters.
+import { Injectable, Logger } from '@nestjs/common';
+import { EmailService } from '../../../common/email/email.service';
 
+/** Constant representing email adapter. */
 export const EMAIL_ADAPTER = Symbol('EMAIL_ADAPTER');
 
+/** Interface defining structure for email adapter. */
 export interface EmailAdapter {
   sendOtp(
     email: string,
@@ -17,42 +19,22 @@ export interface EmailAdapter {
   ): Promise<void>;
 }
 
+/** Injectable service providing queue email adapter logic. */
 @Injectable()
 export class QueueEmailAdapter implements EmailAdapter {
   private readonly logger = new Logger(QueueEmailAdapter.name);
 
-  constructor(
-    @Optional()
-    @InjectQueue('notifications')
-    private readonly notificationsQueue?: Queue,
-  ) {}
+  constructor(private readonly emailService: EmailService) {}
 
   async sendOtp(
     email: string,
     code: string,
     type: 'verify' | 'recovery',
   ): Promise<void> {
-    const subject =
-      type === 'verify'
-        ? 'Slotly Verification Code'
-        : 'Slotly Password Reset Code';
     this.logger.log(
-      `[EMAIL] To: ${email} | Subject: ${subject} | OTP: ${code}`,
+      `Dispatching OTP email to ${email} (type: ${type}) via EmailService`,
     );
-
-    if (this.notificationsQueue) {
-      try {
-        await this.notificationsQueue.add(
-          'send-email',
-          { to: email, subject, template: type, variables: { code } },
-          { removeOnComplete: true, attempts: 3 },
-        );
-      } catch (err: unknown) {
-        this.logger.warn(
-          `Could not enqueue email: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      }
-    }
+    await this.emailService.sendOtp(email, code, type);
   }
 
   async sendSecurityAlert(
@@ -61,26 +43,8 @@ export class QueueEmailAdapter implements EmailAdapter {
     details: Record<string, unknown>,
   ): Promise<void> {
     this.logger.log(
-      `[EMAIL SECURITY ALERT] To: ${email} | Event: ${event} | Details: ${JSON.stringify(details)}`,
+      `Dispatching security alert to ${email} (event: ${event}) via EmailService`,
     );
-
-    if (this.notificationsQueue) {
-      try {
-        await this.notificationsQueue.add(
-          'send-email',
-          {
-            to: email,
-            subject: `Security Alert: ${event}`,
-            template: 'security-alert',
-            variables: { event, ...details },
-          },
-          { removeOnComplete: true, attempts: 3 },
-        );
-      } catch (err: unknown) {
-        this.logger.warn(
-          `Could not enqueue security alert email: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      }
-    }
+    await this.emailService.sendSecurityAlert(email, event, details);
   }
 }

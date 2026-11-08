@@ -1,7 +1,9 @@
+// HTTP controller handling app.controller endpoints.
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import type { HealthResponse } from '@slotly/contracts';
 
+/** Controller handling app controller HTTP endpoints. */
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}

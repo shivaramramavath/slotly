@@ -1,3 +1,4 @@
+// React component for node-factory.
 'use client';
 
 import React, { memo, useState, useMemo } from 'react';
@@ -61,6 +62,7 @@ const TYPE_BADGE_LABELS: Record<BlueprintNodeType, string> = {
 // 1. STANDARD BLUEPRINT NODE
 // ==========================================
 
+/** React component rendering blueprint node. */
 export const BlueprintNode = memo(function BlueprintNode({
   id,
   data,
@@ -353,6 +355,7 @@ export const BlueprintNode = memo(function BlueprintNode({
 // 2. SUB-FLOW / CONTAINER GROUP NODE
 // ==========================================
 
+/** React component rendering blueprint group node. */
 export const BlueprintGroupNode = memo(function BlueprintGroupNode({
   id,
   data,
@@ -408,6 +411,7 @@ export const BlueprintGroupNode = memo(function BlueprintGroupNode({
   );
 });
 
+/** Constant representing node types. */
 export const nodeTypes = {
   blueprint: BlueprintNode,
   blueprintGroup: BlueprintGroupNode,

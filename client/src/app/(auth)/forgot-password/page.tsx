@@ -1,3 +1,4 @@
+// React component for page.
 'use client';
 
 import React, { useState } from 'react';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { authApi } from '@/features/auth/services/auth.api';
 import { toast } from '@/components/ui/toast';
 
+/** React component rendering forgot password page. */
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);

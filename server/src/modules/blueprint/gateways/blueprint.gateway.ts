@@ -1,3 +1,4 @@
+// WebSocket gateway managing real-time events for blueprint.gateway.
 import {
   ConnectedSocket,
   MessageBody,
@@ -37,6 +38,7 @@ import type { CacheService } from '../../../common/cache/cache.interface';
 import { SESSIONS_SERVICE } from '../../auth/services/sessions.service';
 import type { SessionsService } from '../../auth/services/sessions.service';
 
+/** Interface defining structure for socket user data. */
 export interface SocketUserData {
   id: string;
   role: UserRole;
@@ -44,10 +46,12 @@ export interface SocketUserData {
   name: string;
 }
 
+/** Interface defining structure for socket data. */
 export interface SocketData {
   user?: SocketUserData;
 }
 
+/** Type alias for authenticated socket. */
 export type AuthenticatedSocket = Socket<
   DefaultEventsMap,
   DefaultEventsMap,
@@ -60,6 +64,7 @@ interface NodeLockInfo {
   userName: string;
 }
 
+/** WebSocket gateway handling blueprint gateway real-time events. */
 @WebSocketGateway({
   namespace: '/blueprint',
   cors: {

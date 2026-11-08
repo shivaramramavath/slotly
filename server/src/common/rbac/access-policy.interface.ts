@@ -1,7 +1,10 @@
+// Core implementation for access-policy.interface in server/src/common/rbac.
 import { Permission, UserRole } from '@slotly/contracts';
 
+/** Constant representing access policy. */
 export const ACCESS_POLICY = Symbol('ACCESS_POLICY');
 
+/** Interface defining structure for access subject. */
 export interface AccessSubject {
   userId: string;
   role: UserRole;
@@ -9,6 +12,7 @@ export interface AccessSubject {
   departmentId?: string | undefined;
 }
 
+/** Interface defining structure for access resource. */
 export interface AccessResource {
   type: string;
   id?: string | undefined;
@@ -17,6 +21,7 @@ export interface AccessResource {
   ownerId?: string | undefined;
 }
 
+/** Interface defining structure for access policy. */
 export interface AccessPolicy {
   can(
     subject: AccessSubject,

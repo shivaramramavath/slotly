@@ -1,12 +1,15 @@
+// React component for checkbox.
 import * as React from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+/** Interface defining structure for checkbox props. */
 export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
 }
 
+/** Constant representing checkbox. */
 export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
   ({ className, checked = false, onCheckedChange, disabled, ...props }, ref) => {
     return (

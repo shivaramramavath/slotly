@@ -1,6 +1,8 @@
+// Core implementation for revision.helper in server/src/common/concurrency.
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { RevisionConflict } from '@slotly/contracts';
 
+/** Class implementing revision conflict exception. */
 export class RevisionConflictException extends HttpException {
   public readonly code = 'REVISION_CONFLICT';
   public readonly details: RevisionConflict;
@@ -22,6 +24,7 @@ export class RevisionConflictException extends HttpException {
   }
 }
 
+/** Class implementing revision helper. */
 export class RevisionHelper {
   /**
    * Asserts that expectedRevision matches actual currentRevision.

@@ -471,7 +471,7 @@ describe('BlueprintGateway & Write-Behind Processor', () => {
       );
       expect(
         mockWriteBehindService.decrementPendingWrites,
-      ).toHaveBeenCalledWith('proj_1');
+      ).toHaveBeenCalledWith('proj_1', 'node:node_1');
     });
   });
 });

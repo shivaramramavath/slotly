@@ -1,3 +1,4 @@
+// Core implementation for auth.interface in server/src/modules/auth.
 import {
   RegisterDto,
   LoginDto,
@@ -12,14 +13,17 @@ import {
   UserDto,
 } from '@slotly/contracts';
 
+/** Constant representing auth service. */
 export const AUTH_SERVICE = Symbol('AUTH_SERVICE');
 
+/** Interface defining structure for client meta. */
 export interface ClientMeta {
   ip?: string | undefined;
   device?: string | undefined;
   browser?: string | undefined;
 }
 
+/** Interface defining structure for auth service. */
 export interface AuthService {
   register(
     dto: RegisterDto,

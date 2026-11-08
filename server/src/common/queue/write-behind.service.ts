@@ -1,3 +1,4 @@
+// Domain service orchestrating write-behind.service business logic.
 import {
   Injectable,
   Logger,
@@ -9,6 +10,7 @@ import { Queue } from 'bullmq';
 import { CACHE_SERVICE } from '../cache/cache.interface';
 import type { CacheService } from '../cache/cache.interface';
 
+/** Interface defining structure for write behind job. */
 export interface WriteBehindJob<T = unknown> {
   entity: string;
   id: string;
@@ -17,12 +19,14 @@ export interface WriteBehindJob<T = unknown> {
   timestamp: number;
 }
 
+/** Constant representing write behind queue. */
 export const WRITE_BEHIND_QUEUE = 'write-behind';
 
+/** Injectable service providing write behind service logic. */
 @Injectable()
 export class WriteBehindService implements OnModuleDestroy {
   private readonly logger = new Logger(WriteBehindService.name);
-  private readonly inMemoryPending = new Map<string, number>();
+  private readonly inMemoryPendingJobs = new Map<string, Set<string>>();
   private readonly inMemoryQueue = new Map<string, WriteBehindJob>();
 
   constructor(
@@ -50,7 +54,7 @@ export class WriteBehindService implements OnModuleDestroy {
     };
 
     if (projectId) {
-      await this.incrementPendingWrites(projectId);
+      await this.incrementPendingWrites(projectId, jobId);
     }
 
     if (this.bullQueue) {
@@ -77,26 +81,61 @@ export class WriteBehindService implements OnModuleDestroy {
     this.inMemoryQueue.set(jobId, jobData);
   }
 
-  async incrementPendingWrites(projectId: string): Promise<void> {
-    const current = (this.inMemoryPending.get(projectId) || 0) + 1;
-    this.inMemoryPending.set(projectId, current);
-    await this.cacheService.set(`pending_writes:${projectId}`, current, 300);
+  async incrementPendingWrites(
+    projectId: string,
+    jobId?: string,
+  ): Promise<void> {
+    let jobSet = this.inMemoryPendingJobs.get(projectId);
+    if (!jobSet) {
+      jobSet = new Set<string>();
+      this.inMemoryPendingJobs.set(projectId, jobSet);
+    }
+    const resolvedJobId = jobId || `job_${jobSet.size + 1}`;
+    jobSet.add(resolvedJobId);
+    await this.cacheService.set(
+      `pending_jobs:${projectId}`,
+      Array.from(jobSet),
+      300,
+    );
   }
 
-  async decrementPendingWrites(projectId: string): Promise<void> {
-    const current = Math.max((this.inMemoryPending.get(projectId) || 1) - 1, 0);
-    this.inMemoryPending.set(projectId, current);
-    await this.cacheService.set(`pending_writes:${projectId}`, current, 300);
+  async decrementPendingWrites(
+    projectId: string,
+    jobId?: string,
+  ): Promise<void> {
+    const jobSet = this.inMemoryPendingJobs.get(projectId);
+    if (jobSet) {
+      if (jobId) {
+        jobSet.delete(jobId);
+      } else {
+        const first = jobSet.values().next().value;
+        if (first) {
+          jobSet.delete(first);
+        }
+      }
+      if (jobSet.size === 0) {
+        this.inMemoryPendingJobs.delete(projectId);
+        await this.cacheService.del(`pending_jobs:${projectId}`);
+      } else {
+        await this.cacheService.set(
+          `pending_jobs:${projectId}`,
+          Array.from(jobSet),
+          300,
+        );
+      }
+    } else {
+      await this.cacheService.del(`pending_jobs:${projectId}`);
+    }
   }
 
   async getPendingWrites(projectId: string): Promise<number> {
-    const cached = await this.cacheService.get<number>(
-      `pending_writes:${projectId}`,
+    const cached = await this.cacheService.get<string[]>(
+      `pending_jobs:${projectId}`,
     );
-    if (cached !== null) {
-      return cached;
+    if (Array.isArray(cached)) {
+      return cached.length;
     }
-    return this.inMemoryPending.get(projectId) || 0;
+    return this.inMemoryPendingJobs.get(projectId)?.size || 0;
   }
 
   /**

@@ -1,3 +1,4 @@
+// Domain service orchestrating template.service business logic.
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import type {
   ApplyOperationsDto,
@@ -21,6 +22,7 @@ function getId(
   return typeof doc._id === 'string' ? doc._id : doc._id.toString();
 }
 
+/** Injectable service providing template service logic. */
 @Injectable()
 export class TemplateService implements OnModuleInit {
   constructor(

@@ -1,3 +1,4 @@
+// Custom React hook for use-gate-validation.
 import { useCallback } from 'react';
 import type { BlueprintNodeType } from '@slotly/contracts';
 import type { BlueprintCanvasNode, BlueprintCanvasEdge } from '../types/canvas.types';
@@ -33,6 +34,7 @@ const ALLOWED_CHILDREN: Record<BlueprintNodeType, BlueprintNodeType[]> = {
   room: ['subjectAssignment'],
 };
 
+/** Custom React hook for use gate validation. */
 export function useGateValidation(nodes: BlueprintCanvasNode[], edges: BlueprintCanvasEdge[]) {
   const getNodeById = useCallback(
     (id: string | null | undefined): BlueprintCanvasNode | undefined => {

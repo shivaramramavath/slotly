@@ -1,7 +1,9 @@
+// Core implementation for transaction.helper in server/src/common/database.
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection, ClientSession } from 'mongoose';
 
+/** Injectable service providing transaction helper logic. */
 @Injectable()
 export class TransactionHelper {
   private readonly logger = new Logger(TransactionHelper.name);

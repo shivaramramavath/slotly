@@ -1,8 +1,10 @@
+// Core implementation for queue.module in server/src/common/queue.
 import { Global, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WriteBehindService, WRITE_BEHIND_QUEUE } from './write-behind.service';
 
+/** Class implementing app queue module. */
 @Global()
 @Module({
   imports: [
@@ -17,7 +19,11 @@ import { WriteBehindService, WRITE_BEHIND_QUEUE } from './write-behind.service';
       }),
       inject: [ConfigService],
     }),
-    BullModule.registerQueue({ name: WRITE_BEHIND_QUEUE }, { name: 'audit' }),
+    BullModule.registerQueue(
+      { name: WRITE_BEHIND_QUEUE },
+      { name: 'audit' },
+      { name: 'notifications' },
+    ),
   ],
   providers: [WriteBehindService],
   exports: [WriteBehindService, BullModule],
