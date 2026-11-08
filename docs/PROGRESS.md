@@ -1079,3 +1079,72 @@
 - Timetable Board & Studio UI (FEATURES §9, CLIENT_UX §5.7 & §5.8).
 - Interactive drag-and-drop timetable grid using `@dnd-kit/core` with instant client-side validation using `@slotly/engine`.
 - Undo/redo shortcuts, bulk selection, period timing manager modal, conflict inspector panel.
+
+
+## Phase 11: Versions, Comparison, Publishing (Pass 1: Contracts & Server)
+
+### What Was Built
+- **Contracts (`packages/contracts`)**:
+  - Reason codes: `VERSION_IMMUTABLE`, `INVALID_STATE_TRANSITION`, `HARD_CONFLICTS_EXIST`.
+  - Extended `ScheduleVersionStatus`: `['draft', 'editing', 'ready', 'validated', 'pending_approval', 'approved', 'published', 'archived']`.
+  - Added Zod schemas and TypeScript types: `PublishRequestStatusSchema`, `PublishRequestDtoSchema`, `RequestPublishDtoSchema`, `ReviewPublishDtoSchema`, `UpdateVersionLabelDtoSchema`, `DuplicateVersionDtoSchema`, `SlotChangeDetailSchema`, `SlotDiffItemSchema`, `FacultyWorkloadDeltaSchema`, `ConflictDeltaSchema`, `ScoreDeltaSchema`, `VersionDiffDtoSchema`, `TimetableRatingDtoSchema`, `TimetableRatingResponseDtoSchema`.
+- **Pure State Machine (`server/src/modules/publishing/state-machine`)**:
+  - Implemented `PublishStateMachine` with State pattern (`BasePublishState`, `DraftState`, `EditingState`, `ValidatedState`, `PendingApprovalState`, `ApprovedState`, `PublishedState`, `ArchivedState`).
+  - Guards: `validated` strictly requires zero hard conflicts and a complete blueprint graph.
+  - Reviewer rejection automatically returns the lifecycle to `editing` with a mandatory reviewer comment.
+- **Pure Diff and Change Summary Services (`server/src/modules/versions/services`)**:
+  - `DiffService`: Computes slot deltas (added, removed, modified faculty/room/subject/time), faculty workload deltas, conflict deltas, and score metric deltas between any two versions.
+  - `ChangeSummaryService`: Deterministic sentence builder converting slot diffs into readable, human-friendly summaries ("Data Structures moved from Mon P1 to Wed P3") without AI.
+- **Repositories & Immutability (`server/src/modules/versions`, `server/src/modules/publishing`, `server/src/modules/builds`)**:
+  - Enforced `VERSION_IMMUTABLE` at the repository layer: `MongoScheduleVersionRepository.update`, `delete`, and `ScheduleEntryRepository.create`, `createMany`, `update`, `delete`, `deleteByVersion` throw 409 `ConflictException('VERSION_IMMUTABLE')` if the version status is `published` or `archived`.
+  - Created `PublishRequest` schema and repository (`publish_requests` collection).
+  - Created `TimetableRating` schema and repository (`timetable_ratings` collection).
+  - Updated index migration `ensure-indexes.ts` with compound indexes for publish requests and timetable ratings.
+- **Transactional Publishing (`server/src/modules/publishing/services/publishing.service.ts`)**:
+  - `executePublishTransaction`: One atomic MongoDB replica set transaction (`TransactionHelper.withTransaction`) sealing the target version as `published`, archiving the previously published version, updating project status to `published`, marking the publish request approved, recording audit entries, and emitting domain events. Any failure automatically rolls back all changes.
+- **REST Endpoints (`server/src/modules/versions`, `server/src/modules/publishing`)**:
+  - `GET /projects/:projectId/versions` - List all versions for a project.
+  - `GET /versions/:versionId` - Retrieve detailed version metadata.
+  - `PATCH /versions/:versionId/label` - Rename/tag a version.
+  - `POST /versions/:versionId/duplicate` - Duplicate a version and clone entries.
+  - `POST /versions/:versionId/restore` - Restore an archived or published version as a fresh draft revision.
+  - `POST /versions/:versionId/archive` - Archive a version.
+  - `GET /versions/:leftVersionId/diff/:rightVersionId` - Compute pure diff and summary.
+  - `POST /versions/:versionId/publish-request` - Designer requests publishing.
+  - `GET /projects/:projectId/publish-requests` - List publish requests for a project.
+  - `GET /admin/approvals` - Admin queue of pending publish requests.
+  - `POST /publish-requests/:requestId/approve` - Admin approves request and executes publish transaction.
+  - `POST /publish-requests/:requestId/reject` - Admin rejects request back to editing state with comment.
+  - `POST /versions/:versionId/publish` - Admin direct publish (seals and publishes in transaction).
+  - `POST /versions/:versionId/rate` - Submit feedback/rating for a version.
+  - `GET /versions/:versionId/ratings` - Retrieve rating summaries and faculty feedback.
+
+### Decisions
+1. **Repository-Level Immutability**: Immutability is enforced at the repository layer (`MongoScheduleVersionRepository` and `ScheduleEntryRepository`), ensuring no controller, background worker, or service can bypass immutability checks on published/archived versions.
+2. **Deterministic Diff Summaries**: Slot movements, room changes, and teacher changes generate natural language explanations via `ChangeSummaryService` with zero LLM dependence, guaranteeing speed, consistency, and no external token cost.
+3. **Atomic MongoDB Multi-Document Publishing**: All publish lifecycle mutations (version status update, archiving of prior published versions, project status update, request approval, and audit logs) execute inside a single MongoDB transaction session via `TransactionHelper`.
+
+### Test Evidence
+- 6 test suites covering Phase 11 Pass 1 functionality:
+  - `publish-state-machine.spec.ts` (9 tests): Validates lifecycle transitions, guards for hard conflicts and blueprint completion, and rejection returns.
+  - `diff-and-summary.spec.ts` (4 tests): Tests slot diffs, workload deltas, conflict deltas, and natural language summary generation.
+  - `transactional-publishing.spec.ts` (3 tests): Tests atomic publish execution, previous version archiving, and rollback on failure.
+  - `repository-immutability.spec.ts` (6 tests): Validates `VERSION_IMMUTABLE` repository exceptions across versions and schedule entries.
+  - `publishing-workflow.spec.ts` (4 tests): Tests request, approve, and reject workflows with role checks and comments.
+  - `versions-service.spec.ts` (4 tests): Tests duplicate, restore, label update, and archive flows.
+- Total test suite status: 52 passed, 262 tests passed, 0 failures.
+- Verification: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm codemap:check` all pass cleanly with 0 errors.
+
+### Manual Test Checklist
+1. **Version Duplication & Restore**:
+   - Duplicate an existing version -> verify new version is created with status `draft` and identical entries.
+   - Restore an archived or published version -> verify a new draft revision is created.
+2. **Diff & Summary**:
+   - Request diff between two versions -> verify returned JSON contains `added`, `removed`, `changed`, `workloadDeltas`, `conflictDeltas`, and readable `summaryLines`.
+3. **Publishing Lifecycle & Approval**:
+   - As DESIGNER, request publish on a draft with hard conflicts -> verify 400 rejection `HARD_CONFLICTS_EXIST`.
+   - As DESIGNER, request publish on a valid schedule -> verify status is `pending_approval`.
+   - As ADMIN, reject request with comment -> verify status transitions back to `editing` and comment is recorded.
+   - As ADMIN, approve request -> verify version is sealed `published`, previous version is `archived`, and project status is `published`.
+4. **Immutability Protection**:
+   - Attempt to update or delete a published version or its schedule entries -> verify 409 `VERSION_IMMUTABLE` response.

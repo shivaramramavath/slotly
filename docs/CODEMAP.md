@@ -109,11 +109,11 @@
 <!-- GENERATED:START -->
 | Module Map | Area | Line count |
 | :--- | :--- | :--- |
-| [contracts.md](docs/codemap/contracts.md) | Shared Contracts | 359 lines |
+| [contracts.md](docs/codemap/contracts.md) | Shared Contracts | 387 lines |
 | [server-common.md](docs/codemap/server-common.md) | Server Common & Infrastructure | 344 lines |
 | [server-auth.md](docs/codemap/server-auth.md) | Server Auth Module | 127 lines |
 | [server-blueprint.md](docs/codemap/server-blueprint.md) | Server Blueprint Module | 233 lines |
-| [server-builds.md](docs/codemap/server-builds.md) | Server Builds Module | 63 lines |
+| [server-builds.md](docs/codemap/server-builds.md) | Server Builds Module | 62 lines |
 | [server-engine.md](docs/codemap/server-engine.md) | Engine Module & Library | 256 lines |
 | [server-institutions.md](docs/codemap/server-institutions.md) | Server Institutions Module | 163 lines |
 | [server-library.md](docs/codemap/server-library.md) | Server Library Module | 140 lines |

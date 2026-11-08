@@ -115,6 +115,23 @@ POST   /versions/:versionId/redo
 GET    /versions/:versionId/periods
 PUT    /versions/:versionId/periods
 
+VERSIONS, COMPARISON & PUBLISHING (FEATURES §10, Phase 11)
+GET    /projects/:projectId/versions                     list schedule versions for a project
+GET    /projects/:projectId/versions/:versionId          get specific schedule version details
+PATCH  /versions/:versionId/label                        update version label
+POST   /versions/:versionId/duplicate                    duplicate version as a new draft
+POST   /versions/:versionId/restore                      restore an older version as a new draft
+POST   /versions/:versionId/archive                      archive a version
+GET    /versions/:leftVersionId/diff/:rightVersionId     compare two versions with slot, workload, conflict, and score diffs
+POST   /versions/:versionId/publish-request              submit a publish request (DESIGNER)
+GET    /projects/:projectId/publish-requests             list publish requests for a project
+GET    /admin/approvals                                  list pending publish requests across projects (ADMIN)
+POST   /publish-requests/:requestId/approve              admin approves publish request and executes atomic publication
+POST   /publish-requests/:requestId/reject               admin rejects publish request with mandatory comment
+POST   /versions/:versionId/publish                      admin direct publish in atomic transaction
+POST   /versions/:versionId/rate                         submit timetable quality rating and feedback
+GET    /versions/:versionId/ratings                      list quality ratings for a timetable version
+
 SOCKET NAMESPACES & EVENTS
 /blueprint:
   client -> server: project:join, project:leave, cursor:update, node:lock, node:unlock
