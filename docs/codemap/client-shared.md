@@ -177,6 +177,19 @@
 - **Function** `getIndicatorConfig(status: "draft" | "building" | "ready" | "pending_approval" | "published" | "archived")`: `import("E:/Shiva Ram/Projects/slotly/client/src/components/ui/progress-bars").BarIndicatorConfig` - Pure helper mapping project lifecycle status to bar indicator count and color token.
 - **Component** `ProgressBars({ status, className = '' }: import("E:/Shiva Ram/Projects/slotly/client/src/components/ui/progress-bars").ProgressBarsProps)` - React component rendering three-bar indicator glyph with increasing heights (6px, 10px, 14px).
 
+### `client/src/components/ui/segmented-control.tsx`
+*Segmented control component rendering 40px high accessible single-choice tab strip.*
+
+- **Interface** `SegmentedControlOption` - Option item configuration for SegmentedControl.
+- **Interface** `SegmentedControlProps` - Props for SegmentedControl component.
+- **Component** `SegmentedControl({
+  options,
+  value,
+  onChange,
+  ariaLabel = 'Filter options',
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/components/ui/segmented-control").SegmentedControlProps<T>)` - React component rendering 40px high segmented control with surface styling and keyboard navigation.
+
 ### `client/src/components/ui/select.tsx`
 *React component for select.*
 

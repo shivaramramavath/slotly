@@ -500,9 +500,23 @@ Tabs: General, Term, Timing and breaks, Danger zone. Timing editor shows a day s
 - **Security:** MFA setup wizard (QR code, manual key with copy, verify code, recovery codes with Download and Copy and a required "I saved them" checkbox); change password (step-up); active sessions list (current device tagged "This device", Terminate, Logout all others); trusted devices; security activity timeline.
 - Preferences: preferred working hours, preferred periods, notification channels.
 
-### 5.18 Kits `/kits`
+### 5.18 Blueprint Templates & Kits `/templates` (aliases `/blueprint-templates`, `/kits`)
 
-- Gallery of starter kits and saved templates with a mini-graph thumbnail, name, category chip, version, node count. Preview opens a modal with the subtree inspector. **Use** creates a project (goes through the new-project wizard with the kit preselected). Own templates show Duplicate, Export, Delete.
+- Shell: `PageHeader` ("Blueprint Templates and Kits", description in 15px sans muted text max-w-[660px], quiet link "Projects" with arrow -> `/projects`, single primary yellow button "New project" -> `/projects/new`).
+- Toolbar: 40px high `CategoryFilter` segmented control (`SegmentedControl` in `components/ui/segmented-control.tsx`) displaying categories "All 3", "K-12 School", "University", "Vocational and STEM" with real counts, horizontally scrollable on mobile without visible scrollbar.
+- Surface cards grid: Responsive grid of `SurfaceCard` (20px radius, 24px padding, min-h 270px, equal heights, footer pinned to bottom). 3 columns at >=1024px, 2 at 640-1023px, 1 below 640px, 16px gap (`gap-4`).
+- Card anatomy (`KitCard`):
+  - Top row: 32px monochrome glyph in 32px rounded box (GraduationCap for K-12, Landmark for University, FlaskConical for Vocational & STEM, Layers fallback); category label with right arrow (nudges 2px right on hover); 32px "more" button (visible on hover, touch, focus-within) with duplicate kit action.
+  - Content: 20px medium white title (clamp 2 lines), mono 12px muted subtitle (`Subtree · N nodes · M connections`), 14px description with 22px line height (clamp 3 lines; uses custom description or generated fallback "Includes Node1, Node2 and X more."). Tag chips omitted from card face.
+  - Pinned footer: 1px top border; left mono 12px version ("v1"); right actions: quiet "Inspect" text button with Eye icon, and outline "Use kit" button (1px border, 32px high, radius 12px, white text, small arrow icon). Never yellow.
+  - Single yellow rule: The only yellow element on the entire page is the "New project" primary button in the header (plus wordmark "o" and unread bell dot when present).
+  - Interaction overlay: Full card clickable via stretched link/button overlay opening the non-destructive Inspect Subtree dialog. Action triggers sit at higher z-index.
+- States:
+  - Loading: 6 `KitCardSkeleton` items with identical dimensions, PageHeader skeleton, and SegmentedControl skeleton.
+  - Empty: SurfaceCard panel with "No template kits found", description, and "Clear filter" button when a category is selected.
+  - Error: SurfaceCard panel with retry button; route-level `error.tsx` boundary.
+
+
 
 ### 5.19 Notifications
 
@@ -561,6 +575,7 @@ Status refers to what exists in the repository as of Phase 8; confirm in code.
 | SurfaceCard, ProgressBars, StatusIndicator, ProjectCard | Project grid & status indicators (sys0 visual spec) | Built |
 | LibraryTabs, LibraryToolbar, LibraryExportDropdown, LibraryHeaderActions | Library navigation, toolbar & actions (split routes) | Built |
 | LibraryTableSkeleton, LibraryErrorPanel, LibraryEmptyState, LibraryProvider | Library table loading, error, empty states & state provider | Built |
+| SegmentedControl, KitCard, KitCardSkeleton, CategoryFilter | Templates & Kits UI (sys0 visual spec) | Built |
 | StatusBadge, ProgressRing, ScorePill | Status visuals | Partly built |
 | SaveStatusChip, PresenceAvatars | Collaboration | To build or consolidate |
 | ReasonToast + GoFixLink | Gate rejection feedback | To build |

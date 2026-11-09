@@ -54,11 +54,26 @@
 - **Route Page:** `/verify-email` -> renders `default`
 - **Component** `VerifyEmailPage()` - React component rendering verify email page.
 
+### `client/src/app/blueprint-templates/error.tsx`
+*Route error boundary component for blueprint templates and kits.*
+
+- **Error Boundary:** `/blueprint-templates` -> renders `default`
+- **Component** `BlueprintTemplatesError({
+  error,
+  reset,
+}: { error: Error & { digest?: string | undefined; }; reset: () => void; })` - Error boundary component for blueprint templates route.
+
+### `client/src/app/blueprint-templates/loading.tsx`
+*Route loading skeleton for blueprint templates and kits.*
+
+- **Loading Boundary:** `/blueprint-templates` -> renders `default`
+- **Component** `BlueprintTemplatesLoading()` - Loading skeleton for blueprint templates page matching sys0 grid and token spacing.
+
 ### `client/src/app/blueprint-templates/page.tsx`
-*React component for page.*
+*React component rendering blueprint templates and kits catalog page.*
 
 - **Route Page:** `/blueprint-templates` -> renders `default`
-- **Component** `BlueprintTemplatesPage()` - React component rendering blueprint templates page.
+- **Component** `BlueprintTemplatesPage()` - React component rendering blueprint templates page with Suspense wrapper.
 
 ### `client/src/app/dashboard/page.tsx`
 *React component for page.*
@@ -77,6 +92,16 @@
 
 - **Route Page:** `/institutions` -> renders `default`
 - **Component** `InstitutionsPage()` - React component rendering institutions page.
+
+### `client/src/app/kits/error.tsx`
+*Route error boundary component for kits.*
+
+- **Error Boundary:** `/kits` -> renders `default`
+
+### `client/src/app/kits/loading.tsx`
+*Route loading skeleton for kits.*
+
+- **Loading Boundary:** `/kits` -> renders `default`
 
 ### `client/src/app/kits/page.tsx`
 *React component for page.*
@@ -248,6 +273,22 @@
 
 - **Route Page:** `/projects` -> renders `default`
 - **Component** `ProjectsPage()` - React component rendering projects page matching sys0 visual guidelines.
+
+### `client/src/app/templates/error.tsx`
+*Route error boundary component for templates.*
+
+- **Error Boundary:** `/templates` -> renders `default`
+
+### `client/src/app/templates/loading.tsx`
+*Route loading skeleton for templates.*
+
+- **Loading Boundary:** `/templates` -> renders `default`
+
+### `client/src/app/templates/page.tsx`
+*React component rendering templates and kits page.*
+
+- **Route Page:** `/templates` -> renders `default`
+- **Component** `TemplatesPage()` - React component rendering templates page.
 
 ### `client/src/app/users/me/page.tsx`
 *React component for page.*

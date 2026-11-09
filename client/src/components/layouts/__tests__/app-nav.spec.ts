@@ -9,6 +9,8 @@ describe('isNavActive', () => {
     assert.strictEqual(isNavActive('/library', '/library'), true);
     assert.strictEqual(isNavActive('/institutions', '/institutions'), true);
     assert.strictEqual(isNavActive('/blueprint-templates', '/blueprint-templates'), true);
+    assert.strictEqual(isNavActive('/templates', '/blueprint-templates'), true);
+    assert.strictEqual(isNavActive('/kits', '/blueprint-templates'), true);
   });
 
   it('matches sub-routes to parent navigation link', () => {
