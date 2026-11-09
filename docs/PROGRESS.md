@@ -1838,3 +1838,72 @@ Split monolithic Library page into dedicated route segments (`/library/faculty`,
 11. Confirm "Teaching Workload" and "Qualified Subjects" headers do not wrap or collide at 1024px.
 
 Merged via `ux/04-library-routes`, tag `ux-04-library-routes-merged`.
+
+
+---
+
+## UX Task 05: Templates & Kits Page Restyle
+
+Restyled the Blueprint Templates and Kits page (`/templates`, `/blueprint-templates`, `/kits`) to match the sys0 visual language and Projects page anatomy (`ux/05-templates-restyle`).
+
+### What Was Built
+
+1. **Page Shell & Layout Alignment (`PageHeader`, `PageContainer`):**
+   - Title: "Blueprint Templates and Kits", description in 15px sans muted text with max width ~660px, 40px spacing (`mb-10`) below the header.
+   - Header actions slot: quiet text link "Projects" with arrow pointing to `/projects`, and single yellow primary button "New project" linking to `/projects/new`.
+   - Strict single-yellow accent budget: only the "New project" button uses the yellow accent; all cards, filters, and inspect triggers use monochrome/outline tokens.
+
+2. **Single Toolbar Segmented Control (`CategoryFilter`, `SegmentedControl`):**
+   - Reusable `SegmentedControl` in `client/src/components/ui/segmented-control.tsx` (40px height, 12px radius, 1px `#232323` border, surface background, accessible tablist/tab roles, and keyboard arrow navigation).
+   - `CategoryFilter` wrapping `SegmentedControl`: displays categories "All 3", "K-12 School", "University", "Vocational and STEM" with dynamic count aggregation.
+   - Robust category matching normalizing casing and `&` vs `and`.
+   - Single source of truth: filter state derived directly from URL `?category=...` parameter without cascading `useEffect` renders.
+   - Horizontally scrollable on narrow viewports with hidden scrollbars; no horizontal page scroll at 390px.
+
+3. **Kit Card Anatomy (`KitCard` composing `SurfaceCard`):**
+   - Responsive grid: 3 columns at $\ge 1024$px, 2 columns at 640–1023px, 1 column below 640px, 16px gap (`gap-4`), 20px radius, 24px padding (`p-6`), equal heights (`min-h-[270px]`), footer pinned to bottom.
+   - Top row: 32px monochrome glyph in 32px rounded box (`GraduationCap` for K-12, `Landmark` for University, `FlaskConical` for Vocational & STEM, `Layers` fallback); mono 12px category label with arrow nudging 2px right on hover; 32px options button opening dropdown with duplicate action.
+   - Content: 20px medium white title (clamped to 2 lines), mono 12px muted subtitle (`Subtree · N nodes · M connections` with lowercase unit words), 14px description with 22px line height (clamped to 3 lines; uses template description or generated fallback "Includes Node1, Node2 and X more."). Tag chips removed from card face.
+   - Pinned footer row: 1px top border; left mono 12px version ("v1"); right quiet "Inspect" text button with Eye icon, and outline "Use kit" button (1px border, white text, 32px height, 12px radius, arrow icon). Never yellow.
+   - Interaction overlay: Whole card opens non-destructive Inspect Subtree dialog via stretched overlay; action triggers sit above overlay at `z-20`.
+   - Hover and focus-visible: border lightens to `#383838`, background shifts to `#161616`, focus-within 2px ring with offset.
+
+4. **Per-Route Loading & Error States:**
+   - `KitCardSkeleton`: Skeletons matching exact card anatomy (20px radius, 24px padding, glyph box, category badge, title line, subtitle, 2 description lines, footer border, version, and 2 button skeletons).
+   - `loading.tsx`: Added for `/blueprint-templates`, `/kits`, and `/templates` rendering PageHeader skeleton, SegmentedControl skeleton, and 6-card grid.
+   - `error.tsx`: Added for `/blueprint-templates`, `/kits`, and `/templates` rendering SurfaceCard error panel with Retry trigger.
+   - Empty state: SurfaceCard panel with "No template kits found", description, and "Clear filter" action when a category is filtered.
+
+5. **Route Parity:**
+   - `/templates`, `/blueprint-templates`, and `/kits` all cleanly render the unified TemplatesPage.
+   - `app-nav.tsx` updated so `/templates` keeps the "Templates" nav link active with the white 1px underline.
+   - `middleware.ts` updated with `/templates` in protected routes and matcher.
+
+6. **Automated Tests:**
+   - `kit-card.spec.ts`: Tests `formatCategoryLabel`, `formatSubtitle`, `getKitDescription` (custom, <=2 nodes, >2 nodes, empty), `getCategoryGlyph`, clamp classes, and design tokens.
+   - `category-filter.spec.ts`: Tests `normalizeCategory`, `matchCategory` (all, exact, ampersand normalization, keywords, rejection).
+   - `segmented-control.spec.ts`: Tests option data structure and count properties.
+   - `app-nav.spec.ts`: Tests `isNavActive` for `/templates`, `/blueprint-templates`, and `/kits`.
+
+### Decisions Made
+
+- **URL-First Category State:** Derived active category directly from `searchParams.get('category') || 'all'` to avoid cascading `useEffect` renders while keeping URLs shareable and back-button friendly.
+- **Ampersand & Keyword Normalization:** Normalized `&` to `and` in category matching so database values (`Vocational & STEM`) seamlessly map to UI specifications (`Vocational and STEM`).
+- **Shared SegmentedControl Primitive:** Built a reusable `SegmentedControl` in `components/ui/` with full keyboard arrow navigation and WAI-ARIA tablist semantics.
+
+### Manual Test Checklist
+
+1. Navigate to `/templates`, `/blueprint-templates`, and `/kits`: Verify all three routes load the identical restyled page.
+2. Verify top bar has "Templates" active with a white 1px underline.
+3. Verify PageHeader displays "Blueprint Templates and Kits" with sans 15px muted description.
+4. Verify actions slot has quiet "Projects" link with arrow, and one yellow primary "New project" button. Confirm this is the only yellow element on the page.
+5. In CategoryFilter, verify segmented control with "All 3", "K-12 School", "University", "Vocational and STEM" with counts.
+6. Verify clicking a category filters the card grid and updates the URL `?category=...`.
+7. Verify clearing the category filter restores all cards.
+8. Verify each KitCard has: 32px glyph, category label with arrow, "..." menu with Duplicate kit, 20px title (line-clamp-2), mono subtitle, 14px description (line-clamp-3), footer with version, quiet "Inspect", and outline "Use kit".
+9. Click card face: verifies Inspect Subtree dialog opens.
+10. Click "Use kit": verifies navigation to `/projects/new` without opening Inspect dialog.
+11. Click "..." menu: verifies dropdown opens with "Duplicate kit"; press Escape: menu closes without navigation.
+12. Verify responsive layout at 1440px (3 cols), 768px (2 cols), 390px (1 col, no horizontal page overflow).
+
+Merged via `ux/05-templates-restyle`, tag `ux-05-templates-restyle-merged`.

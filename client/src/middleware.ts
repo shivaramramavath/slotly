@@ -9,6 +9,7 @@ const PROTECTED_PREFIXES = [
   '/library',
   '/blueprint-templates',
   '/kits',
+  '/templates',
   '/users',
   '/versions',
 ];
@@ -62,6 +63,7 @@ export const config = {
     '/library/:path*',
     '/blueprint-templates/:path*',
     '/kits/:path*',
+    '/templates/:path*',
     '/users/:path*',
     '/versions/:path*',
     '/login',

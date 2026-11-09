@@ -27,8 +27,8 @@ export function isNavActive(pathname: string | null | undefined, targetHref: str
 
   // Templates equivalence: /blueprint-templates or /kits
   if (
-    (cleanTarget === '/blueprint-templates' || cleanTarget === '/kits') &&
-    (cleanPath.startsWith('/blueprint-templates') || cleanPath.startsWith('/kits'))
+    (cleanTarget === '/blueprint-templates' || cleanTarget === '/kits' || cleanTarget === '/templates') &&
+    (cleanPath.startsWith('/blueprint-templates') || cleanPath.startsWith('/kits') || cleanPath.startsWith('/templates'))
   ) {
     return true;
   }

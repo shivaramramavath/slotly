@@ -190,12 +190,12 @@
 | [server-engine.md](docs/codemap/server-engine.md) | Engine Module & Library | 256 lines |
 | [server-institutions.md](docs/codemap/server-institutions.md) | Server Institutions Module | 163 lines |
 | [server-library.md](docs/codemap/server-library.md) | Server Library Module | 140 lines |
-| [client-app.md](docs/codemap/client-app.md) | Client App Routes | 272 lines |
+| [client-app.md](docs/codemap/client-app.md) | Client App Routes | 313 lines |
 | [client-auth.md](docs/codemap/client-auth.md) | Client Auth Feature | 93 lines |
 | [client-blueprint.md](docs/codemap/client-blueprint.md) | Client Blueprint Feature | 212 lines |
 | [client-builds.md](docs/codemap/client-builds.md) | Client Builds Feature | 84 lines |
 | [client-institution.md](docs/codemap/client-institution.md) | Client Institution Feature | 125 lines |
 | [client-library.md](docs/codemap/client-library.md) | Client Library Feature | 176 lines |
 | [client-projects.md](docs/codemap/client-projects.md) | Client Projects Feature | 34 lines |
-| [client-shared.md](docs/codemap/client-shared.md) | Client Shared Components & Lib | 292 lines |
+| [client-shared.md](docs/codemap/client-shared.md) | Client Shared Components & Lib | 305 lines |
 <!-- GENERATED:END -->
