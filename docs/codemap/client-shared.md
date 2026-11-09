@@ -5,11 +5,36 @@
 
 - **Class** `ErrorBoundary` - Class implementing error boundary.
 
+### `client/src/components/layouts/app-header.tsx`
+*Primary application header component implementing sys0 transparent lockup, scroll styling, and plain-text navigation.*
+
+- **Interface** `AppHeaderProps` - Props for AppHeader component.
+- **Component** `AppHeader({
+  compact = false,
+  className = '',
+  hasUnreadNotifications = true,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/app-header").AppHeaderProps)` - React component rendering responsive app header with wordmark lockup, plain nav, and user avatar.
+
 ### `client/src/components/layouts/app-layout.tsx`
-*React component for app-layout.*
+*React component for app-layout composing AppHeader, PageContainer, and auth protection.*
 
 - **Interface** `AppLayoutProps` - Interface defining structure for app layout props.
-- **Component** `AppLayout({ children, activePath = '/dashboard' }: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/app-layout").AppLayoutProps)` - React component rendering app layout with authentication route protection.
+- **Component** `AppLayout({
+  children,
+  compact = false,
+  fluid = false,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/app-layout").AppLayoutProps)` - React component rendering app layout with authentication route protection and sys0 styling.
+
+### `client/src/components/layouts/app-nav.tsx`
+*Main navigation bar component rendering plain-text active-underlined route links.*
+
+- **Interface** `AppNavProps` - Props for AppNav component.
+- **Function** `isNavActive(pathname: string | null | undefined, targetHref: string)`: `boolean` - Helper determining whether a navigation link matches current path by first segment.
+- **Component** `AppNav({
+  className = '',
+  onLinkClick,
+  orientation = 'horizontal',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/app-nav").AppNavProps)` - React component rendering accessible, plain-text header navigation.
 
 ### `client/src/components/layouts/auth-layout.tsx`
 *React component for auth-layout.*
@@ -19,10 +44,38 @@
   subtitle,
 }: { children: React.ReactNode; subtitle?: string | undefined; })` - React component rendering auth layout.
 
+### `client/src/components/layouts/page-container.tsx`
+*Reusable page container constraining layout to visual specification width and padding.*
+
+- **Interface** `PageContainerProps` extends `HTMLAttributes<HTMLDivElement>` - Props for PageContainer component.
+- **Component** `PageContainer({
+  children,
+  fluid = false,
+  className = '',
+  ...props
+}: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/page-container").PageContainerProps)` - React component rendering constrained or fluid page container.
+
+### `client/src/components/layouts/page-header.tsx`
+*Reusable page header component matching sys0 visual hierarchy specifications.*
+
+- **Interface** `PageHeaderProps` - Props for PageHeader component.
+- **Component** `PageHeader({
+  title,
+  description,
+  actions,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/page-header").PageHeaderProps)` - React component rendering standard page header with title, description, and action controls.
+- **Component** `PageHeaderSkeleton({ className = '' }: { className?: string | undefined; })` - Skeleton placeholder component for PageHeader during loading state.
+
 ### `client/src/components/layouts/public-layout.tsx`
 *React component for public-layout.*
 
 - **Component** `PublicLayout({ children }: { children: React.ReactNode; })` - React component rendering public layout.
+
+### `client/src/components/layouts/user-menu.tsx`
+*User profile avatar dropdown menu component matching sys0 visual header standards.*
+
+- **Component** `UserMenu()` - React component rendering 32px circular avatar with user dropdown actions.
 
 ### `client/src/components/ui/badge.tsx`
 *React component for badge.*
@@ -116,6 +169,14 @@
 - **Interface** `LogoProps` - Interface defining structure for logo props.
 - **Component** `Logo({ className, href = '/' }: import("E:/Shiva Ram/Projects/slotly/client/src/components/ui/logo").LogoProps)` - React component rendering logo.
 
+### `client/src/components/ui/progress-bars.tsx`
+*Three-bar progression indicator glyph component matching visual specification.*
+
+- **Interface** `BarIndicatorConfig` - Configuration describing active count and color token for progress bars.
+- **Interface** `ProgressBarsProps` - Props for ProgressBars component.
+- **Function** `getIndicatorConfig(status: "draft" | "building" | "ready" | "pending_approval" | "published" | "archived")`: `import("E:/Shiva Ram/Projects/slotly/client/src/components/ui/progress-bars").BarIndicatorConfig` - Pure helper mapping project lifecycle status to bar indicator count and color token.
+- **Component** `ProgressBars({ status, className = '' }: import("E:/Shiva Ram/Projects/slotly/client/src/components/ui/progress-bars").ProgressBarsProps)` - React component rendering three-bar indicator glyph with increasing heights (6px, 10px, 14px).
+
 ### `client/src/components/ui/select.tsx`
 *React component for select.*
 
@@ -138,6 +199,28 @@
 *React component for skeleton.*
 
 - **Component** `Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)` - React component rendering skeleton.
+
+### `client/src/components/ui/status-indicator.tsx`
+*Status indicator component combining progress bars with monospace status label.*
+
+- **Interface** `StatusIndicatorProps` - Props for StatusIndicator component.
+- **Function** `formatStatusLabel(status: "draft" | "building" | "ready" | "pending_approval" | "published" | "archived", blueprintProgress: number | null | undefined)`: `string` - Formats lifecycle status and optional blueprint completion into standard label.
+- **Component** `StatusIndicator({
+  status,
+  blueprintProgress,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/components/ui/status-indicator").StatusIndicatorProps)` - React component rendering three-bar status glyph paired with monospace text label.
+
+### `client/src/components/ui/surface-card.tsx`
+*Reusable surface card container implementing 20px radius, 24px padding, and focus-within ring.*
+
+- **Interface** `SurfaceCardProps` extends `HTMLAttributes<HTMLDivElement>` - Props for SurfaceCard component.
+- **Component** `SurfaceCard({
+  variant = 'static',
+  children,
+  className = '',
+  ...props
+}: import("E:/Shiva Ram/Projects/slotly/client/src/components/ui/surface-card").SurfaceCardProps)` - React component rendering 20px radius surface card matching sys0 visual guidelines.
 
 ### `client/src/components/ui/switch.tsx`
 *React component for switch.*

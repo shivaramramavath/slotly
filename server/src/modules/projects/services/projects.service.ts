@@ -55,7 +55,10 @@ export class ProjectsService {
     private readonly cache?: CacheService,
   ) {}
 
-  private toDto(doc: Project, blueprintProgress: number | null = null): ProjectDto {
+  private toDto(
+    doc: Project,
+    blueprintProgress: number | null = null,
+  ): ProjectDto {
     const id = getId(doc);
     return {
       id,
@@ -69,8 +72,12 @@ export class ProjectsService {
       lastOpenedAt: doc.lastOpenedAt?.toISOString?.() || undefined,
       revision: doc.revision,
       blueprintProgress,
-      createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
-      updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
+      createdAt: doc.createdAt
+        ? new Date(doc.createdAt).toISOString()
+        : new Date().toISOString(),
+      updatedAt: doc.updatedAt
+        ? new Date(doc.updatedAt).toISOString()
+        : new Date().toISOString(),
     };
   }
 
@@ -226,19 +233,27 @@ export class ProjectsService {
         let progress: number | null = null;
         if (this.cache && pId) {
           try {
-            const cachedReadiness = await this.cache.get<{ percentComplete?: number }>(
-              `slotly:blueprint:${pId}:readiness`,
-            );
-            if (cachedReadiness && typeof cachedReadiness.percentComplete === 'number') {
+            const cachedReadiness = await this.cache.get<{
+              percentComplete?: number;
+            }>(`slotly:blueprint:${pId}:readiness`);
+            if (
+              cachedReadiness &&
+              typeof cachedReadiness.percentComplete === 'number'
+            ) {
               progress = cachedReadiness.percentComplete;
             } else {
-              const cachedBlueprint = await this.cache.get<{ nodes?: Array<{ status?: string }> }>(
-                `slotly:blueprint:${pId}`,
-              );
-              if (cachedBlueprint?.nodes && Array.isArray(cachedBlueprint.nodes)) {
+              const cachedBlueprint = await this.cache.get<{
+                nodes?: Array<{ status?: string }>;
+              }>(`slotly:blueprint:${pId}`);
+              if (
+                cachedBlueprint?.nodes &&
+                Array.isArray(cachedBlueprint.nodes)
+              ) {
                 const totalNodes = cachedBlueprint.nodes.length;
                 if (totalNodes > 0) {
-                  const completed = cachedBlueprint.nodes.filter((n) => n.status === 'complete').length;
+                  const completed = cachedBlueprint.nodes.filter(
+                    (n) => n.status === 'complete',
+                  ).length;
                   progress = Math.round((completed / totalNodes) * 100);
                 } else {
                   progress = 0;

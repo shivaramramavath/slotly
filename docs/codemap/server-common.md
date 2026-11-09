@@ -384,7 +384,7 @@
 ### `server/src/modules/projects/services/projects.service.ts`
 *Domain service orchestrating projects.service business logic.*
 
-- **Injectable** `ProjectsService` (deps: CachedProjectRepository, CachedBlueprintRepository, TemplateService, GraphFromInstitutionBuilder, @Inject(INSTITUTIONS_SERVICE), AuditService, @Inject(INSTITUTION_REPOSITORY)) - Injectable service providing projects service logic.
+- **Injectable** `ProjectsService` (deps: CachedProjectRepository, CachedBlueprintRepository, TemplateService, GraphFromInstitutionBuilder, @Inject(INSTITUTIONS_SERVICE), AuditService, @Inject(INSTITUTION_REPOSITORY), @Inject(CACHE_SERVICE)) - Injectable service providing projects service logic.
 
 ### `server/src/modules/users/repositories/cached-user.repository.ts`
 *Database repository managing cached-user.repository persistence.*
