@@ -17,6 +17,7 @@ GET /users/me/security, /users/me/security/activity, /users/me/security/devices
 DELETE /users/me/security/devices/:deviceId
 GET /users/me/security/connections (list connected OAuth provider identities)
 DELETE /users/me/security/connections/:provider (disconnect OAuth provider with step-up verification)
+GET /users/me, PATCH /users/me (profile; verify path and fields in the controller)
 
 INSTITUTION & STRUCTURE
 GET /institution/structure
@@ -71,6 +72,7 @@ POST /library/import
 GET /library/export
 POST /library/match/room
 POST /library/match/faculty
+GET /library/counts per-entity counts for the library tabs (added in UX-2; verify it exists on main)
 
 PROJECTS
 POST /projects
@@ -104,6 +106,7 @@ POST /projects/:projectId/builds enqueue build generation (modes: fresh, regener
 GET /projects/:projectId/builds list generated schedule versions
 GET /projects/:projectId/builds/:versionId get specific schedule version with slots, score, conflicts
 POST /projects/:projectId/builds/cancel cancel in-flight build job
+GET /projects/:projectId/builds/current currently running build, if any (present in the Phase 9 code; was missing here)
 
 TIMETABLE & EDITOR (use If-Match: <revision> on all writes; 409 on mismatch)
 GET    /versions/:versionId/slots                        query schedule entries by sectionId, facultyId, roomId, subjectId, day
@@ -124,7 +127,8 @@ PUT    /versions/:versionId/periods
 
 VERSIONS, COMPARISON & PUBLISHING (FEATURES §10, Phase 11)
 GET    /projects/:projectId/versions                     list schedule versions for a project
-GET    /projects/:projectId/versions/:versionId          get specific schedule version details
+GET    /projects/:projectId/versions/:versionId          get specific schedule version details (verify: the Phase 11 log lists GET /versions/:versionId)
+GET    /versions/:versionId                              version metadata and details (per the Phase 11 log; verify which of the two paths exists, keep one)
 PATCH  /versions/:versionId/label                        update version label
 POST   /versions/:versionId/duplicate                    duplicate version as a new draft
 POST   /versions/:versionId/restore                      restore an older version as a new draft
@@ -139,105 +143,43 @@ POST   /versions/:versionId/publish                      admin direct publish in
 POST   /versions/:versionId/rate                         submit timetable quality rating and feedback
 GET    /versions/:versionId/ratings                      list quality ratings for a timetable version
 
-VIEWERS, EXPORTS, SHARING & NOTIFICATIONS (FEATURES §11, Phase 12)
-GET    /viewer/projects/:projectId/timetable             published timetable view for faculty, section, room, subject with current period
-GET    /viewer/me                                        landing timetable view for current logged-in faculty/student
-POST   /exports/projects/:projectId                      enqueue timetable export job (PDF, Excel, PNG, ICS)
-GET    /exports/:jobId                                   poll export job progress and status
-GET    /exports/download/:token                          download exported file via signed token
-POST   /calendar-feeds/projects/:projectId               create revocable calendar feed token
-GET    /calendar-feeds/projects/:projectId               list active calendar feeds
-DELETE /calendar-feeds/:feedId                           revoke calendar feed token
-GET    /public/calendar/:feedToken.ics                   unauthenticated RFC 5545 calendar subscription feed
-POST   /shares/projects/:projectId                       create revocable public share link
-GET    /shares/projects/:projectId                       list share links for a project
-DELETE /shares/:shareId                                  revoke public share link
-GET    /public/shares/:token                             unauthenticated rate-limited view of published timetable
-GET    /notifications                                    list user notifications (paginated, unread & type filters)
-PATCH  /notifications/:notificationId/read               mark single notification as read
-POST   /notifications/read-all                           mark all notifications as read
-GET    /notifications/preferences                        get notification channel preferences
-PUT    /notifications/preferences                        update notification channel preferences
-POST   /announcements                                    admin broadcast announcement to target audience
-
 SOCKET NAMESPACES & EVENTS
 /blueprint:
-client -> server: project:join, project:leave, cursor:update, node:lock, node:unlock
+client -> server: project:join, project:leave, cursor:update, node:lock, node:unlock,
+node:add, node:update, node:move, node:delete, edge:add, edge:delete (constants in packages/contracts)
 server -> client: node:status-changed, ops:applied, presence:changed,
 node:locked, node:unlocked, revision:conflict
 
 /builds:
-client -> server: join:project, leave:project
+client -> server: join:project, leave:project   (verify: the integration audit found the code using build:join / build:leave)
 server -> client: build:progress, build:completed, build:failed
 
 /schedule:
-  client -> server: schedule:join, schedule:leave
+  client -> server: schedule:join, schedule:leave   (verify: the Phase 10 log names these join:schedule / leave:schedule)
   server -> client: slot:moved, slot:updated, slot:locked, slot:cleared, revision:conflict, presence:changed
-
-/notifications:
-  client -> server: subscribe, mark_read
-  server -> client: notification:received, announcement:received
 
 BULLMQ QUEUES & PROCESSORS
 builds:
 concurrency: 2 (one active build per project enforced via Redis lock slotly:build:lock:{projectId})
-processors: BuildsProcessor -> BuildFacade -> TimetableSolver / AlternativesGenerator
+processors: BuildsProcessor -> BuildFacade -> TimetableSolver / AlternativesGenerator   (verify: the integration audit found builds running in-process instead of through this queue)
 write-behind:
 concurrency: 5
 coalesced write-behind persistence with jobId = {entity}:{id}
 flush barrier before builds
-email:
+email:   (verify: the code uses a queue named 'notifications'; keep one name)
 concurrency: 3
 direct delivery or transactional queued email dispatch via Brevo / SMTP
 audit:
 concurrency: 5
 persists audit trail entries from memory / Redis to Mongo audit_logs collection
-notifications:
-concurrency: 5
-processors: NotificationsFanOutProcessor, EmailProcessor with retry and dead letter
-exports:
-concurrency: 2
-processors: ExportProcessor -> ExportFacade -> StorageProvider (local disk)
 
-REDIS CACHE KEYS & TAGS (Phase 12)
-slotly:viewer:{projectId}:{type}:{targetId}[:day] - cached published timetable view (TTL 24h, tag project:{projectId}:viewer)
-slotly:public:share:{tokenHash}                   - cached public share metadata & timetable (TTL 1h)
-slotly:export:signed:{token}                      - expiring signed export download ticket (TTL 24h)
-slotly:feed:token:{tokenHash}                     - cached calendar feed token mapping (TTL 24h)
-
-# Phase 13: Analytics, Administration, Feedback, Monitoring
-GET    /analytics/projects/:projectId/overview           totals: faculty, departments, rooms, subjects, sections, timetables, conflicts
-GET    /analytics/projects/:projectId/metrics            all analytics metrics (workload, room, period, free periods, etc.)
-GET    /analytics/projects/:projectId/metrics/:metric    single analytics metric by key
-GET    /analytics/projects/:projectId/balancing-suggestions smart workload balancing suggestions
-GET    /admin/users                                      list users with pagination and search
-PATCH  /admin/users/:userId/role                         change user role (requires step-up)
-GET    /admin/roles                                      role × permission matrix
-GET    /admin/timetables                                 all timetables across institution
-GET    /admin/conflicts                                  reported problems and open conflicts across institution
-GET    /admin/users/:userId/sessions                     per-user active sessions
-DELETE /admin/users/:userId/sessions/:sessionId          terminate user session
-GET    /admin/users/:userId/security-events              security audit events for user
-POST   /admin/users/:userId/force-password-reset          force user password reset on next login
-POST   /admin/users/:userId/require-mfa                  toggle required MFA for user
-GET    /admin/audit-logs                                 filter audit logs (actor, action, date range, target)
-POST   /admin/audit-logs/export                          enqueue CSV audit log export through exports queue
-POST   /feedback                                         submit feedback, quality rating, or problem report
-GET    /feedback/me                                      list own submitted feedback
-GET    /admin/feedback                                   admin feedback triage list
-PATCH  /admin/feedback/:id                               admin update feedback status and reply
-GET    /admin/system/health                              health checks for API, MongoDB, Redis, and Queues
-GET    /admin/system/queues                              queue depths, active/failed/delayed counts
-POST   /admin/system/queues/:queueName/retry-failed      retry failed jobs in queue
-GET    /metrics                                          internal Prometheus metrics endpoint
-POST   /monitoring/vitals                                queue client Web Vitals reporting
-
-QUEUES (Phase 13)
-analytics:
-concurrency: 3
-processors: AnalyticsProcessor (asynchronous counter increments)
-
-REDIS CACHE KEYS & TAGS (Phase 13)
-slotly:analytics:{projectId}:overview                  - cached analytics overview counts (TTL 1h, tag project:{projectId}:analytics)
-slotly:analytics:{projectId}:{metricKey}               - cached metric calculation (TTL 1h, tag project:{projectId}:analytics)
-slotly:system:rate-limit:{ipOrUserId}                  - sliding window rate limiting key
+RECONCILIATION REQUIRED (this file, the code and docs/ARCHITECTURE.md disagree; decide, then fix the loser)
+1. /builds client events: join:project / leave:project (this file) vs build:join / build:leave (code at audit time) vs build:subscribe (ARCHITECTURE).
+2. /schedule client events: schedule:join / schedule:leave (this file) vs join:schedule / leave:schedule (Phase 10 log).
+3. Build lock key: slotly:build:lock:{projectId} (this file) vs slotly:lock:build:{projectId} (code at audit time) vs slotly:build:{projectId}:lock (ARCHITECTURE).
+4. Builds queue: documented with a BuildsProcessor; the audit found in-process execution (AUD-A-03). Either route builds through BullMQ or document the in-process design and remove the queue entry.
+5. Email queue name: email (this file) vs notifications (code).
+6. Library routes: POST /library/import and GET /library/export, POST /library/match/room (this file) vs /library/import/:entity, /library/export/:entity, /library/rooms/match, /library/faculty/match (Phase 4 log).
+7. Institution routes: /institution/departments and so on (this file) vs /departments, /programs (Phase 3 log).
+8. Version detail path: /projects/:projectId/versions/:versionId vs /versions/:versionId.
+Regenerate the route table from the controllers with scripts/audit-routes.js and compare line by line before editing this file.

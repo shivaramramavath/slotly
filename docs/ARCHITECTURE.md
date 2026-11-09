@@ -1,492 +1,647 @@
 # Slotly Architecture Specification
 
-## 1. Feature Coverage Matrix (FEATURES.md to Phases 1-14)
+Last updated: 2026-11-08 (status taken from docs/PROGRESS.md). Reflects Phases 0 to 9, the audit stabilization fixes, the code map, namespaced server configuration (C1), social login (S1, both passes), refresh-flow hardening (P1 Part A), Phase 10 pass 0 and pass 1 (engine package and schedule server) and Phase 11 pass 1 (versions and publishing server). Client passes of Phases 10 and 11, the slots client and route protection Part B are still pending.
 
-| Category / Section        | Feature Name                      | Description                                                                            | Target Phase |
-| :------------------------ | :-------------------------------- | :------------------------------------------------------------------------------------- | :----------- |
-| **Designer (React Flow)** | 1. Visual Canvas                  | Infinite canvas, zoom, pan, snap to grid, minimap, multi-select, fit view              | Phase 5      |
-|                           | 2. Academic Structure Nodes       | Institution, Department, Program, Academic Year, Semester, Section, Batch              | Phase 4, 5   |
-|                           | 3. Faculty Nodes                  | Faculty profile, availability weekly matrix, workload limits, qualification            | Phase 5, 8   |
-|                           | 4. Subject Nodes                  | Theory, Lab, Tutorial, Electives, consecutive hours, credits, rooms                    | Phase 5, 8   |
-|                           | 5. Room Nodes                     | Classroom, Lab, Seminar hall, capacity, equipment, availability                        | Phase 5, 8   |
-|                           | 6. Drag & Drop System             | Palette to canvas drag, handle-to-handle connections, connection gate validation       | Phase 5      |
-|                           | 7. Node Config Panel              | Contextual sidebar configuration panel, schema validation, inline edits                | Phase 5      |
-|                           | 8. Graph Validation Engine        | Structural validation, constraint validation, error navigation, fix hints              | Phase 4      |
-|                           | 9. Auto Arrange Engine            | Hierarchical Dagre layout (TB default, LR, BT, RL), edge routing                       | Phase 5      |
-|                           | 10. Node Grouping & Containers    | Department containers, semester groups, collapsible visual containers                  | Phase 5      |
-|                           | 11. Graph Templates               | Save subtree/graph as template, duplicate, export/import JSON                          | Phase 6      |
-|                           | 12. Undo, Redo & History          | Command pattern for graph operations, history panel, snapshot restore                  | Phase 6      |
-|                           | 13. Auto Save & Persistence       | Non-critical position autosave via Redis/BullMQ, revision checks                       | Phase 6, 11  |
-|                           | 14. Graph Search & Navigation     | Search nodes by name/code, focus node, mini-map highlights                             | Phase 5      |
-|                           | 15. Smart Recommendations         | Automatic faculty/room assignment recommendations based on tags/qualifications         | Phase 8, 13  |
-|                           | 16. Graph Constraints             | Institution-level, department-level and section-level inherited constraints            | Phase 4, 8   |
-|                           | 17. Timetable Preview             | Direct read-only matrix preview generated from current blueprint graph                 | Phase 8      |
-|                           | 18. Import & Export               | Export blueprint to JSON/SVG/PNG, import academic structure JSON/CSV                   | Phase 6      |
-|                           | 19. Collaboration                 | Real-time presence, multi-user node locking, collaborative cursors                     | Phase 7      |
-|                           | 20. Performance & Reliability     | Virtualized canvas rendering, memoized completion calculations, stampede guard         | Phase 4, 5   |
-|                           | 21. Advanced UI Features          | Guided mode (find first incomplete node), quick connect, badges                        | Phase 4, 5   |
-|                           | 22. Designer Toolbar              | Zoom controls, layout selector, validation summary, build launcher                     | Phase 5      |
-| **Auth & Security**       | 1. Authentication Core            | Registration, Login, Logout, Argon2 password hashing, secure cookies                   | Phase 1      |
-|                           | 2. Session Management             | Redis-backed session tracking, multi-device tracking, revoke single/all                | Phase 1      |
-|                           | 3. Token Management               | Access token in memory (15m), Refresh token in httpOnly cookie with rotation           | Phase 1      |
-|                           | 4. Multi-Factor Auth (MFA)        | TOTP MFA enrollment (QR code), verification, recovery codes, step-up auth              | Phase 2      |
-|                           | 5. Password Management            | Reset via secure token, change password, breached password check (pwned API)           | Phase 2      |
-|                           | 6. Email Verification & OTP       | 6-digit OTP via email, rate limiting, expiry, resend cooldown                          | Phase 2      |
-|                           | 7. Account Recovery               | Recovery codes verification, emergency admin reset                                     | Phase 2      |
-|                           | 8. Passkeys & WebAuthn            | Biometric / FIDO2 authentication fallback                                              | Phase 2      |
-|                           | 9. Role-Based Access (RBAC)       | SUPER_ADMIN, ADMIN, DESIGNER, FACULTY, STUDENT roles                                   | Phase 1, 3   |
-|                           | 10. Authorization & Security      | Institution and department resource-level ownership guards                             | Phase 3      |
-|                           | 11. Threat Protection             | IP rate limiting, account lockout after failed attempts, helmet headers                | Phase 1      |
-|                           | 12. Device Management             | Device fingerprinting, browser/OS detection, remote revocation                         | Phase 2      |
-|                           | 13. Security Notifications        | Email alert on new login, password change, MFA status changes                          | Phase 2      |
-|                           | 14. Audit Logs                    | Write-behind queue for authentication and security events                              | Phase 2      |
-|                           | 15. Account Lifecycle             | User deactivation, soft delete, role assignment by institution admin                   | Phase 3      |
-|                           | 16. Auth API Routes               | Routes per docs/ROUTES.md (/auth/_, /users/me/security/_)                              | Phase 1, 2   |
-|                           | 17. Redis Session Structure       | Session hash keys: `slotly:session:{sessionId}` with TTL                               | Phase 1      |
-|                           | 18. Auth Frontend Pages           | Login, register, verify-email, reset-password, mfa-challenge, security settings        | Phase 1, 2   |
-| **Timetable Editor**      | 1. Editor Main Features           | Grid-based matrix view by Section, Faculty, and Room                                   | Phase 10     |
-|                           | 2. Interactive Schedule Table     | Day x Period grid, responsive layout, custom periods                                   | Phase 10     |
-|                           | 3. Cell-Level Editing             | Click-to-edit cell modal: Subject, Faculty, Room assignment                            | Phase 10     |
-|                           | 4. Advanced Cell Editor           | Conflict warnings in real-time, replacement recommendations                            | Phase 10     |
-|                           | 5. Drag & Drop Editing            | dnd-kit drag class between periods and days with drop indicators                       | Phase 10     |
-|                           | 6. Cell Copy, Paste & Duplication | Clipboard operations for period assignments across days/sections                       | Phase 10     |
-|                           | 7. Multi-Cell Selection           | Bulk move, bulk clear, bulk faculty reassignment                                       | Phase 10     |
-|                           | 8. Timetable Cell Types           | Theory, Lab (multi-period span), Break, Free, Elective group                           | Phase 10     |
-|                           | 9. Cell Merging & Splitting       | Merge contiguous periods for lab blocks (2-4 hrs), split merged cells                  | Phase 10     |
-|                           | 10. Conflict Detection            | Live faculty double-booking, room overlap, section clashes                             | Phase 10     |
-|                           | 11. Smart Cell Suggestions        | Highlight valid free slots when dragging or clicking a class                           | Phase 10     |
-|                           | 12. History & Undo/Redo           | Command pattern on client and server for slot operations                               | Phase 11     |
-|                           | 13. Auto-Save & Write-Behind      | Redis-first write-behind queue for slot moves with revision tags                       | Phase 11     |
-|                           | 14. Keyboard Shortcuts            | Vim/standard navigation (arrows, Delete, Ctrl+Z, Ctrl+Y, Ctrl+C, Ctrl+V)               | Phase 10     |
-|                           | 15. Table Customization           | Toggle Saturday/Sunday, periods count, lunch duration, compact mode                    | Phase 10     |
-|                           | 16. Locking & Permissions         | Designer edit mode vs Admin approve mode, cell lock during active drag                 | Phase 10, 12 |
-|                           | 17. Schedule Comparison           | Diff visualizer between two timetable versions (highlights changes)                    | Phase 12     |
-|                           | 18. Publishing Lifecycle          | State pattern: draft -> building -> ready -> pending_approval -> published -> archived | Phase 12     |
-|                           | 19. AI-Assisted Editing           | Groq LangGraph agent parses scheduling commands & proposes operations                  | Phase 13     |
-|                           | 20. Editor API Routes             | Endpoints matching docs/ROUTES.md with If-Match revision headers                       | Phase 10, 11 |
-| **Solver & Analytics**    | Constraint Engine                 | Hard constraints (no overlap, room capacity) & soft preferences                        | Phase 9      |
-|                           | BullMQ Build Pipeline             | Async scheduling solver job with progress events and cancellation                      | Phase 9      |
-|                           | Exporters                         | PDF timetable generator, Excel (.xlsx) export, iCal (.ics) subscription                | Phase 14     |
-|                           | Public Viewer                     | Read-only hashed token share link for students and public boards                       | Phase 14     |
-|                           | Workload & Analytics              | Faculty teaching hours distribution, room utilization heatmaps                         | Phase 14     |
+How to read this file:
+
+- **Built** means the item exists in the repository and is described in `docs/PROGRESS.md` or visible in git history. **Planned** means designed but not yet built. **Done (branch)** means finished on a branch whose merge into `main` should be confirmed.
+- Items marked **(verify)** were written from the specification or progress log and must be checked against the code. Section 14 has a prompt that does this.
+- Names in `ROUTES.md` are authoritative unless Section 13 (Decisions) says otherwise.
+
+Related files: `AGENTS.md`, `FEATURES.md`, `ROUTES.md`, `BLUEPRINT_RULES.md`, `CLIENT_UX.md`, `CLIENT_ROUTES.md`, `CODEMAP.md`, `AUDIT_REPORT.md`, `AUTH_VERIFICATION.md`, `PROGRESS.md`.
 
 ---
 
-## 2. Target Folder Trees
+## 1. Roadmap and status
 
-### 2.1 Client Application (`client/`)
+| Step | Scope | Status |
+|---|---|---|
+| Phases 0 to 8 | Scaffold, foundation, identity, institution, library, projects and Blueprint domain, canvas, advanced designer, constraint engine | Built |
+| Phase 9 | Generation: solver, builds, build UI | Built |
+| Stabilization | Fixes recorded in PROGRESS as AUD-001 to AUD-009 (pending-writes set, audit processor, RBAC and socket auth, availability normalization, unique indexes and migration, reason-code canonicalization, contract drift, institution data in TanStack Query, `blueprint.api.ts` relocation, docs) | Built |
+| Integration audit | `docs/AUDIT_REPORT.md` findings AUD-A-01 to AUD-A-11 (a different ID scheme from the fix list above) | Report done; several findings still open, see 13.3 |
+| Code map | `docs/CODEMAP.md`, generator, `pnpm codemap` and `pnpm codemap:check` | Built |
+| C1 | Server configuration: namespaced `registerAs` configs, Joi validation, env migration helper | Built |
+| S1 | Social login (Google, GitHub): server pass and client pass | Built |
+| P1 Part A | Refresh verification and hardening (grace window, cross-tab lock, proactive refresh, cleanup registry, CORS and cookie fixes) | Built |
+| P1 Part B | Route access registry, RouteGuard, auth state machine, optional edge hint | Planned |
+| UX-2 | Library routes, shared layout, export dropdown, URL filters, counts | Branch work exists (`ux/02-library-routes`) but has no entry in PROGRESS; confirm it is merged |
+| UX-1a | Client route restructure and slots (`CLIENT_ROUTES.md`) | Planned |
+| UX-1 | Skeletons, optimistic updates, rendering retrofit | Planned |
+| Phase 10 pass 0 | Engine extraction into `packages/engine` (`@slotly/engine`) | Built |
+| Phase 10 pass 1 | Schedule server: entries, occupancy, operations log, MoveValidator, `/schedule` gateway, undo and redo | Built |
+| Phase 10 pass 2 | Board and Studio client | Pending |
+| Phase 11 pass 1 | Versions, diff, change summary, publish state machine, publish requests, ratings | Built |
+| Phase 11 pass 2 | Versions, compare, publish and approvals client | Pending |
+| Phase 12 | Viewers, exports, sharing, notifications | Planned |
+| Phase 13 | Analytics, admin, audit query, monitoring, feedback | Planned |
+| Phase 14 | AI assistant and RAG | Planned |
+| Phase 15 | CI and release hardening | Planned |
+| Phase 16 | Optional additions | Planned |
+
+Recommended order from here: confirm merges and the UX-2 branch; close the open audit findings that affect names and security (13.3 items 1 to 5); UX-1a; P1 Part B; UX-1; Phase 10 pass 2; Phase 11 pass 2; Phase 12. The slots client (UX-1a) comes before the Board and Studio client so those screens are built on the final routes, and the route guard (P1 Part B) attaches to the final `(auth)` and `(app)` layouts.
+
+---|---|---|
+| Phases 0 to 8 | Scaffold, foundation, identity, institution, library, projects and Blueprint domain, canvas, advanced designer, constraint engine | Built |
+| Phase 9 | Generation: solver, builds queue, build UI | Built |
+| Audit | Integration audit and fixes AUD-001 to AUD-009 (pending writes leak, guards and socket auth, availability matrices, unique indexes, canonical reason codes, contract drift, TanStack Query for institution data, `blueprint.api.ts` relocation, docs alignment) | Done (branch `fix/integration-audit`, tag `phase-09-stabilized`; confirm merge to `main`) |
+| Code map | `docs/CODEMAP.md` and generator, `pnpm codemap` and `pnpm codemap:check` | Done (branch `docs/codemap`, tag `codemap-done`; confirm merge) |
+| UX-2 | Library routes (`/library/faculty`, `/subjects`, `/rooms`), shared layout, export dropdown, URL filters, counts endpoint | Done (branch `ux/02-library-routes`; confirm merge) |
+| C1 | Server configuration refactor to namespaced `registerAs` configs with Joi validation | Planned |
+| UX-1a | Client route restructure and slots (`CLIENT_ROUTES.md`) | Planned |
+| P1 | Protected routes in the client and refresh-token verification and hardening | Planned |
+| UX-1 | Client retrofit: skeletons, optimistic updates, rendering | Planned |
+| S1 | Social login (Google, GitHub) | Planned |
+| Phase 10 | Board and Studio (schedule editor) | Planned |
+| Phase 11 | Versions, comparison, publishing workflow | Planned |
+| Phase 12 | Viewers, exports, sharing, notifications | Planned |
+| Phase 13 | Analytics, admin, audit query, monitoring, feedback | Planned |
+| Phase 14 | AI assistant and RAG | Planned |
+| Phase 15 | CI and release hardening | Planned |
+| Phase 16 | Optional additions | Planned |
+
+Recommended order: confirm merges, then C1, UX-1a, P1, UX-1, S1, then Phase 10. Config comes first because later work adds environment variables (OAuth). UX-1a comes before P1 because the route guard attaches to the final `(auth)` and `(app)` layouts. Social login comes after both because it touches the login, profile and security pages.
+
+---
+
+## 2. Feature coverage matrix
+
+Sections refer to `FEATURES.md`.
+
+| FEATURES section | Topic | Phase or step | Status |
+|---|---|---|---|
+| 2.1 to 2.4, 2.8, 2.13 | Registration, sessions, tokens, OTP, throttling, RBAC | 2 | Built (hardened by AUD-002) |
+| 2.5 to 2.7, 2.9 to 2.12, 2.15 | Passwords, recovery, MFA, step-up, devices, audit events, lifecycle, auth UI | 2 | Built |
+| 2.1 (extension) | Social login with Google and GitHub, account linking, onboarding | S1 | Built |
+| 2.2, 2.3 (client side) | Single-flight and cross-tab refresh, proactive refresh | P1 Part A | Built |
+| 2.13 (client side) | Protected routes, route access registry, RouteGuard | P1 Part B | Planned |
+| 2.14 | Passkeys, risk-based auth | 16 | Planned |
+| 3 | Institution and academic management | 3 | Built |
+| 4 | Library | 4, UX-2 | Built (routes and export menu done on branch) |
+| 5 | Projects | 5 | Built |
+| 6.1 to 6.3, 6.7, 6.10 to 6.12, 6.16 to 6.17 (server) | Blueprint domain, gating, templates, history, readiness, import and export | 5 | Built |
+| 6.4 to 6.7 (client), 6.12 | Canvas, gating UX, sync, autosave | 6 | Built (sidebar tabs move to slots in UX-1a) |
+| 6.4, 6.8 to 6.20 | Advanced designer features | 7 | Built |
+| 6.15, 7 | Constraints and validation | 8 | Built |
+| 8 | Generation | 9 | Built |
+| 9 | Board and Studio | 10 | Server built, client pending |
+| 10 | Versions and publishing | 11 | Server built, client pending |
+| 11 | Viewers, export, sharing, notifications | 12 | Planned |
+| 12, 13 | Analytics, admin, feedback, monitoring | 13 | Planned |
+| 14 | AI and RAG | 14 | Planned |
+| 15 | Platform requirements (CI, security pass, runbook) | 15 | Planned |
+| 16 | Later additions | 16 | Planned |
+| CLIENT_UX | Parallel routes, skeletons, optimistic updates, rendering budget | UX-1a, UX-1 | Planned |
+
+---
+
+## 3. Target folder trees
+
+### 3.1 Repository
 
 ```
-client/
-├── public/
-│   └── favicon.ico
-├── src/
-│   ├── app/
-│   │   ├── (auth)/
-│   │   │   ├── login/page.tsx
-│   │   │   ├── register/page.tsx
-│   │   │   ├── verify-email/page.tsx
-│   │   │   ├── reset-password/page.tsx
-│   │   │   └── mfa/page.tsx
-│   │   ├── (dashboard)/
-│   │   │   ├── layout.tsx
-│   │   │   ├── dashboard/page.tsx
-│   │   │   ├── institutions/page.tsx
-│   │   │   └── settings/security/page.tsx
-│   │   ├── (studio)/
-│   │   │   ├── projects/[projectId]/
-│   │   │   │   ├── blueprint/page.tsx      # React Flow Visual Designer
-│   │   │   │   ├── editor/page.tsx         # Interactive Timetable Grid Studio
-│   │   │   │   ├── comparison/page.tsx     # Version Diff Viewer
-│   │   │   │   └── settings/page.tsx
-│   │   ├── share/[token]/page.tsx          # Public Viewport
-│   │   ├── layout.tsx
-│   │   ├── page.tsx
-│   │   └── globals.css
-│   ├── components/
-│   │   └── ui/                             # shadcn/ui primitives (Button, Dialog, Dropdown, Input, etc.)
-│   ├── features/                           # Feature-sliced modules (SOLID container/presentation)
-│   │   ├── auth/
-│   │   │   ├── components/
-│   │   │   ├── hooks/
-│   │   │   ├── services/
-│   │   │   ├── store/
-│   │   │   └── types/
-│   │   ├── blueprint/
-│   │   │   ├── components/
-│   │   │   │   ├── canvas/                 # React Flow canvas wrapper
-│   │   │   │   ├── nodes/                  # Custom Node types (Institution, Dept, Subject, etc.)
-│   │   │   │   ├── edges/                  # Custom Gates & Edges
-│   │   │   │   ├── panels/                 # NodeConfigPanel, ValidationSummary, Palette
-│   │   │   │   └── toolbar/                # BlueprintToolbar (TB/LR, Fit, Guided Mode)
-│   │   │   ├── hooks/                      # useBlueprintGraph, useGateValidation, useGuidedMode
-│   │   │   ├── services/                   # blueprint.api.ts, blueprint.socket.ts
-│   │   │   ├── store/                      # blueprint.store.ts (Zustand)
-│   │   │   └── types/
-│   │   ├── timetable-editor/
-│   │   │   ├── components/
-│   │   │   │   ├── grid/                   # Weekly timetable matrix
-│   │   │   │   ├── cell/                   # TimetableCell, MergedCell
-│   │   │   │   ├── modals/                 # CellEditModal, ConflictWarningModal
-│   │   │   │   ├── dnd/                    # DragOverlay, DropSlot
-│   │   │   │   └── toolbar/                # EditorToolbar, FilterControls
-│   │   │   ├── hooks/                      # useTimetableGrid, useDndSchedule, useUndoRedo
-│   │   │   ├── services/                   # timetable.api.ts
-│   │   │   ├── store/                      # timetable.store.ts
-│   │   │   └── types/
-│   │   ├── ai-assistant/
-│   │   │   ├── components/                 # ChatDrawer, OperationProposalCard
-│   │   │   ├── hooks/
-│   │   │   ├── services/
-│   │   │   └── store/
-│   │   └── analytics/
-│   │       ├── components/                 # WorkloadChart, RoomHeatmap
-│   │       └── services/
-│   ├── lib/
-│   │   ├── api-client.ts                   # Axios/Fetch wrapper with JWT refresh interceptor
-│   │   ├── socket-client.ts                # Socket.IO client instance
-│   │   ├── utils.ts                        # Styling / clsx / twMerge helpers
-│   │   └── query-client.ts                 # TanStack Query client setup
-│   └── types/
-├── package.json
-└── tsconfig.json
+slotly/
+├── client/                 Next.js (App Router, TypeScript, Tailwind v4)
+├── server/                 NestJS (TypeScript)
+├── packages/
+│   ├── contracts/          shared zod schemas, DTO types, reason codes, socket event names (tsup)
+│   └── engine/             @slotly/engine: framework-free constraint engine shared by server and client (built, Phase 10 pass 0)
+├── docs/                   FEATURES, ROUTES, BLUEPRINT_RULES, ARCHITECTURE, CLIENT_UX, CLIENT_ROUTES,
+│                           CODEMAP + codemap/, AUDIT_REPORT, AUTH_VERIFICATION, PROGRESS
+├── scripts/                codemap generator, env-migrate, audit scripts (routes, indexes, socket load)
+├── docker-compose.yml      Redis (verify: MongoDB is hosted on Atlas, no local MongoDB service)
+├── AGENTS.md
+└── pnpm-workspace.yaml
 ```
 
-### 2.2 Server Application (`server/`)
+### 3.2 Client (`client/src`)
+
+Canonical routes with slots (`@name` folders are parallel-route slots; `(group)` folders do not appear in URLs). Every segment and every slot has `loading.tsx` and `error.tsx`; every slot also has `default.tsx`.
 
 ```
-server/
-├── src/
-│   ├── common/
-│   │   ├── adapters/                       # LLM, BreachedPassword, Mailer, OAuth
-│   │   ├── decorators/                     # CurrentUser, Roles, Public, Revision
-│   │   ├── filters/                        # GlobalExceptionFilter, MongoExceptionFilter
-│   │   ├── guards/                         # AuthGuard, SessionGuard, RolesGuard, ResourceGuard
-│   │   ├── interceptors/                   # LoggingInterceptor, RevisionHeaderInterceptor
-│   │   ├── pipes/                          # ZodValidationPipe
-│   │   └── types/
-│   ├── config/                             # @nestjs/config schemas & validation
-│   ├── infrastructure/
-│   │   ├── cache/                          # CacheService (ioredis, tag invalidation, single-flight)
-│   │   ├── database/                       # Mongoose connection & transactional session manager
-│   │   └── queue/                          # BullMQ modules & workers config
-│   ├── modules/
-│   │   ├── auth/                           # Authentication, tokens, Argon2, sessions
-│   │   ├── users/                          # User entity, profile, security settings
-│   │   ├── institutions/                   # Multi-tenancy, hierarchy, permissions
-│   │   ├── blueprint/
-│   │   │   ├── controllers/                # BlueprintController, TemplateController
-│   │   │   ├── gates/                      # G1-G10 Chain of Responsibility gates
-│   │   │   ├── gateways/                   # BlueprintGateway (/blueprint namespace)
-│   │   │   ├── repositories/               # BlueprintRepository, CachedBlueprintRepository
-│   │   │   ├── schemas/                    # Mongoose schemas (Node, Edge, Template)
-│   │   │   ├── services/                   # BlueprintService, GateValidationService, LayoutService
-│   │   │   └── blueprint.module.ts
-│   │   ├── solver/
-│   │   │   ├── constraints/                # Strategy pattern constraint rules
-│   │   │   ├── engine/                     # Solver engine (backtracking / CSP)
-│   │   │   ├── processors/                 # BullMQ SolverJobProcessor
-│   │   │   └── solver.module.ts
-│   │   ├── timetable/
-│   │   │   ├── controllers/                # TimetableController, SlotController
-│   │   │   ├── repositories/               # VersionRepository, SlotRepository
-│   │   │   ├── schemas/                    # TimetableVersion, Slot
-│   │   │   ├── services/                   # TimetableService, SlotMoveValidator
-│   │   │   ├── lifecycle/                  # State pattern (Draft, Ready, Published, Archived)
-│   │   │   └── timetable.module.ts
-│   │   ├── write-behind/                   # BullMQ Write-Behind Queue & processors
-│   │   ├── ai/                             # Groq LangChain/LangGraph agent & tools
-│   │   ├── audit/                          # Audit log consumer & repository
-│   │   └── export/                         # PDF, XLSX, iCal Exporter strategies
-│   ├── app.controller.ts
-│   ├── app.module.ts
-│   ├── app.service.ts
-│   └── main.ts
-├── test/
-├── package.json
-└── tsconfig.json
+app/
+├── layout.tsx  error.tsx  global-error.tsx  not-found.tsx  globals.css  favicon.ico
+│
+├── (public)/
+│   ├── layout.tsx                          PublicLayout
+│   ├── page.tsx                            /  landing
+│   └── s/[token]/                          page, loading, not-found       public share view
+│
+├── (auth)/
+│   ├── layout.tsx                          AuthLayout + RouteGuard (guestOnly)
+│   ├── login  register  forgot-password  reset-password
+│   ├── verify-email  mfa  onboarding       state-restricted pages
+│   └── auth/callback/                      social login return page (built; moves under the (auth) group in UX-1a)
+│
+└── (app)/
+    ├── layout.tsx                          AppShell + session gate; props {children, modal}
+    ├── loading.tsx  error.tsx
+    │
+    ├── @modal/                             global intercepting modals and drawers
+    │   ├── default.tsx                     returns null
+    │   ├── (.)projects/new/page.tsx        wizard modal
+    │   ├── (.)library/faculty/new  subjects/new  rooms/new
+    │   ├── (.)library/faculty/[facultyId]  subjects/[subjectId]  rooms/[roomId]    drawers
+    │   └── (.)notifications/page.tsx       notification drawer
+    │
+    ├── home/                               layout props {children, stats, recent, status}
+    │   ├── page.tsx
+    │   └── @stats/  @recent/  @status/     each: default, loading, error, page
+    │
+    ├── projects/
+    │   ├── page.tsx  loading.tsx  error.tsx
+    │   ├── new/page.tsx                    full-page fallback for hard navigation
+    │   └── [projectId]/
+    │       ├── layout.tsx                  project header and tabs (stays mounted); props {children, modal}
+    │       ├── @modal/                     default.tsx, (.)publish/page.tsx
+    │       ├── blueprint/
+    │       │   ├── layout.tsx              props {children, sidebar}
+    │       │   ├── page.tsx                canvas, palette, toolbar (dynamic import, ssr false)
+    │       │   ├── default.tsx             re-exports page (hard load of a sidebar URL)
+    │       │   └── @sidebar/               default (null), page (Config), config, constraints,
+    │       │                               validation, history, ai   (each with loading and error)
+    │       ├── build/                      page, loading, error
+    │       ├── board/                      layout props {children, picker}; page, default, loading, error
+    │       │   ├── [sectionId]/            page, loading
+    │       │   └── @picker/                section picker (stays mounted)
+    │       ├── studio/                     layout props {children, picker, conflicts}
+    │       │   ├── page  default  loading  error
+    │       │   └── @picker/  @conflicts/
+    │       ├── versions/                   page, loading
+    │       │   └── compare/                layout props {children, left, right}; @left/ @right/
+    │       ├── publish/                    page, loading
+    │       └── settings/                   page, loading
+    │
+    ├── institution/                        layout (header and tab links); page; structure, departments,
+    │                                       programs, academic-years, semesters, sections, calendar,
+    │                                       working-days (page + loading each)
+    ├── library/                            layout (shared shell: header, toolbar, tabs)
+    │   ├── page.tsx                        redirects to /library/faculty
+    │   ├── faculty/  subjects/  rooms/     page + loading each
+    │   └── import/
+    ├── kits/                               page, loading
+    ├── timetables/                         me/  faculty/[facultyId]/  sections/[sectionId]/  rooms/[roomId]/
+    ├── analytics/                          layout props {children, workload, rooms, periods, free,
+    │                                       unallocated, efficiency}; one @slot per card
+    ├── admin/                              layout (role guard); users, roles, approvals, conflicts,
+    │                                       feedback, audit-logs, system
+    ├── notifications/                      hard-navigation fallback of the drawer
+    ├── profile/                            layout (tabs); page; security/; sessions/
+    └── help/  feedback/
+
+components/
+├── ui/                primitives (built); dropdown-menu, popover, avatar, progress, route-modal,
+│                      route-drawer, boundary, skeletons/ (planned)
+└── layouts/           app-layout, auth-layout, public-layout
+
+features/              (feature-sliced: components, hooks, services, store, types)
+├── auth/              built (refresh coordination, cross-tab sync, token refresher, logout registry, OAuth buttons and callback, step-up); auth state machine and RouteGuard planned in P1 Part B
+├── institution/       built (server data in TanStack Query after AUD-007; store keeps UI state)
+├── library/           built (entity registry, tables, toolbar, export menu, filters hook)
+├── projects/          built (project table, wizard, settings form to be extracted from pages)
+├── blueprint/         built (canvas, nodes, palette, sidebar tabs, dialogs, hooks, stores, blueprint.api.ts)
+├── builds/            built
+├── home/  profile/  board/  studio/  versions/  publishing/  viewer/
+├── notifications/  analytics/  admin/  ai/        planned
+
+lib/
+├── api-client.ts  query-provider.tsx  utils.ts                    built
+├── route-access.ts   route policy registry (planned, P1 Part B)
+├── routes.ts  query-keys.ts  web-vitals.ts                        planned
+├── auth/              cross-tab-sync, token-refresher, logout-registry   built (P1 Part A; verify file names)
+├── optimistic/        createOptimisticMutation, per-resource mutation queue       planned (UX-1)
+└── socket/            socket factory (blueprint, builds, schedule, notifications)   planned
 ```
 
----
+### 3.3 Server (`server/src`)
 
-## 3. Socket Contract (`/blueprint`)
+```
+config/                namespaced configs (built, C1): app, database, redis, jwt, session, auth, oauth,
+                       email, cache, queue, groq .config.ts; defaults.ts; env.validation.ts (Joi);
+                       config.module.ts (AppConfigModule); index.ts barrel
 
-### 3.1 Gateway Endpoint
+common/
+├── cache/             CacheService, RedisCacheService, InMemoryCacheService (fallback), tags, single-flight
+├── database/          BaseRepository, MongoBaseRepository, CachedRepository, TransactionHelper
+├── queue/             QueueModule, WriteBehindService (coalescing, dead-letter, bounded pending-writes counter)
+├── events/            typed EventBus
+├── audit/             AuditService, audit processor, AuditLog schema
+├── monitoring/        metrics interceptor (extended in Phase 13)
+├── rbac/              Permission enum, RolePermissions registry, guards, decorators
+├── concurrency/       RevisionHelper, RevisionConflictException (409 with current state)
+├── filters/ pipes/ middleware/ interceptors/
+└── adapters/          email (Brevo and log drivers), OAuth, breached-password, TOTP (LLM, embeddings later)
 
-- Namespace: `/blueprint`
-- Auth: Bearer JWT in handshake auth (`auth: { token: "Bearer ..." }`)
+modules/
+├── auth/              tokens, sessions, OTP, MFA, step-up, throttling, devices, recovery        built
+│   └── oauth/         provider registry, state store, account linking, onboarding               built (S1)
+├── users/             profile, security, admin lifecycle                                       built
+├── institutions/      institution, departments, programs, academic years, semesters, sections,
+│                      holidays, tree builder, dependency checker                                built
+├── library/           faculty, subjects, elective groups, rooms, workload, RoomMatcher,
+│                      FacultyQualifier, FileParser (CSV, Excel), import, counts endpoint        built
+├── projects/          ProjectState (state pattern), service and controller                      built
+├── blueprint/         NodeTypeRegistry, CompletionRules, CompletionService, GateChain (11 gates),
+│                      OperationService, ImpactAnalyzer, ConstraintResolver, builders, templates,
+│                      recommendations, readiness, BlueprintGateway, BlueprintWriteProcessor      built
+├── engine/            core/ (pure TypeScript) + EngineValidationService, controller              built
+├── builds/            solver, alternatives, BuildFacade, processor, /builds gateway              built
+├── schedules/         entries, occupancy, operations log, MoveValidator, /schedule gateway       built (10, server pass)
+├── versions/  publishing/   versions, diff, change summary, publish state machine, requests       built (11, server pass)
+├── viewer/  exports/  sharing/  notifications/  emails/                                        planned (12)
+├── analytics/  admin/  feedback/  audit-query/  monitoring/                                    planned (13)
+└── ai/                llm, rag, operations                                                     planned (14)
+```
 
-### 3.2 Event Definitions
-
-| Event Name            | Direction        | Payload Schema                                                                               | Description                         |
-| :-------------------- | :--------------- | :------------------------------------------------------------------------------------------- | :---------------------------------- |
-| `project:join`        | Client -> Server | `{ projectId: string }`                                                                      | Join room `project:{projectId}`     |
-| `project:leave`       | Client -> Server | `{ projectId: string }`                                                                      | Leave room `project:{projectId}`    |
-| `cursor:update`       | Client -> Server | `{ projectId: string, x: number, y: number }`                                                | Broadcast user cursor position      |
-| `node:lock`           | Client -> Server | `{ projectId: string, nodeId: string }`                                                      | Acquire exclusive lock on node      |
-| `node:unlock`         | Client -> Server | `{ projectId: string, nodeId: string }`                                                      | Release lock on node                |
-| `presence:changed`    | Server -> Client | `{ users: Array<{ userId: string, name: string, color: string, activeNodeId?: string }> }`   | Active users in the project         |
-| `node:status-changed` | Server -> Client | `{ nodeId: string, status: NodeStatus, missing: Array<{ field: string, message: string }> }` | Emitted when completion changes     |
-| `ops:applied`         | Server -> Client | `{ revision: number, appliedOps: Array<{ opId: string, type: string, targetId: string }> }`  | Emitted after batch ops apply       |
-| `node:locked`         | Server -> Client | `{ nodeId: string, userId: string, userName: string }`                                       | Notify other peers of locked node   |
-| `node:unlocked`       | Server -> Client | `{ nodeId: string }`                                                                         | Lock released                       |
-| `revision:conflict`   | Server -> Client | `{ currentRevision: number, rejectedRevision: number, message: string }`                     | Informs client of out-of-date write |
-
----
-
-## 4. MongoDB Collections, Indexes & Relations
-
-### 4.1 Schema Overview
-
-1. **`users`**
-   - Fields: `_id`, `email`, `passwordHash`, `name`, `role` (enum), `institutionId` (ref), `departmentId` (ref), `isEmailVerified`, `mfaEnabled`, `mfaSecret`, `recoveryCodes[]`, `createdAt`, `updatedAt`
-   - Indexes:
-     - `{ email: 1 }` (unique)
-     - `{ institutionId: 1, role: 1 }`
-   - Relations: Belongs to `institutions`.
-
-2. **`sessions`**
-   - Fields: `_id`, `userId` (ref), `sessionId` (UUID), `userAgent`, `ipAddress`, `refreshTokenHash`, `lastActiveAt`, `expiresAt`, `createdAt`
-   - Indexes:
-     - `{ sessionId: 1 }` (unique)
-     - `{ userId: 1 }`
-     - `{ expiresAt: 1 }` (TTL index)
-   - Relations: Belongs to `users`.
-
-3. **`institutions`**
-   - Fields: `_id`, `name`, `code` (unique), `workingDays` (number[]), `periodConfig` ({ startTime, periodDuration, periodsPerDay, breaks[] }), `createdAt`, `updatedAt`
-   - Indexes:
-     - `{ code: 1 }` (unique)
-
-4. **`departments`**
-   - Fields: `_id`, `institutionId` (ref), `name`, `code`, `createdAt`, `updatedAt`
-   - Indexes:
-     - `{ institutionId: 1, code: 1 }` (unique compound)
-   - Relations: Belongs to `institutions`.
-
-5. **`programs`**
-   - Fields: `_id`, `departmentId` (ref), `institutionId` (ref), `name`, `code`, `durationYears`, `createdAt`, `updatedAt`
-   - Indexes:
-     - `{ departmentId: 1, code: 1 }` (unique compound)
-
-6. **`academic_years`**
-   - Fields: `_id`, `programId` (ref), `institutionId` (ref), `yearNumber`, `label`, `createdAt`, `updatedAt`
-   - Indexes:
-     - `{ programId: 1, yearNumber: 1 }` (unique compound)
-
-7. **`semesters`**
-   - Fields: `_id`, `academicYearId` (ref), `programId` (ref), `institutionId` (ref), `semesterNumber`, `startDate`, `endDate`, `createdAt`, `updatedAt`
-   - Indexes:
-     - `{ academicYearId: 1, semesterNumber: 1 }` (unique compound)
-
-8. **`sections`**
-   - Fields: `_id`, `semesterId` (ref), `institutionId` (ref), `name`, `strength`, `createdAt`, `updatedAt`
-   - Indexes:
-     - `{ semesterId: 1, name: 1 }` (unique compound)
-
-9. **`batches`**
-   - Fields: `_id`, `sectionId` (ref), `institutionId` (ref), `name`, `size`, `createdAt`, `updatedAt`
-   - Indexes:
-     - `{ sectionId: 1, name: 1 }` (unique compound)
-
-10. **`subjects`**
-    - Fields: `_id`, `institutionId` (ref), `departmentId` (ref), `name`, `code`, `type` (Theory, Lab, Tutorial, Elective), `weeklyHours`, `consecutivePeriods`, `allowedRoomTypes[]`, `createdAt`, `updatedAt`
-    - Indexes:
-      - `{ institutionId: 1, code: 1 }` (unique compound)
-
-11. **`faculties`**
-    - Fields: `_id`, `userId` (ref, optional), `institutionId` (ref), `departmentId` (ref), `name`, `employeeId`, `email`, `maxHoursPerDay`, `maxHoursPerWeek`, `qualifiedSubjectIds[]` (ref), `availability` (matrix: 7xN booleans), `createdAt`, `updatedAt`
-    - Indexes:
-      - `{ institutionId: 1, employeeId: 1 }` (unique compound)
-
-12. **`rooms`**
-    - Fields: `_id`, `institutionId` (ref), `departmentId` (ref, optional), `name`, `code`, `type` (Classroom, Lab, Seminar), `capacity`, `equipment[]`, `createdAt`, `updatedAt`
-    - Indexes:
-      - `{ institutionId: 1, code: 1 }` (unique compound)
-
-13. **`projects`**
-    - Fields: `_id`, `institutionId` (ref), `name`, `term`, `academicYear`, `status` (enum: draft, building, ready, pending_approval, published, archived), `revision`, `activeVersionId` (ref), `createdById` (ref), `createdAt`, `updatedAt`
-    - Indexes:
-      - `{ institutionId: 1, status: 1 }`
-      - `{ createdById: 1 }`
-
-14. **`blueprints`**
-    - Fields: `_id`, `projectId` (ref), `revision`, `nodes` (Array of { id, type, parentId, data, position: {x,y}, status, missing[] }), `edges` (Array of { id, source, target, type }), `viewport` ({ x, y, zoom }), `updatedAt`
-    - Indexes:
-      - `{ projectId: 1 }` (unique)
-
-15. **`blueprint_templates`**
-    - Fields: `_id`, `institutionId` (ref, optional), `name`, `category`, `rootNodeType`, `treeData` (json), `isPublic`, `createdAt`
-    - Indexes:
-      - `{ category: 1 }`
-      - `{ institutionId: 1 }`
-
-16. **`timetable_versions`**
-    - Fields: `_id`, `projectId` (ref), `versionNumber`, `revision`, `status` (draft, published, archived), `publishApprovedBy` (ref), `publishedAt`, `createdAt`
-    - Indexes:
-      - `{ projectId: 1, versionNumber: 1 }` (unique)
-      - `{ projectId: 1, status: 1 }`
-
-17. **`timetable_slots`**
-    - Fields: `_id`, `versionId` (ref), `projectId` (ref), `dayOfWeek` (0-6), `periodIndex`, `durationSpan` (default 1), `sectionId` (ref), `batchId` (ref, optional), `subjectId` (ref), `facultyId` (ref), `roomId` (ref), `isLocked`, `createdAt`, `updatedAt`
-    - Indexes:
-      - `{ versionId: 1, dayOfWeek: 1, periodIndex: 1, facultyId: 1 }` (sparse conflict index)
-      - `{ versionId: 1, dayOfWeek: 1, periodIndex: 1, roomId: 1 }` (sparse conflict index)
-      - `{ versionId: 1, dayOfWeek: 1, periodIndex: 1, sectionId: 1 }` (sparse conflict index)
-
-18. **`audit_logs`**
-    - Fields: `_id`, `institutionId` (ref), `userId` (ref), `action` (string), `resource` (string), `resourceId` (string), `metadata` (object), `ipAddress`, `createdAt`
-    - Indexes:
-      - `{ institutionId: 1, createdAt: -1 }`
-      - `{ resourceId: 1 }`
-
-19. **`oauth_identities`**
-    - Fields: `_id`, `userId` (ref: users), `provider` ('google' | 'github'), `providerUserId`, `email`, `name`, `avatarUrl`, `createdAt`, `updatedAt`
-    - Indexes:
-      - `{ provider: 1, providerUserId: 1 }` (unique)
-      - `{ userId: 1 }`
-    - Relations: Belongs to `users`.
+The engine core and the solver must stay free of NestJS, Mongoose and Redis imports. After C1, `process.env` is read only inside `config/` and the bootstrap file.
 
 ---
 
-## 5. Redis Keys, TTLs, Tags, Queues & Job Names
+## 4. Client routing architecture
 
-### 5.1 Redis Keys & Invalidation Tags
+### 4.1 Slots (parallel routes)
 
-| Pattern                                   | Type          | TTL      | Purpose                                    | Invalidation Tags                              |
-| :---------------------------------------- | :------------ | :------- | :----------------------------------------- | :--------------------------------------------- |
-| `slotly:session:{sessionId}`              | Hash          | 7 days   | Active session authentication data         | `user:{userId}`                                |
-| `slotly:oauth:state:{state}`              | String (JSON) | 10 mins  | OAuth PKCE and CSRF state store            | n/a (single-use del)                           |
-| `slotly:user:{userId}:profile`            | String (JSON) | 1 hour   | Cached user profile & roles                | `user:{userId}`                                |
-| `slotly:blueprint:{projectId}`            | String (JSON) | 2 hours  | Cached blueprint graph & completion status | `project:{projectId}`, `blueprint:{projectId}` |
-| `slotly:blueprint:{projectId}:readiness`  | String (JSON) | 10 mins  | Computed readiness score & missing fields  | `blueprint:{projectId}`                        |
-| `slotly:institution:{institutionId}:tree` | String (JSON) | 24 hours | Hierarchy tree (depts, programs)           | `institution:{institutionId}`                  |
-| `slotly:version:{versionId}:slots`        | String (JSON) | 2 hours  | Full schedule slots matrix for editor      | `version:{versionId}`                          |
-| `slotly:lock:node:{projectId}:{nodeId}`   | String        | 30 secs  | Distributed lock for node editing          | n/a (auto-expires / explicit del)              |
-| `slotly:lock:slot:{versionId}:{slotId}`   | String        | 30 secs  | Distributed lock for slot move             | n/a                                            |
+| Layout | Slots | Purpose | Notes |
+|---|---|---|---|
+| `(app)` | `@modal` | Global intercepting modals and drawers | `default.tsx` returns `null` |
+| `home` | `@stats`, `@recent`, `@status` | Independently streaming dashboard cards | Each has its own skeleton and error boundary |
+| `projects/[projectId]` | `@modal` | Publish modal over any project page | Full page `publish/` exists for hard navigation |
+| `blueprint` | `@sidebar` | Config, Constraints, Validation, History and AI tabs as real URLs | Canvas never re-renders when switching tabs; selected node lives in client state (optional `?node=`), not in the route |
+| `board` | `@picker` | Persistent section picker | Stays mounted and cached when the section changes |
+| `studio` | `@picker`, `@conflicts` | Section picker and conflict panel | |
+| `versions/compare` | `@left`, `@right` | Two versions loading independently | |
+| `analytics` | `@workload`, `@rooms`, `@periods`, `@free`, `@unallocated`, `@efficiency` | One slot per card | |
 
-### 5.2 BullMQ Queues and Job Names
+Rules: every slot has `default.tsx`; `@modal` defaults return `null`; below a width breakpoint the Blueprint sidebar and Studio panels render as bottom sheets; Next.js 16 `params` and `searchParams` are promises (`await` in server components, `use` in client components).
 
-| Queue Name      | Job Name              | Payload                                               | Concurrency | Description                                 |
-| :-------------- | :-------------------- | :---------------------------------------------------- | :---------- | :------------------------------------------ |
-| `write-behind`  | `sync-node-positions` | `{ projectId, nodePositions: [{ id, x, y }] }`        | 10          | Coalesced background DB persistence         |
-| `write-behind`  | `sync-node-config`    | `{ projectId, nodeId, data }`                         | 10          | Coalesced node autosave                     |
-| `write-behind`  | `sync-chat-history`   | `{ projectId, userId, message }`                      | 5           | Persist AI conversation history             |
-| `solver`        | `solve-timetable`     | `{ projectId, versionId, constraints, options }`      | 2           | Conflict-free constraint engine execution   |
-| `audit`         | `log-event`           | `{ userId, institutionId, action, metadata, ip }`     | 20          | Asynchronous audit log persistence          |
-| `notifications` | `send-email`          | `{ to, subject, template, variables }`                | 5           | SMTP email dispatch (OTP, invites, alerts)  |
-| `export`        | `generate-export`     | `{ versionId, format: 'pdf'\|'xlsx'\|'ics', userId }` | 4           | Background generation of heavy export files |
+### 4.2 Intercepting routes
 
----
+| Soft navigation URL | Rendered as | Hard navigation fallback |
+|---|---|---|
+| `/projects/new` | Modal wizard | `projects/new/page.tsx` |
+| `/library/{faculty,subjects,rooms}/new` | Modal dialog | Full page |
+| `/library/{faculty,subjects,rooms}/[id]` | Right drawer | Full page |
+| `/notifications` | Drawer | `/notifications` page |
+| `/projects/[projectId]/publish` | Modal | `publish/` page |
 
-## 6. CRITICAL vs NON-CRITICAL Operations
+### 4.3 Route access policies (planned, P1 Part B)
 
-| Category         | Operation                                         | Execution Pattern                  | DB Target                                    | Consistency Guarantee              |
-| :--------------- | :------------------------------------------------ | :--------------------------------- | :------------------------------------------- | :--------------------------------- |
-| **CRITICAL**     | User Registration & Login                         | Synchronous                        | MongoDB + Redis                              | Immediate Strong Consistency       |
-| **CRITICAL**     | Session Revocation                                | Synchronous                        | Redis (immediate) + Mongo                    | Immediate Invalidation             |
-| **CRITICAL**     | Role / Permission Change                          | Synchronous                        | MongoDB + Redis cache bust                   | Immediate Strong Consistency       |
-| **CRITICAL**     | Project Creation & Delete                         | Synchronous                        | MongoDB                                      | Immediate Strong Consistency       |
-| **CRITICAL**     | Structural Graph Change (Add/Remove Node or Edge) | Synchronous after Gate Chain check | MongoDB + Redis cache update                 | Immediate Strong Consistency       |
-| **CRITICAL**     | Batch Operations (Topological Apply)              | Synchronous                        | MongoDB (Transaction)                        | Atomic Rollback on Failure         |
-| **CRITICAL**     | Solver Build Job Enqueue                          | Synchronous barrier                | Redis / BullMQ                               | Flushes pending write-behind first |
-| **CRITICAL**     | Save Studio Slot Move                             | Synchronous validation + write     | MongoDB (Transaction)                        | Conflict-free verification         |
-| **CRITICAL**     | Timetable Publish & Approval                      | Synchronous                        | MongoDB (Transaction)                        | Version immutability sealed        |
-| **CRITICAL**     | Accept AI Changes                                 | Synchronous                        | MongoDB (Transaction)                        | Complete state validation          |
-| **NON-CRITICAL** | Canvas Node Drag (Positions)                      | Write-behind                       | Redis first -> BullMQ (`jobId=node:${id}`)   | Eventual Consistency (coalesced)   |
-| **NON-CRITICAL** | Node Config Autosave                              | Write-behind                       | Redis first -> BullMQ (`jobId=config:${id}`) | Eventual Consistency (debounce)    |
-| **NON-CRITICAL** | Real-time Cursor & Presence                       | In-memory broadcast                | Socket.IO                                    | Ephemeral                          |
-| **NON-CRITICAL** | Chat History Storage                              | Write-behind                       | Redis -> BullMQ -> Mongo                     | Eventual Consistency               |
-| **NON-CRITICAL** | Audit & Activity Logging                          | Write-behind                       | BullMQ -> Mongo                              | Fire-and-forget buffer             |
-| **NON-CRITICAL** | Analytics Counters                                | Write-behind                       | Redis INCRBY -> BullMQ batch flush           | Eventual Consistency               |
-| **NON-CRITICAL** | Email Notifications                               | Async Queue                        | BullMQ -> SMTP worker                        | Asynchronous retry with backoff    |
+A single registry (`lib/route-access.ts`) maps route patterns to a policy. The guard, edge hint, navigation, command palette and redirect targets all read it. A test fails if any route file has no policy.
 
----
+| Policy | Routes | Behaviour |
+|---|---|---|
+| public | `/`, `/s/[token]`, `/auth/callback` | Always reachable |
+| guestOnly | `/login`, `/register`, `/forgot-password`, `/reset-password` | Signed-in users are redirected to their role home |
+| state-restricted | `/verify-email` (needs unverified email), `/mfa` (needs pending MFA), `/onboarding` (needs pending onboarding) | Other states are redirected to the allowed page; pending-onboarding users can reach nothing else |
+| authenticated | Everything under `(app)` | Signed-out users go to `/login?next=<sanitized path>` |
+| role or permission | `/admin/*`, approvals, analytics scopes | 403 screen on mismatch, never a redirect loop |
+| role home | FACULTY and STUDENT land on `/timetables/me`; others on `/home` | |
 
-## 7. RBAC Matrix (Role x Resource x Action)
+### 4.4 Migration from built routes
 
-| Resource                       | Action                   | SUPER_ADMIN | ADMIN (Institution) |    DESIGNER     |      FACULTY      |    STUDENT     |      PUBLIC      |
-| :----------------------------- | :----------------------- | :---------: | :-----------------: | :-------------: | :---------------: | :------------: | :--------------: |
-| **Institution**                | Create / Delete          |     Yes     |         No          |       No        |        No         |       No       |        No        |
-|                                | Edit Config / Periods    |     Yes     |      Yes (own)      |       No        |        No         |       No       |        No        |
-|                                | View Details             |     Yes     |      Yes (own)      |    Yes (own)    |     Yes (own)     |   Yes (own)    |        No        |
-| **Departments / Programs**     | Create / Edit / Delete   |     Yes     |   Yes (own inst.)   |       No        |        No         |       No       |        No        |
-|                                | View                     |     Yes     |      Yes (own)      |    Yes (own)    |     Yes (own)     |   Yes (own)    |        No        |
-| **Faculty & Room Resources**   | Create / Edit / Delete   |     Yes     |   Yes (own inst.)   | Yes (own dept.) |        No         |       No       |        No        |
-|                                | Set Own Availability     |     Yes     |         Yes         |       Yes       |  Yes (self only)  |       No       |        No        |
-| **Projects (Timetable Terms)** | Create / Delete          |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-|                                | Edit Metadata            |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-| **Blueprint Graph**            | View Graph & Status      |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-|                                | Add/Edit/Delete Nodes    |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-|                                | Apply Templates / Batch  |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-| **Solver Build**               | Trigger Build Job        |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-|                                | Cancel Build Job         |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-| **Timetable Editor**           | View Draft Schedules     |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-|                                | Move / Swap / Edit Slots |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-|                                | Lock / Unlock Slots      |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-| **Publishing Workflow**        | Submit for Approval      |     Yes     |   Yes (own inst.)   | Yes (assigned)  |        No         |       No       |        No        |
-|                                | Approve / Reject Publish |     Yes     |   Yes (own inst.)   |       No        |        No         |       No       |        No        |
-|                                | Publish to Production    |     Yes     |   Yes (own inst.)   |       No        |        No         |       No       |        No        |
-| **Published Timetables**       | View Schedule            |     Yes     |   Yes (own inst.)   | Yes (own inst.) | Yes (own classes) | Yes (own sec.) | Yes (via Token)  |
-|                                | Export (PDF/Excel/iCal)  |     Yes     |         Yes         |       Yes       | Yes (own classes) | Yes (own sec.) | Yes (if enabled) |
-| **Audit Logs**                 | View Security & Activity |     Yes     |   Yes (own inst.)   |       No        |        No         |       No       |        No        |
+| Built | Canonical | Handling |
+|---|---|---|
+| `/dashboard` | `/home` | Permanent redirect |
+| `/blueprint-templates` | `/kits` | Permanent redirect |
+| `/institutions` | `/institution` (tabs as sub-routes) | Redirect and split |
+| `/projects/:id/editor` | `/projects/:id/studio` | Redirect |
+| `/users/me`, `/users/me/security` | `/profile`, `/profile/security` | Redirect |
+| `/sessions` (inside `(auth)`) | `/profile/sessions` (inside `(app)`) | Move and redirect |
+| `/library` with state tabs | `/library/{faculty,subjects,rooms}` | Done in UX-2 |
+| `blueprint/export`, `import`, `history`, `readiness` pages | Dialogs and the `@sidebar/history` slot | Delete pages |
+| `versions/[versionId]/periods` page | None (API route name, not a screen) | Delete |
 
 ---
 
-## 8. Risks and Open Questions
+## 5. Auth architecture
 
-### 8.1 Identified Risks & Mitigations
+### 5.1 Tokens and sessions (built)
 
-1. **Solver Scalability for Large Universities (500+ Faculty, 100+ Sections)**
-   - _Risk:_ Combinatorial explosion in NP-hard timetable scheduling leading to worker timeout.
-   - _Mitigation:_ Decouple solver into BullMQ workers with progressive constraint relaxation (hard constraints first, soft preferences optimized via simulated annealing/tabu search); partition by department where resources do not overlap.
+- Access token: short-lived (15 minutes), in memory only, carries `userId` and `sessionId`. Refresh token: httpOnly cookie, hashed at rest, rotated on every refresh, token families with reuse detection. Every request also validates the Redis session (inactivity timeout 7 days, maximum lifetime 30 days), so revocation is immediate. The socket handshake authenticates the same way (builds namespace enforced by AUD-002).
+- Step-up window 10 minutes; step-up accepts password, TOTP or a fresh email OTP (the email option serves accounts with neither a password nor MFA).
 
-2. **Concurrent Edits on Graph & Timetable Grid**
-   - _Risk:_ Overwriting another designer's node movements or slot placements.
-   - _Mitigation:_ Optimistic concurrency with mandatory `If-Match: <revision>` header; server returns `409 Conflict` with the latest state when stale; ephemeral Socket.IO presence and node locks warn users before editing.
+### 5.2 Client refresh and protection (refresh part built in P1 Part A; route guard and state machine planned in Part B)
 
-3. **Write-Behind Consistency Gap Before Builds**
-   - _Risk:_ User triggers a Build immediately after moving nodes or updating configs, before BullMQ write-behind workers persist changes to MongoDB.
-   - _Mitigation:_ Explicit **Consistency Barrier** implemented in `BuildFacade`: before enqueuing a build, the server flushes or awaits pending write-behind jobs for that `projectId`.
+| Concern | Design |
+|---|---|
+| Single flight | All 401 handling shares one refresh promise; replayed requests retry once; refresh, login and register 401s never trigger another refresh |
+| Cross-tab | Web Locks API (with a BroadcastChannel fallback) serializes refresh across tabs; timestamp-only broadcasts for "refreshed", "logout", "login"; no tokens ever broadcast |
+| Server concurrency policy | A previous refresh token stays acceptable for a short grace window; reuse after the window revokes the family |
+| Proactive refresh | Scheduled shortly before expiry, paused while the tab is hidden, immediate on visibility or online events |
+| Failure handling | Only a definitive 401 or 403 from refresh signs out; network errors and 5xx keep the session and show a retryable state; step-up 403 is not a session expiry |
+| State machine | idle, restoring, authenticated, unauthenticated, mfaPending, needsVerification, needsOnboarding |
+| RouteGuard | Renders only a skeleton while idle or restoring; never renders protected children, names or cached data before authentication resolves; redirects once per navigation; `sanitizeNext()` allows only relative in-app paths |
+| Edge hint | Non-sensitive `slotly_session_hint` cookie lets the proxy (`proxy.ts` or `middleware.ts` depending on the Next.js version) redirect obvious signed-out visitors early. It is a convenience only: a forged hint can cause at most a redirect that the guard corrects |
+| Logout cleanup | Observer registry clears query cache, stores, sockets and timers on logout, definitive refresh failure and user change |
+| Storage | No token in localStorage, sessionStorage, URLs or logs |
 
-4. **Redis Ephemerality & Fallback**
-   - _Risk:_ Redis connection loss could block all read queries if cache-aside is tightly coupled.
-   - _Mitigation:_ `CacheService` handles Redis failures gracefully by falling back to MongoDB queries and logging a warning without crashing requests.
+### 5.3 Social login (built, S1)
 
-5. **LLM Hallucinations in Schedule Editing**
-   - _Risk:_ Natural language commands from users producing invalid schedules or bypassing constraints.
-   - _Mitigation:_ Strict Command Pattern: LLM acts only as an intent parser emitting structured AST operations (`MoveSlotCommand`, `SwapSlotCommand`). These commands pass through the deterministic `SlotMoveValidator` before applying.
+```
+Continue with Google/GitHub (normal link)
+ -> GET /auth/oauth/:provider/start      state, PKCE (where supported) and nonce stored in Redis (10 min, single use)
+                                         + short-lived httpOnly binding cookie, redirect to provider
+ -> GET /auth/oauth/:provider/callback   verify state and binding, exchange code, read VERIFIED email,
+                                         decide login / link / create, issue the normal session and refresh cookie
+ -> client /auth/callback                calls /auth/refresh, then goes to next, /mfa or /onboarding
+```
 
-### 8.2 Open Questions
-
-1. **Academic Calendar Recurrence:** Should holiday breaks and odd/even week alternations (bi-weekly labs) be modeled as distinct node types or period-level rules in Phase 8?
-2. **Student Elective Bidding:** Should student elective allocation happen within the timetable solver or as an upstream input to batch creation? (Default decision: Upstream input with section strength split).
-
+Linking rules: an identity already linked logs in that user; an unverified provider email is rejected; a match with a verified-email account links; a match with an unverified-email account takes ownership (password and sessions cleared, email marked verified, owner notified); no match creates a user with no institution and status pending_onboarding. MFA is never skipped. Provider tokens are not stored. Providers are plug-ins behind a registry; a provider is enabled only when both its id and secret are configured. New collection: `oauth_identities`.
 
 ---
 
-## 9. Configuration Architecture (Namespaced `registerAs` & Strict Validation)
+## 6. Socket contract
 
-### 9.1 Namespaces & Typed Factories
-All server configuration is strictly namespaced under `server/src/config/` using NestJS `registerAs`. Factories only map and parse `process.env` (integers, booleans, and fallbacks from `DEFAULT_CONFIG` in `defaults.ts`); no business logic.
+All namespaces authenticate the handshake with the Bearer access token and verify the Redis session. Write permissions: DESIGNER and ADMIN edit; FACULTY and STUDENT are read-only. Mutating payloads carry `opId` and the client `revision`. The client reads the current in-memory token at each connect and reconnects once after a refresh on a handshake auth error.
 
-| Namespace | Injection Key | Environment Variables | Purpose |
-| :--- | :--- | :--- | :--- |
-| `app` | `appConfig.KEY` | `PORT`, `NODE_ENV`, `CLIENT_URL`, `CORS_ORIGINS`, `API_PREFIX`, `LOG_LEVEL` | HTTP/WS server and environment |
-| `database` | `databaseConfig.KEY` | `DATABASE_URL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_POOL_SIZE` | MongoDB connection & connection pooling |
-| `redis` | `redisConfig.KEY` | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DB`, `REDIS_TLS` | Redis client settings |
-| `jwt` | `jwtConfig.KEY` | `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN` | Token secrets and TTL durations |
-| `session` | `sessionConfig.KEY` | `SESSION_TTL`, `SESSION_MAX_LIFETIME`, `SESSION_COOKIE_*` | Session lifetimes and httpOnly cookies |
-| `auth` | `authConfig.KEY` | `ARGON2_*`, `OTP_*`, `STEP_UP_WINDOW`, `THROTTLE_*`, `PASSWORD_*` | Security parameters, hashing, rate limits |
-| `oauth` | `oauthConfig.KEY` | `OAUTH_CALLBACK_BASE_URL`, `GOOGLE_*`, `GITHUB_*` | Social login providers & callbacks |
-| `email` | `emailConfig.KEY` | `EMAIL_DRIVER`, `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` | Email driver (log \| brevo) & Brevo API |
-| `cache` | `cacheConfig.KEY` | `CACHE_DEFAULT_TTL`, `CACHE_*_TTL` | Cache-aside TTL policies |
-| `queue` | `queueConfig.KEY` | `QUEUE_PREFIX`, `QUEUE_ATTEMPTS`, `QUEUE_CONCURRENCY_*` | BullMQ worker & queue concurrency |
-| `groq` | `groqConfig.KEY` | `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_MAX_TOKENS`, `GROQ_TEMPERATURE` | AI assistant LLM settings |
+### 6.1 `/blueprint` (built)
 
-### 9.2 Validation & Legacy Variable Detection
-1. **Unified Joi Schema**: `envValidationSchema` validates all environment variables at bootstrap. Fails fast with a unified message enumerating invalid/missing variable names only (never secret values).
-2. **Legacy Variable Trap**: `checkLegacyVariables` detects historical variable names (`MONGODB_URI`, `JWT_ACCESS_EXPIRATION`, `EMAIL_FROM`, `SMTP_*`, `GOOGLE_CALLBACK_URL`, etc.) and halts bootstrapping with explicit migration guidance.
-3. **Test Isolation**: In `NODE_ENV=test`, `ignoreEnvFile: true` ensures `.env` files are not loaded, providing safe in-memory defaults.
-4. **Typed Injection**: Modules consume configs using `ConfigModule.forFeature(thatConfig)` and `@Inject(thatConfig.KEY) private readonly config: ConfigType<typeof thatConfig>`. Direct `process.env` access outside `src/config/` and `src/main.ts` is strictly prohibited and enforced via ESLint `no-process-env`.
-5. **Migration CLI**: `pnpm env:migrate [path]` safely updates existing `.env` files into `.env.migrated` without logging or leaking secret values.
+| Event | Direction | Notes |
+|---|---|---|
+| `project:join`, `project:leave` | client to server | Room `project:{projectId}` |
+| `cursor:update` | client to server | Ephemeral |
+| `node:lock`, `node:unlock` | client to server | Exclusive edit lock |
+| `node:add`, `node:delete`, `edge:add`, `edge:delete` | client to server | Critical: gate chain, synchronous write, acknowledgement with reason code and fix hint on rejection |
+| `node:update`, `node:move` | client to server | Non-critical: Redis first, write-behind job, completion recompute |
+| `presence:changed` | server to client | Users with colors and active node |
+| `node:status-changed` | server to client | Node and descendants |
+| `ops:applied` | server to client | New revision plus operations |
+| `node:locked`, `node:unlocked` | server to client | Lock state |
+| `revision:conflict` | server to client | Current and rejected revision |
+
+### 6.2 `/builds` (built; event names disagree between docs and code, see 13.3)
+
+`build:subscribe` (client), `build:progress`, `build:completed`, `build:failed` (server).
+
+### 6.3 `/schedule` (built, Phase 10 server pass; client event names to verify)
+
+`slot:moved`, `slot:updated`, `slot:locked`, `slot:cleared`, `revision:conflict`, `presence:changed`. Writes use REST; the gateway broadcasts after commit with the originating `opId` so clients ignore their own echoes.
+
+### 6.4 `/notifications` (planned, Phase 12)
+
+`notification:created`, `announcement:created` to room `user:{userId}`.
+
+---
+
+## 7. MongoDB collections
+
+Transactions require a replica set. MongoDB is hosted on Atlas, which provides one; any other deployment must too. Atlas network access should be restricted to known addresses.
+
+### 7.1 Built
+
+| Collection | Key fields | Indexes |
+|---|---|---|
+| `users` | email, passwordHash (Argon2id), passwordHistory[], name, role, status, institutionId, departmentId, isEmailVerified, mfaEnabled, mfaSecret, recoveryCodes[] (hashed) | unique `{email}`, `{institutionId, role}` |
+| `institutions` | name, code, workingDays, periodConfig, soft delete | unique `{code}` |
+| `departments` | institutionId, name, code, headFacultyId?, soft delete | unique `{institutionId, code}` |
+| `programs` | institutionId, departmentId, name, code, durationYears | unique `{departmentId, code}` |
+| `academic_years` | institutionId, programId, yearNumber, label | unique `{programId, yearNumber}` |
+| `semesters` | institutionId, academicYearId, number, startDate, endDate, active | unique `{academicYearId, number}` |
+| `sections` | institutionId, parent reference (verify), name, strength, batches[] | unique `{parent, name}` |
+| `holidays` | institutionId, date range, name, category | `{institutionId, date}` |
+| `faculty` | institutionId, departmentId, code, name, email, designation, availability (dimensions follow settings after AUD-003), preferences, min and max hours, qualifiedSubjectIds[], archived | unique `{institutionId, code}` |
+| `subjects` | institutionId, departmentId, code, name, type (theory, lab, tutorial, seminar), credits, weeklyHours, labHours, consecutivePeriods, requirements, isElective, electiveGroupId?, facultyIds[], archived | unique `{institutionId, code}` |
+| `elective_groups` | institutionId, name, subjectIds[], mustBeSimultaneous | `{institutionId}` |
+| `rooms` | institutionId, departmentId?, code, name, type (lecture, lab, seminar), capacity, building, equipment[], availability, archived | unique `{institutionId, code}` |
+| `projects` | institutionId, name, term, status, settings, strictness, revision, lastOpenedAt, createdById | `{institutionId, status}` |
+| `blueprints` (verify: embedded nodes and edges, or separate collections) | projectId, revision, nodes[], edges[], viewport | unique `{projectId}` |
+| `blueprint_templates` | institutionId?, name, category, subtree, version, visibility | `{category}`, `{institutionId}` |
+| blueprint history, snapshots, comments (verify names) | projectId, entries, actor | `{projectId, createdAt}` |
+| builds and schedule version storage (verify names) | projectId, status, progress, versionNo, slots, conflicts, stats, score, kind, revision | `{projectId, createdAt}` |
+| `audit_logs` | institutionId, userId, action, resource, resourceId, metadata, ip | `{institutionId, createdAt: -1}`, `{resourceId}` |
+
+AUD-004 added the compound unique indexes and a schema migration; confirm against the live database with `listIndexes`. Sessions live in Redis (source of truth).
+
+### 7.2 Built after the first pass of this document (Phases 10 and 11 server passes, S1) and planned
+
+| Collection | Step | Key fields and indexes |
+|---|---|---|
+| `oauth_identities` (built) | S1 | userId, provider, providerUserId, email, emailVerified, displayName, avatarUrl, linkedAt, lastLoginAt. Unique `{provider, providerUserId}`, index `{userId}`. No provider tokens stored. |
+| `schedule_entries` (built) | 10 | versionId, sectionId, batchId?, day, startPeriod, span, type, subjectId?, facultyId?, roomId?, locked, revision |
+| `schedule_occupancy` (built) | 10 | versionId, resourceType, resourceId, day, period, entryId. Unique `{versionId, resourceType, resourceId, day, period}` prevents double-booking under concurrency |
+| `schedule_operations` (built) | 10 | versionId, seq, userId, type, forward, inverse, at (undo and redo) |
+| `publish_requests` (built) | 11 | projectId, versionId, requestedBy, status, reviewer, comment |
+| `shares`, `exports`, `notifications`, `announcements` | 12 | token hashes, export jobs, user notifications, announcements |
+| ratings | 11 | Built as `timetable_ratings` in the Phase 11 server pass (verify the collection name); versionId, userId, score, comment |
+| `feedback` | 13 | userId, type, message, status, reply |
+| `policies`, `policy_chunks`, `ai_conversations`, `ai_messages` | 14 | RAG documents and chunks, chat history |
+
+---
+
+## 8. Redis keys, tags, queues
+
+### 8.1 Keys and tags
+
+| Pattern | TTL | Purpose | Tags |
+|---|---|---|---|
+| `slotly:session:{sessionId}` | session policy | Session record (device, ip, status, mfaVerified, stepUpUntil) | `user:{userId}` |
+| refresh token family keys, OTP keys, reset tokens, throttle counters (verify exact names) | OTP 10 min, resend cooldown 60 s | Auth state | none |
+| `slotly:oauth:state:{state}` (S1) | 10 min, single use | OAuth state, PKCE verifier, nonce, mode, sanitized next | none |
+| `slotly:user:{userId}:profile` | 1 h | Profile and roles | `user:{userId}` |
+| `slotly:institution:{id}` and `:tree` | 24 h | Institution and structure tree | `institution:{id}` |
+| `slotly:faculty:{id}`, `slotly:subject:{id}`, `slotly:room:{id}`, list and counts keys | long | Library reads (counts endpoint added in UX-2) | `library:{institutionId}` |
+| `slotly:project:{id}` | 2 h | Project and blueprint graph with computed completion | `project:{id}` |
+| `slotly:blueprint:{projectId}:readiness` | 10 min | Readiness | `project:{id}` |
+| `slotly:validation:{inputHash}` | 5 min | Validation results | `project:{id}` |
+| `pending_writes:{projectId}` | bounded after AUD-001 | Consistency barrier counter | none |
+| `slotly:lock:node:{projectId}:{nodeId}` | 30 s | Node edit lock | none |
+| `slotly:build:{projectId}:lock` | job duration | One active build per project | none |
+| `slotly:version:{versionId}:slots` | 2 h | Schedule reads (Phase 10) | `project:{id}:schedule` |
+| `slotly:viewer:*`, `slotly:analytics:*`, `slotly:share:{token}` | varies | Phases 12 and 13 | by entity |
+
+Auth limits (built): access token 15 minutes, session inactivity 7 days, maximum lifetime 30 days, step-up 10 minutes, login 5 per minute, OTP 3 per 15 minutes, refresh 30 per minute, password reset 3 per hour. After C1 these values live in the `auth` and `session` config namespaces.
+
+### 8.2 Queues
+
+| Queue | Jobs | Status | Class |
+|---|---|---|---|
+| `write-behind` | `sync-node` (coalesced by `node:{id}`), later chat history | Built | non-critical |
+| `audit` | `log-event` (processor added in AUD-001) | Built | non-critical |
+| `notifications` (email) | `send-email`, later fan-out | Built (the code uses the queue name `notifications`, not `email`); fan-out planned | background |
+| `builds` | `solve-timetable` | Built | critical, one per project |
+| `imports` | library import (verify whether queued) | Built or planned | background |
+| `exports` | `generate-export` | Planned (12) | background |
+| `analytics` | counters, refresh | Planned (13) | background |
+| `ai-writes` | `save-message`, embeddings | Planned (14) | non-critical |
+
+Queue names follow the code; `ROUTES.md` was aligned in AUD-009 (verify). Rules: idempotent jobs, retries with exponential backoff, dead-letter handling, graceful shutdown drain, and a consistency barrier before builds.
+
+---
+
+## 9. Server configuration architecture (built, C1)
+
+Pattern: one `registerAs` file per namespace, one Joi schema for all variables, one barrel, one `AppConfigModule`, typed injection with `@Inject(xConfig.KEY)` and `ConfigType<typeof xConfig>`, `ConfigModule.forFeature(xConfig)` in each module that depends on a namespace. Defaults live in one place. `process.env` is not read outside `config/` and bootstrap (lint rule).
+
+| Namespace | Contents |
+|---|---|
+| `app` | port (4000), nodeEnv, clientUrl, CORS origins, API prefix, logging |
+| `database` | `DATABASE_URL`, pool and timeout options |
+| `redis` | host, port, password, db, tls |
+| `jwt` | access and refresh secrets and lifetimes |
+| `session` | inactivity TTL, maximum lifetime, cookie settings |
+| `auth` | Argon2 parameters, OTP rules, step-up window, throttle limits, password policy |
+| `oauth` | callback base URL and per-provider id and secret |
+| `email` | driver (brevo or log), API key, sender, timeout, retries |
+| `cache`, `queue`, `groq` | TTLs; BullMQ defaults; AI settings |
+
+Validation fails fast with variable names only (never values), reports legacy names (`MONGODB_URI`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `EMAIL_FROM`, per-provider callback URLs, `SMTP_*`) as renamed or removed, and supplies safe fake defaults under `NODE_ENV=test`.
+
+---
+
+## 10. Critical versus non-critical operations
+
+| Class | Operation | Pattern |
+|---|---|---|
+| Critical | Registration, login (including social), session revocation, password and MFA changes, role changes | Synchronous write, immediate cache bust |
+| Critical | Library and institution CRUD | Synchronous write, tag invalidation (optimistic on the client) |
+| Critical | Project create, delete, archive | Synchronous |
+| Critical | Structural graph change, batch operations, template apply, import | Gate chain, then synchronous transactional write |
+| Critical | Build enqueue | Consistency barrier, pre-build validation, Redis lock |
+| Critical | Studio slot move, swap, bulk, merge, split (Phase 10) | MoveValidator, transaction, unique occupancy index, revision check |
+| Critical | Publish and approval (Phase 11) | Single transaction, version sealed immutable |
+| Critical | Accept AI changes (Phase 14) | Same gates and validators as manual edits |
+| Non-critical | Node drag positions and config autosave | Redis first, coalesced write-behind job |
+| Non-critical | Presence and cursors | In-memory broadcast |
+| Non-critical | Audit log, chat history, analytics counters, last-opened time | Queue |
+| Non-critical | Emails and notification fan-out | Queue with retry |
+
+---
+
+## 11. RBAC
+
+Roles: SUPER_ADMIN (reserved), ADMIN (institution admin), DESIGNER, FACULTY, STUDENT, plus PUBLIC (share token only). Permissions are data in a registry (22 base permissions plus `SUBJECT_READ`, `SUBJECT_MANAGE`, `PROJECT_ARCHIVE`), enforced by guards on HTTP and sockets, with resource-level checks through an access policy. The RBAC matrix test (AUD-002) calls every route and namespace as each role. The client mirrors the same policies for navigation and route access (Section 4.3) but the server is authoritative.
+
+| Resource | Action | ADMIN | DESIGNER | FACULTY | STUDENT | PUBLIC |
+|---|---|:---:|:---:|:---:|:---:|:---:|
+| Institution structure | Create, edit, delete | Yes | Limited (assigned departments) | No | No | No |
+| Institution structure | View | Yes | Yes | Yes | Yes | No |
+| Library | Manage | Yes | Assigned departments | No | No | No |
+| Library | View | Yes | Yes | Yes | No | No |
+| Faculty availability | Edit own | Yes | Yes | Self only | No | No |
+| Projects | Create, edit, archive | Yes | Assigned | No | No | No |
+| Projects | Delete | Yes | No | No | No | No |
+| Blueprint | View, edit, apply templates | Yes | Assigned | No | No | No |
+| Build | Start, cancel | Yes | Assigned | No | No | No |
+| Schedule (Studio) | Edit, lock | Yes | Assigned | No | No | No |
+| Publish | Request | Yes | Assigned | No | No | No |
+| Publish | Approve, publish | Yes | No | No | No | No |
+| Published timetable | View | Yes | Yes | Own classes | Own section | Via token |
+| Published timetable | Export | Yes | Yes | Own | Own | If enabled |
+| Share links | Create, revoke | Yes | Assigned | No | No | No |
+| Analytics | View | Yes | Assigned | Own workload | No | No |
+| Admin area, audit logs, feedback management | Use | Yes | No | No | No | No |
+| Notifications, feedback | Use | Yes | Yes | Yes | Yes | No |
+| AI assistant | Use | Yes | Assigned | No | No | No |
+
+---
+
+## 12. Domain references
+
+### 12.1 Blueprint
+
+- Hierarchy: Institution, Department, Program, Academic Year, Semester, Section, Batch; subject assignments under Section; elective groups under Semester; Faculty and Room as independent resource nodes.
+- Statuses: empty, incomplete, complete, and blocked (effective status when an ancestor is not complete).
+- Gate chain in order: ProjectNotLocked, Permission, ParentExists, ParentTypeAllowed, ParentComplete, SingleParent, NoCycle, DuplicateName, Capacity, ConnectionEndpoint, Qualification. Result `{allowed, reasonCode, message, fixHint}`.
+- Batch operations apply in topological order and skip dependents of failures.
+- Revisions: stale write returns 409 `REVISION_CONFLICT` with current and rejected revision and the current graph.
+- Reason codes were canonicalized across contracts, server and client in AUD-005 (canonical set from the Phase 5 `ReasonCodeSchema`: `PARENT_NOT_FOUND`, `CYCLE_DETECTED`, `UNAUTHORIZED` and the unchanged others; legacy spellings accepted and mapped in one place).
+
+### 12.2 Engine and generation
+
+- Engine core (pure TypeScript): ScheduleState, constraints as Strategy classes in a ConstraintRegistry (20 hard, 7 soft), SuggestionStrategy, PreBuildChecker, ValidationService. Validation results cached by input hash (5 minutes, tagged by project).
+- Solver (pure): hardest-first, greedy across all sections, backtracking, swap-based improvement, seeded and deterministic, time limit returns best-so-far, honors locks, electives, batches, merged labs and per-day period configuration; ranked alternatives.
+- BuildFacade: flush pending writes, check gate G5 and pre-build validation, load complete non-blocked nodes, solve, save versions, update status, emit event. One active build per project (Redis lock); cancel and retry supported.
+
+---
+
+## 13. Decisions, risks and known issues
+
+### 13.1 Decisions
+
+| ID | Decision |
+|---|---|
+| D1 | Access token stays in memory (Bearer) with the Redis session checked on every request; refresh token is an httpOnly cookie. Server components do not prefetch user data. Revisit only if first-paint latency becomes a problem (would need a same-origin cookie-based access token and CSRF protection). |
+| D2 | Sessions live in Redis; revocation is immediate. |
+| D3 | Engine core and solver are pure TypeScript with no framework imports. |
+| D4 | One schedule entry per session with a span; a unique occupancy index guarantees no double-booking. |
+| D5 | Queue and job names follow the code. |
+| D6 | One canonical reason-code set; legacy aliases accepted and mapped in one place (done, AUD-005). |
+| D7 | Canonical client routes and slots are those in Section 3.2 and `CLIENT_ROUTES.md`; old paths redirect permanently. |
+| D8 | Each phase ends with branch, small commits, safety scan, push, tag and pull request (`AGENTS.md` Git workflow). |
+| D9 | Server configuration uses namespaced `registerAs` configs, Joi validation and typed injection (C1). |
+| D10 | Route protection has three layers: server guards (authoritative), client RouteGuard driven by a route access registry, and an optional non-sensitive edge hint cookie (P1). |
+| D11 | Social login uses the server-side authorization code flow with state, PKCE where supported and a binding cookie; only verified provider emails are trusted; MFA is never skipped; provider tokens are not stored (S1). |
+| D12 | `docs/CODEMAP.md` is generated from code and checked (`pnpm codemap:check`); the agent reads it before writing new code. |
+| D13 | MongoDB is hosted on Atlas (replica set, transactions available); local Docker provides Redis only. |
+
+### 13.2 Stabilization fixes (as recorded in PROGRESS)
+
+| Fix | Resolution |
+|---|---|
+| AUD-001 | Pending writes tracked as a set (idempotent), audit processor added, un-expiring cache entries bounded to 3600 s |
+| AUD-002 | Permissions guard on users security routes, JWT handshake on the builds gateway, RBAC matrix test across five roles |
+| AUD-003 | `normalizeAvailabilityMatrix` in contracts, used on read and write; client grids follow institution and project dimensions |
+| AUD-004 | Compound unique indexes with `isDeleted`, `{ownerId}` on projects, idempotent `ensure-indexes` migration with dry run |
+| AUD-005 | 17 canonical reason codes, `REASON_CODE_ALIASES`, `normalizeReasonCode`, `REASON_CODE_MESSAGES`, client toast mapping |
+| AUD-006 | Value versus type import drift and exact optional property typing reconciled |
+| AUD-007 | Institution data in TanStack Query; Zustand keeps UI state only |
+| AUD-008 | `blueprint.api.ts` moved to the blueprint feature with a compatibility re-export (the re-export is still used by some pages) |
+| AUD-009 | ROUTES, AUDIT_REPORT, PROGRESS and CODEMAP aligned at that time |
+
+The audit report uses its own IDs (AUD-A-01 to AUD-A-11). The two schemes do not map one to one; see 13.3.
+
+### 13.3 Open items
+
+| # | Item | Action |
+|---|---|---|
+| 1 | AUD-A-03: builds run in-process instead of through the BullMQ `builds` queue, and the build lock key is spelled three ways (`slotly:build:lock:{id}` in ROUTES, `slotly:lock:build:{id}` in code at audit time, `slotly:build:{id}:lock` in this file) | Decide: route builds through the queue (matches the design) or document the in-process design; pick one lock key spelling and fix docs and code |
+| 2 | AUD-A-04: socket event names differ between docs and code for `/builds` (`join:project` or `build:subscribe` versus `build:join`) and `/schedule` (`schedule:join` versus `join:schedule`) | Pick the spec names, fix code or docs, add a contract test |
+| 3 | AUD-A-06: email queue is named `notifications` in code and `email` in ROUTES | Align ROUTES (code name wins unless there is a reason) |
+| 4 | AUD-A-07 (S3): access tokens are signed with a plain SHA-256 over `header.payload.secret`, not HMAC | Move to HMAC-SHA256 or a standard JWT library with a transition window |
+| 5 | AUD-A-02 residual: `FacultyAvailabilityConstraint` does not normalize the matrix for six-day institutions | Normalize in the constraint or at the engine input boundary and add a test |
+| 6 | AUD-A-05: circular module dependencies (`auth` and `institutions` and `users`; `blueprint` and `projects`) | Break with an interface or event, add a madge check to CI |
+| 7 | AUD-A-09 to A-11: repository boilerplate duplication and large files, vulnerable dependencies (`xlsx`, `zod` advisories), root endpoint without `@Public` | Schedule; update dependencies and replace `xlsx` if no fix exists |
+| 8 | UX-2 branch has no PROGRESS entry | Confirm it is merged into `main`; add the entry |
+| 9 | `docs/ROUTES.md` conflicts with the code on library, institution and version paths (see its reconciliation section) | Regenerate the table from controllers (`scripts/audit-routes.js`) and decide per item |
+| 10 | Development-only master OTP and automatic institution context | Confirm they are impossible to enable in production and tested |
+| 11 | Gateway CORS values must come through the config layer, not `process.env` in feature code | Use a helper exported from `src/config` |
+| 12 | Atlas network access list and database user scope | Restrict to known addresses and least privilege; rotate any credential that was ever shared |
+
+### 13.4 Risks
+
+1. **Solver scale.** Large institutions can exceed time limits; mitigate with worker concurrency limits, best-so-far results, progressive relaxation, and department partitioning.
+2. **Concurrent edits.** Optimistic revisions (`If-Match`), 409 with current state, presence and node locks; Phase 10 adds the unique occupancy index.
+3. **Write-behind gap.** Consistency barrier before builds; Redis AOF; non-critical data only.
+4. **Redis outage.** Cache falls back to MongoDB; writes that require Redis degrade or fail clearly as designed; recovery tested.
+5. **LLM safety.** The model only proposes structured operations that pass the same gates and validators; retrieved text is data, not instructions.
+6. **Multi-tab refresh races.** Rotation with reuse detection can sign users out everywhere if two tabs refresh at once; mitigated by the server grace window and client cross-tab locking (P1).
+7. **Account takeover through social login.** Pre-registered unverified accounts and unverified provider emails are the main vectors; mitigated by the linking rules in Section 5.3 and tests.
+8. **Client-only route protection.** The client guard improves experience, not security; server guards and the RBAC matrix test are the real control.
+9. **Secrets handling.** Real `.env` files are never committed; configuration validates by name only; rotate any credential that is exposed.
+
+---
+
+## 14. Keeping this document accurate
+
+Run this after merges and at the end of each phase.
+
+```
+TASK: Architecture sync. Read docs/ARCHITECTURE.md, docs/PROGRESS.md, docs/CODEMAP.md
+and the code. Branch: docs/architecture-sync. Follow the GIT WORKFLOW (steps 5 to 11).
+
+1. Walk every item marked "(verify)" and every "Built" row in docs/ARCHITECTURE.md.
+   Check the code (schemas and live indexes, module folders, queue and job names,
+   socket event names, Redis key patterns, route files) and correct the document where
+   they differ. Do not change code in this task.
+2. Verify the client route tree in Section 3.2: list every file under client/src/app,
+   compare with the tree, and report missing slots, missing default.tsx, loading.tsx
+   and error.tsx files, and routes that exist in code but not in the document or the
+   reverse.
+3. Check which of the steps C1, UX-1a, P1, UX-1, S1 have actually landed and update
+   Section 1 and Section 13.3.
+4. Append a "Drift report" listing every difference found and whether the code or the
+   document should change.
+5. Check docs/ROUTES.md against the code and list route, event, queue and key names
+   that do not match.
+6. Commit with "docs: architecture sync", push, open a PR. Do not merge.
+```
