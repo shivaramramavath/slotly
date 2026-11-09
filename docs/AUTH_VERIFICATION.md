@@ -1,145 +1,96 @@
-# Auth Verification & Refresh Flow Hardening
+# Auth Verification and Refresh Flow
 
-## 1. Flow Architecture Map
+Status: Part A (verify and harden the refresh flow) is done and merged into the working branch history recorded in `docs/PROGRESS.md`. Part B (client route protection: route access registry, RouteGuard, auth state machine, optional edge hint) is planned. Social login (Google, GitHub) and email-OTP step-up are built. Items marked **(verify)** must be checked against the code.
+
+## 1. Flow map
 
 ```
-+-----------------------------------------------------------------------------------------+
-|                                      CLIENT LAYER                                       |
-|                                                                                         |
-|  [AuthProvider]                                                                         |
-|      |                                                                                  |
-|      +--> Calls authApi.refresh() on initial application mount                          |
-|                                                                                         |
-|  [apiClient]                                                                            |
-|      |                                                                                  |
-|      +--> Attaches Bearer memoryAccessToken to request headers                          |
-|      +--> Intercepts 401 Unauthorized responses (excluding /auth/* routes)              |
-|      +--> Single-flights concurrent 401s via in-flight refresh Promise & queue          |
-|      +--> Replays original requests with fresh access token                             |
-|      +--> Defers to Cross-Tab Lock (Web Locks API / BroadcastChannel)                   |
-|                                                                                         |
-|  [Proactive Refresher]                                                                  |
-|      |                                                                                  |
-|      +--> Reads JWT exp claim, schedules refresh at ~60s before expiry                 |
-|      +--> Suspends on tab visibility hidden; fires on visibilitychange / online         |
-|                                                                                         |
-|  [Logout Cleanup Registry (Observer)]                                                   |
-|      |                                                                                  |
-|      +--> Notifies feature subscribers (React Query cache, zustand stores, sockets)    |
-|      +--> Evicts all cached user & organization data upon sign-out or session expiry   |
-+-----------------------------------------------------------------------------------------+
-                                          |
-                                          | HTTP (credentials: include)
-                                          v
-+-----------------------------------------------------------------------------------------+
-|                                      SERVER LAYER                                       |
-|                                                                                         |
-|  [Helmet & CORS Middleware]                                                             |
-|      |                                                                                  |
-|      +--> Exact origin enforcement: CLIENT_URL (credentials: true)                      |
-|      +--> Rejects wildcard '*' CORS on HTTP and WebSocket namespaces                   |
-|                                                                                         |
-|  [AuthController: POST /auth/refresh]                                                   |
-|      |                                                                                  |
-|      +--> Throttling: Redis rate limiting per IP                                        |
-|      +--> Reads httpOnly cookie: 'refreshToken'                                         |
-|      +--> Extracts sessionId from token (format: s_${sessionId}_${tokenSecret})         |
-|      |                                                                                  |
-|      v                                                                                  |
-|  [RedisSessionsService: rotateRefreshToken]                                             |
-|      |                                                                                  |
-|      +--> Validates session status ('active') and max lifetime (now <= expiresAt)       |
-|      +--> Checks token hash against currentRefreshTokenHash                             |
-|      +--> CONCURRENT REFRESH GRACE POLICY:                                              |
-|      |      - If previous token presented within GRACE_WINDOW (10s):                    |
-|      |        Returns cached rotation result (grace recovery)                           |
-|      +--> REUSE DETECTION:                                                              |
-|      |      - If token presented was used > 10s ago:                                    |
-|      |        REVOKES session family immediately                                        |
-|      |        Emits security audit event & queues alert email                           |
-|      +--> ATOMIC ROTATION:                                                              |
-|      |      - Stores previous token hash with rotated timestamp                         |
-|      |      - Issues new s_${sessionId}_${newSecret} token                              |
-|      |      - Updates lastActiveAt and touches inactivity TTL (7 days)                  |
-|      |      - Signs new short-lived JWT access token (15m expiry)                       |
-|      |                                                                                  |
-|      v                                                                                  |
-|  [Response: HTTP 200]                                                                   |
-|      +--> Body: { accessToken, user: { id, role, institutionId } }                      |
-|      +--> Header: Set-Cookie: refreshToken=...; Path=/auth; HttpOnly; SameSite=Lax...   |
-+-----------------------------------------------------------------------------------------+
+CLIENT
+  AuthProvider        calls POST /auth/refresh once on application mount (single flight)
+  apiClient           attaches the in-memory Bearer access token; on 401 (except /auth/login,
+                      /auth/register, /auth/refresh) runs one shared refresh, then replays the
+                      original request once and validates the replay status
+  cross-tab-sync      Web Locks (navigator.locks 'slotly_refresh_lock') serializes refresh across
+                      tabs; BroadcastChannel 'slotly_auth_sync' broadcasts token_refreshed, login,
+                      logout (timestamps only, never tokens)
+  token-refresher     reads the JWT exp, schedules a refresh about 60 s before expiry, pauses while
+                      the tab is hidden, checks on visibilitychange and the online event
+  logout-registry     Observer: features register cleanup (query cache, stores, sockets, timers);
+                      runs on logout, definitive refresh failure and user change
+  sockets             handshake auth callback reads the current in-memory token on every connect;
+                      one retry after a refresh on a handshake auth error
+
+SERVER
+  CORS                exact origin (CLIENT_URL) with credentials on HTTP and on the /blueprint,
+                      /builds and /schedule namespaces
+  POST /auth/refresh  per-IP throttle (30 per minute); reads httpOnly cookie 'refreshToken';
+                      token format s_<sessionId>_<64 hex chars>; sessionId parsed with
+                      parts.slice(1, -1).join('_') so underscored ids work
+  rotation            validates the Redis session (active, within max lifetime), compares the hash
+                      with the current refresh token, rotates atomically, updates lastActiveAt and
+                      the inactivity TTL, signs a new 15-minute access token
+  grace window        a just-rotated token presented again within 10 s receives the same new
+                      credentials (concurrent tabs); presented after 10 s it is treated as reuse
+  reuse detection     after the grace window, the whole token family is revoked, a security audit
+                      event is written and an alert email is queued
+  every request       AuthGuard validates the access token AND the Redis session, so revocation is
+                      immediate; socket handshakes do the same
 ```
 
----
+## 2. Cookie and CORS audit (final state)
 
-## 2. Cookie Attributes & CORS Audit
+| Property | Value | Assessment |
+|---|---|---|
+| Name | `refreshToken` | Fine |
+| HttpOnly | true | Not readable from JavaScript |
+| Secure | true when `NODE_ENV` is production | Fine; allows local HTTP development |
+| SameSite | Lax | Balances CSRF protection with OAuth top-level redirects |
+| Path | `/auth` | Resolved: the cookie is sent only to refresh and logout routes, not to every API route |
+| Max-Age | 2592000 s (30 days) per the progress log **(verify)** | An earlier draft of this document said 7 days. The server enforces a 7-day inactivity timeout and a 30-day maximum lifetime, so the cookie may outlive an inactive session but never extends it. Confirm the code and keep this table and `docs/PROGRESS.md` consistent |
+| Domain | omitted (host-only) | Prevents subdomain leaks |
+| HTTP CORS | exact `CLIENT_URL`, credentials true | Fine |
+| WebSocket CORS | exact `CLIENT_URL` | Resolved (was `origin: '*'` with credentials). **(verify)** the value is read through the config layer and not by direct `process.env` access in the gateway decorators, which the lint rule forbids outside `src/config` |
 
-| Property | Current Value | Required Target | Safety Status & Assessment |
-| :--- | :--- | :--- | :--- |
-| **Cookie Name** | `refreshToken` | `refreshToken` | Safe. |
-| **HttpOnly** | `true` | `true` | Safe. Cookie is inaccessible to JavaScript `document.cookie`. |
-| **Secure** | `process.env.NODE_ENV === 'production'` | `process.env.NODE_ENV === 'production'` | Safe. Prevents plaintext transmission over HTTP in production while enabling local development. |
-| **SameSite** | `lax` | `lax` | Safe. Balances CSRF protection with top-level OAuth redirects. |
-| **Path** | `/` | `/auth` | **UNSAFE (FLAGGED)**: Path `/` sends the refresh cookie to every endpoint (`/blueprint`, `/library`, etc.), increasing exposure. Path should be restricted to `/auth` where `refresh` and `logout` live. |
-| **Max-Age** | `7 * 24 * 3600 * 1000` (7 days) | `7 * 24 * 3600 * 1000` | Safe. Matches server inactivity TTL (7 days). |
-| **Domain** | Omitted | Omitted | Safe. Host-only cookie prevents subdomain leaks. |
-| **HTTP CORS Origin** | `config.get('CLIENT_URL', 'http://localhost:3000')` | Exact origin | Safe. Strict origin with `credentials: true`. |
-| **WebSocket CORS** | `origin: '*'` | Exact `CLIENT_URL` origin | **UNSAFE (FLAGGED)**: `blueprint.gateway.ts` and `builds.gateway.ts` configure `origin: '*'` with `credentials: true`, which is insecure and invalid per CORS standards. |
+Session limits: access token 15 minutes, session inactivity timeout 7 days, maximum lifetime 30 days, step-up window 10 minutes, refresh throttle 30 per minute per IP.
 
----
+## 3. Findings
 
-## 3. Discovered Vulnerabilities & Implementation Gaps
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| R1 | S1 | Refresh token format mismatch between controller (`s_<sessionId>_<random>`) and sessions service (`rt_<random>`) made every refresh fail | Resolved, one format everywhere |
+| R2 | S1 | Concurrent multi-tab refresh falsely triggered reuse detection and revoked the whole session | Resolved by the 10-second grace window |
+| R3 | S2 | WebSocket CORS wildcard with credentials on blueprint and builds gateways | Resolved (see the verify note above); the schedule gateway must follow the same rule |
+| R4 | S2 | apiClient looped on `/auth/register`, did not check replayed responses, and treated transient refresh failures as logout | Resolved |
+| R5 | S3 | No throttling on `POST /auth/refresh` | Resolved (30 per minute per IP) |
+| R6 | S3 | Access tokens are signed with `createHash('sha256')` over `header.payload.secret` instead of HMAC (audit finding AUD-A-07: `sessions.service.ts` and `auth.guard.ts`) | **Open**. Replace with `createHmac('sha256', secret)` or a standard JWT library, keep a short transition period that accepts both, and add tests |
+| R7 | S3 | Client route protection is not yet centralized (no route access registry or RouteGuard) | **Open**, Part B |
 
-### S1: Refresh Token Format Mismatch Between Controller and Service
-- **Location:** `server/src/modules/auth/auth.controller.ts:162-170` vs `sessions.service.ts:155, 279`
-- **Issue:** `auth.controller.ts` expects tokens in format `s_${sessionId}_${random}`, but `sessions.service.ts` generated `rt_${random}`. Any incoming `POST /auth/refresh` throws `401 INVALID_REFRESH_TOKEN_FORMAT`.
-- **Severity:** **S1** (Feature failure / crash on refresh).
+## 4. Additions since the first version
 
-### S1: Race Condition on Concurrent Multi-Tab Refreshes (False Reuse Trigger)
-- **Location:** `server/src/modules/auth/services/sessions.service.ts:256-266`
-- **Issue:** When multiple requests hit `/auth/refresh` simultaneously with the same valid cookie, the first request rotates the token and adds the hash to `usedTokenHashes`. The second request immediately triggers `REFRESH_TOKEN_REUSE_DETECTED`, killing the user's entire session and locking them out.
-- **Severity:** **S1** (Unintended session destruction).
-- **Resolution:** Implement a 10-second grace window (`graceTokenHash`, `graceRotatedAt`, `graceAccessToken`, `graceRefreshToken`). If a token matching `graceTokenHash` is presented within 10 seconds of rotation, return the grace tokens. If presented after 10 seconds, trigger reuse revocation.
+- **Step-up** accepts password, TOTP or a fresh email OTP (`POST /auth/step-up`, `POST /auth/step-up/email/send`), so accounts with no password and no MFA can still do sensitive actions.
+- **Social login** uses the server-side authorization code flow (`GET /auth/oauth/providers`, `/auth/oauth/:provider/start`, `/auth/oauth/:provider/callback`) with state, a binding cookie, PKCE where supported and a nonce; only verified provider emails are trusted; MFA is never skipped; provider tokens are not stored; accounts are linked or created by the rules in `docs/ARCHITECTURE.md` Section 5.3; `POST /auth/onboarding` completes institution setup for new social users; connected accounts are managed under `/users/me/security/connections` (disconnect needs step-up and is blocked when it would remove the last sign-in method).
+- **Configuration** for all of the above comes from the `auth`, `session`, `jwt` and `oauth` namespaces (`docs/ARCHITECTURE.md` Section 9).
 
-### S2: WebSocket CORS Wildcard with Credentials
-- **Location:** `server/src/modules/blueprint/gateways/blueprint.gateway.ts:71` and `builds.gateway.ts:23`
-- **Issue:** `origin: '*'` with `credentials: true`.
-- **Severity:** **S2** (CORS misconfiguration).
-- **Resolution:** Inject `ConfigService` and bind `cors.origin` to `CLIENT_URL`.
+## 5. Tests
 
-### S2: apiClient 401 Loop on Registration / Missing Replay Error Check
-- **Location:** `client/src/lib/api-client.ts:55, 70-71, 88-89`
-- **Issue:** 
-  1. `apiClient` only excludes `/auth/login` and `/auth/refresh` from triggering refresh on 401; `/auth/register` is not excluded.
-  2. When replaying a request after refresh, `apiClient` does not check `if (!retryRes.ok)` or parse JSON errors, returning error objects as success.
-  3. Network failures (5xx/offline) during refresh reject without distinguishing transient network errors from definitive 401/403 session expiration.
-- **Severity:** **S2** (Client loop and silent error consumption).
+Server (`server/src/modules/auth/tests/refresh-flow.spec.ts`, 10 scenarios): refresh success and rotation; 10 parallel refreshes inside the grace window; reuse after the window revokes the family; malformed, expired, tampered and missing cookies; session revocation on password change; inactivity timeout and maximum lifetime; MFA-pending cannot refresh; logout and logout-all; throttling; response headers and CORS. Plus `token-rotation.spec.ts` and the OAuth, step-up and RBAC suites.
 
-### S3: Missing Throttling on `POST /auth/refresh`
-- **Location:** `server/src/modules/auth/auth.controller.ts:141`
-- **Issue:** No rate limiting applied to the refresh endpoint, allowing potential brute force attacks.
-- **Severity:** **S3** (Rate limiting).
-- **Resolution:** Apply `ThrottlerService` to rate limit refresh requests per IP (e.g., 30 per minute).
+Client (`api-client.spec.ts`, 5 tests, and `token-storage.spec.ts`): single flight for concurrent 401s; no loops on login, register or refresh; network and 5xx errors do not log out; step-up 403 is not a session expiry; a definitive 401 on refresh clears state once. The storage test scans client sources for token persistence in localStorage or sessionStorage.
 
----
+Still to add for Part B: route access registry coverage test, RouteGuard state tests, `sanitizeNext` attack-string tests, forged-hint test, and the nine Playwright scenarios from the protected-routes prompt.
 
-## 4. Verification Test Plan (15 Scenarios)
+## 6. Part B design (planned)
 
-### Server Integration Tests (`refresh-flow.spec.ts`)
-1. **Refresh success**: Valid refresh token returns a new access token, sets rotated cookie, and updates session version.
-2. **Concurrent refresh within grace window (10 parallel requests)**: 10 parallel requests with the same cookie all succeed and return consistent tokens without triggering reuse detection.
-3. **Reuse after grace window**: Presentation of an old token after 10s revokes the session family and rejects subsequent refreshes.
-4. **Invalid tokens & error stability**: Expired token, tampered token, malformed format, missing cookie, revoked session, and suspended user each return 401/403 with stable error codes.
-5. **Session revocation on password change**: Changing password revokes other sessions and their refresh fails immediately.
-6. **Inactivity timeout & maximum lifetime**: Refresh fails if inactive beyond 7 days or beyond 30 days max lifetime.
-7. **MFA-pending restriction**: MFA challenge state cannot be refreshed or upgraded into a full session.
-8. **Logout & logout-all**: Logout revokes session and clears cookie; logout-all terminates all user sessions.
-9. **Throttling**: Normal multi-tab refresh stays under threshold; excessive requests trigger rate limiting without locking out the account.
-10. **Response headers & security**: Set-Cookie specifies `Path=/auth; HttpOnly; SameSite=Lax`, CORS specifies exact origin, and response body contains only the access token and user info.
+- Auth state machine in the store: idle, restoring, authenticated, unauthenticated, mfaPending, needsVerification, needsOnboarding.
+- `lib/route-access.ts` registry mapping route patterns to public, guestOnly, authenticated, role or permission, and state-restricted policies; one source for the guard, navigation, command palette and redirects; a test fails when a route file has no policy.
+- RouteGuard in the `(auth)` and `(app)` layouts: renders only a skeleton while idle or restoring; never renders protected children or cached data before authentication resolves; redirects once per navigation; `sanitizeNext` allows relative in-app paths only.
+- Optional edge hint cookie `slotly_session_hint` read by `proxy.ts` (or `middleware.ts`, depending on the Next.js version): a convenience for early redirects, never trusted. Forging it must grant no data.
 
-### Client Unit Tests (`api-client.spec.ts`)
-11. **Single-flight**: 5 concurrent 401 responses trigger exactly one `/auth/refresh` call and all 5 replay once.
-12. **Loop prevention**: 401 from `/auth/refresh`, `/auth/login`, or `/auth/register` never triggers refresh. Replayed request that 401s again does not refresh again.
-13. **Network error resilience**: 5xx or network drop during refresh does not log out the user and surfaces a retryable error.
-14. **Step-up non-expiry**: 403 `STEP_UP_REQUIRED` is not treated as session expiry.
-15. **Definitive failure handling**: 401 on refresh clears store, cancels queries, and triggers a single toast notification.
+## 7. Manual checklist
+
+1. DevTools, Application, Cookies: `refreshToken` shows HttpOnly, Path `/auth`, SameSite Lax (and Secure in production).
+2. Temporarily set a short access-token lifetime in a test environment, stay on a page, and watch Network: one refresh request per expiry and no logout.
+3. Open two tabs, sign out in one: the other signs out within about a second.
+4. Replay an old refresh cookie after more than 10 seconds on a throwaway account: the account is signed out everywhere and a security alert is recorded.
+5. Stop the API briefly during a refresh: the user stays signed in and sees a retryable state.
+6. Confirm no token appears in localStorage, sessionStorage, URLs or logs.

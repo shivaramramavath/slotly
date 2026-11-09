@@ -59,6 +59,8 @@ import type { RequestUser } from './guards/auth.guard';
 import { Public } from './guards/public.decorator';
 import { StepUpGuard } from './guards/step-up.guard';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { USER_REPOSITORY } from '../users/repositories/user.repository';
+import type { UserRepository } from '../users/repositories/user.repository';
 import { sessionConfig } from '../../config';
 import type { SessionConfig } from '../../config';
 
@@ -75,6 +77,9 @@ export class AuthController {
     @Optional()
     @Inject(THROTTLER_SERVICE)
     private readonly throttler?: ThrottlerService,
+    @Optional()
+    @Inject(USER_REPOSITORY)
+    private readonly userRepo?: UserRepository,
   ) {}
 
   private extractMeta(req: Request) {
@@ -202,14 +207,38 @@ export class AuthController {
       session,
     } = await this.sessionsService.rotateRefreshToken(sessionId, refreshToken);
 
+    const userDoc = this.userRepo
+      ? await this.userRepo.findById(session.userId)
+      : null;
+
+    const userDto = userDoc
+      ? {
+          id: userDoc._id ? userDoc._id.toString() : session.userId,
+          email: userDoc.email,
+          name: userDoc.name,
+          role: userDoc.role,
+          institutionId:
+            userDoc.institutionId?.toString() || session.institutionId,
+          departmentId: userDoc.departmentId?.toString(),
+          isEmailVerified: userDoc.isEmailVerified ?? false,
+          mfaEnabled: userDoc.mfaEnabled ?? false,
+          status: userDoc.status || 'active',
+        }
+      : {
+          id: session.userId,
+          email: `${session.userId}@institution.local`,
+          name: 'User',
+          role: session.role,
+          institutionId: session.institutionId,
+          isEmailVerified: true,
+          mfaEnabled: false,
+          status: 'active' as const,
+        };
+
     this.setRefreshCookie(res, newRefreshToken);
     return {
       accessToken,
-      user: {
-        id: session.userId,
-        role: session.role,
-        institutionId: session.institutionId,
-      },
+      user: userDto,
     };
   }
 

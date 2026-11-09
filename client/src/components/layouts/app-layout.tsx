@@ -29,6 +29,17 @@ export function AppLayout({ children, activePath = '/dashboard' }: AppLayoutProp
   const [hasNotifications] = React.useState(true);
 
   React.useEffect(() => {
+    if (status !== 'loading' && status !== 'idle') return;
+    const timer = setTimeout(() => {
+      const current = useAuthStore.getState().status;
+      if (current === 'loading' || current === 'idle') {
+        clearAuth();
+      }
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [status, clearAuth]);
+
+  React.useEffect(() => {
     if (status === 'unauthenticated') {
       const nextQuery =
         pathname && pathname !== '/' ? `?next=${encodeURIComponent(pathname)}` : '';

@@ -1627,3 +1627,79 @@
   - Exporter golden outputs (valid PDF buffer, Excel buffer, PNG magic header, compliant RFC 5545 .ics structure).
   - Calendar feed & share token hashing, verification, expiry, and revocation.
   - Fan-out recipient resolution & notification preference filtering.
+---
+
+## Phase 13: Analytics and Administration (Pass 1: Contracts & Server - Completed)
+
+### Plan
+- **Contracts (`packages/contracts`):**
+  - Added permissions: `ANALYTICS_READ`, `FEEDBACK_SUBMIT`, `FEEDBACK_MANAGE`, `SYSTEM_MONITOR`.
+  - Analytics DTOs: `AnalyticsOverviewDto`, `FacultyWorkloadDistributionDto`, `RoomUtilizationDto`, `PeriodUtilizationDto`, `FacultyFreePeriodsDto`, `DepartmentStatsDto`, `UnallocatedSubjectDto`, `SchedulingEfficiencyDto`, `WorkloadBalancingSuggestionDto`.
+  - Admin & Security DTOs: `AdminUserListItemDto`, `ChangeUserRoleDto`, `RolePermissionsMatrixDto`, `AdminTimetableItemDto`, `AdminReportedConflictDto`, `SecurityEventDto`, `UserSessionItemDto`.
+  - Feedback DTOs: `CreateFeedbackDto`, `FeedbackDto`, `UpdateFeedbackDto`.
+  - Audit Query DTOs: `AuditQueryDto`, `AuditLogListDto`.
+  - Monitoring DTOs: `SystemHealthDto`, `QueueHealthItemDto`, `QueuesHealthResponseDto`, `ClientWebVitalsDto`.
+- **Analytics Module (`server/src/modules/analytics`):**
+  - Strategy Pattern: `AnalyticsMetric` interface with individual metric calculators:
+    - `OverviewCountsMetric` (totals: faculty, departments, rooms, subjects, sections, generated/published timetables, open conflicts)
+    - `FacultyWorkloadMetric` (target vs scheduled hours, under/overload status)
+    - `RoomUtilizationMetric` (capacity, occupied periods, percentage)
+    - `SubjectAllocationMetric` (allocated vs required weekly periods)
+    - `PeriodUtilizationMetric` (period popularity across days)
+    - `FreePeriodsMetric` (free periods per faculty)
+    - `DepartmentStatsMetric` (sections, faculty, weekly hours)
+    - `UnallocatedSubjectsMetric` (missing hours and unassigned classes)
+    - `SchedulingEfficiencyMetric` (compactness, teacher preference, distribution)
+  - `MetricRegistry`: Register and resolve metric strategies dynamically.
+  - `WorkloadBalancerService`: Read-only suggestion engine identifying load rebalancing swaps.
+  - `AnalyticsService`: Redis cache-aside (`slotly:analytics:{projectId}:{metric}`, TTL 1h) tagged with `project:{projectId}:analytics`.
+  - BullMQ `analytics` queue worker for background counter increments and cache pre-warming.
+- **Admin Module (`server/src/modules/admin`):**
+  - User management: List users with pagination and search, role modification with step-up verification (password or MFA), force password reset, and require MFA flag.
+  - Role permissions matrix endpoint (`GET /admin/roles`).
+  - Session and security audit tracking per user.
+  - Timetable and reported conflict monitoring.
+  - System health and queue operations (`GET /admin/system/health`, `GET /admin/system/queues`, retry failed jobs).
+- **Feedback Module (`server/src/modules/feedback`):**
+  - Mongoose `Feedback` schema and repository (`feedback` collection).
+  - User submission and own feedback querying (`POST /feedback`, `GET /feedback/me`).
+  - Admin triage, status transitions, and replies (`GET /admin/feedback`, `PATCH /admin/feedback/:id`).
+- **Audit Query & CSV Export:**
+  - Indexed filtering on `AuditLog` collection: actorId, action, targetType, targetId, date range, pagination.
+  - Export CSV job on `exports` queue returning expiring signed download ticket.
+- **Monitoring & Observability (`server/src/modules/monitoring`):**
+  - Prometheus metrics at `GET /metrics` via `prom-client`.
+  - Terminus health indicators for MongoDB, Redis, and BullMQ queues.
+  - Redis sliding window rate limiting storage adapter.
+  - Web Vitals collector `POST /monitoring/vitals` enqueuing client metrics.
+- **OpenAPI Swagger:**
+  - Configured at `/docs` in `server/src/main.ts` for non-production environments.
+- **Tests:**
+  - Metric calculators tested with deterministic timetable and blueprint fixtures.
+  - Audit filtering and pagination unit tests.
+  - Admin endpoint authorization guards and step-up verification tests.
+  - Rate limiting tests.
+
+
+### Pass 1 Implementation Summary (Completed)
+- **Built**:
+  - `packages/contracts`: Analytics, Admin, Feedback, Monitoring, Audit DTO schemas; permissions (`ANALYTICS_READ`, `FEEDBACK_SUBMIT`, `FEEDBACK_MANAGE`, `SYSTEM_MONITOR`); reason codes (`STEP_UP_REQUIRED`, `FEEDBACK_NOT_FOUND`).
+  - `AnalyticsModule`: `IAnalyticsMetric` strategy interface and 9 metric implementations in `MetricRegistry` (`overview_counts`, `faculty_workload`, `room_utilization`, `subject_allocation`, `period_utilization`, `free_periods`, `department_stats`, `unallocated_subjects`, `scheduling_efficiency`); `WorkloadBalancerService` returning non-destructive suggestions; `AnalyticsService` caching with Redis (TTL 3600s, tagged `project:{projectId}:analytics`); `AnalyticsProcessor` consuming BullMQ `analytics` queue.
+  - `FeedbackModule`: Mongoose `Feedback` schema and repository; user endpoints (`POST /feedback`, `GET /feedback/me`); administrative triage endpoints (`GET /admin/feedback`, `PATCH /admin/feedback/:id`).
+  - `AdminModule`: `AdminUsersService` with step-up verification for role escalation, password reset enforcement, mandatory MFA, session revocation, security events history; `AdminRolesController` returning permission matrix; `AdminTimetablesService` tracking institutional timetable versions and constraint violations; `AdminSystemService` inspecting subsystem health and BullMQ queue depths with retry capabilities; `AdminAuditController` with indexed query filters and background CSV exports.
+  - `MonitoringModule`: `PrometheusMetricsService` collecting standard runtime metrics, HTTP request latency/counters, and active builds at `GET /metrics`; `RedisRateLimitGuard` (`slotly:system:rate-limit:{ipOrUserId}`); Web Vitals intake at `POST /monitoring/vitals`; OpenAPI Swagger docs enabled at `/docs`.
+  - Notification Cache Invalidation: `NotificationsFanoutProcessor` updated to synchronously invalidate tag `project:{projectId}:analytics` on `timetable.published`.
+- **Decisions Made**:
+  - Faculty workload balancing returns suggestions only without modifying timetable entries.
+  - User role modifications strictly enforce recent step-up authentication within active session or inline password confirmation; target user's active sessions are automatically revoked to apply new permissions immediately.
+  - Analytics calculations use cache-aside with tags for instantaneous invalidation on publishing.
+- **What Was Skipped / Deferred**:
+  - Pass 2 Client views (Analytics parallel slots, ChartSkeleton, Admin management tables, Feedback modal, Monitoring charts) deferred to Pass 2.
+- **Manual Test Checklist**:
+  1. `GET /metrics` returns valid Prometheus metrics format including runtime memory and custom HTTP counters.
+  2. `GET /docs` serves Swagger UI in development.
+  3. `GET /admin/system/health` returns `status: ok` with MongoDB, Redis, and queues statuses.
+  4. `GET /admin/system/queues` lists all queues with waiting/active/completed/failed counts.
+  5. `POST /feedback` submits user feedback; `GET /feedback/me` retrieves it; `GET /admin/feedback` lists it for administrators; `PATCH /admin/feedback/:id` updates status with admin reply.
+  6. `PATCH /admin/users/:userId/role` returns 403 `STEP_UP_REQUIRED` if caller session is not stepped up and no valid password is provided.
+  7. `GET /analytics/projects/:projectId/overview` and `GET /analytics/projects/:projectId/metrics` return computed analytical metrics and cache them under tag `project:{projectId}:analytics`.

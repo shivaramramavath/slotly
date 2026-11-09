@@ -219,6 +219,44 @@
 - **Type** `NotificationDto` - TypeScript type inferred from notification DTO Zod schema.
 - **Type** `NotificationPreferencesDto` - TypeScript type inferred from notification preferences DTO Zod schema.
 - **Type** `CreateAnnouncementDto` - TypeScript type inferred from create announcement DTO Zod schema.
+- **Type** `AnalyticsMetricKey` - TypeScript type inferred from analytics metric key Zod schema.
+- **Type** `AnalyticsOverviewDto` - TypeScript type inferred from analytics overview counts DTO.
+- **Type** `FacultyWorkloadDistributionItem` - TypeScript type inferred from faculty workload distribution item.
+- **Type** `FacultyWorkloadDistributionDto` - TypeScript type inferred from faculty workload distribution DTO.
+- **Type** `RoomUtilizationItem` - TypeScript type inferred from room utilization item.
+- **Type** `RoomUtilizationDto` - TypeScript type inferred from room utilization DTO.
+- **Type** `SubjectAllocationItem` - TypeScript type inferred from subject allocation item.
+- **Type** `SubjectAllocationDto` - TypeScript type inferred from subject allocation DTO.
+- **Type** `PeriodUtilizationItem` - TypeScript type inferred from period utilization item.
+- **Type** `PeriodUtilizationDto` - TypeScript type inferred from period utilization DTO.
+- **Type** `FacultyFreePeriodsItem` - TypeScript type inferred from faculty free periods item.
+- **Type** `FacultyFreePeriodsDto` - TypeScript type inferred from faculty free periods DTO.
+- **Type** `DepartmentStatsItem` - TypeScript type inferred from department stats item.
+- **Type** `DepartmentStatsDto` - TypeScript type inferred from department stats DTO.
+- **Type** `UnallocatedSubjectItem` - TypeScript type inferred from unallocated subject item.
+- **Type** `UnallocatedSubjectsDto` - TypeScript type inferred from unallocated subjects DTO.
+- **Type** `SchedulingEfficiencyDto` - TypeScript type inferred from scheduling efficiency DTO.
+- **Type** `WorkloadBalancingSuggestion` - TypeScript type inferred from workload balancing suggestion.
+- **Type** `WorkloadBalancingSuggestionsResponse` - TypeScript type inferred from workload balancing suggestions response DTO.
+- **Type** `AdminUserListItemDto` - TypeScript type inferred from admin user list item DTO.
+- **Type** `ChangeUserRoleDto` - TypeScript type inferred from admin change user role DTO.
+- **Type** `RolePermissionsMatrixDto` - TypeScript type inferred from role permissions matrix DTO.
+- **Type** `AdminTimetableItemDto` - TypeScript type inferred from admin timetable overview item.
+- **Type** `AdminReportedConflictDto` - TypeScript type inferred from admin reported conflict item.
+- **Type** `SecurityEventDto` - TypeScript type inferred from security event DTO.
+- **Type** `UserSessionItemDto` - TypeScript type inferred from user session item DTO.
+- **Type** `FeedbackType` - TypeScript type inferred from feedback type.
+- **Type** `FeedbackStatus` - TypeScript type inferred from feedback status.
+- **Type** `CreateFeedbackDto` - TypeScript type inferred from create feedback DTO.
+- **Type** `FeedbackDto` - TypeScript type inferred from feedback DTO.
+- **Type** `UpdateFeedbackDto` - TypeScript type inferred from update feedback status and reply DTO.
+- **Type** `AuditQueryDto` - TypeScript type inferred from audit query DTO.
+- **Type** `AuditLogDto` - TypeScript type inferred from single audit log entry DTO.
+- **Type** `AuditLogListDto` - TypeScript type inferred from audit log list response DTO.
+- **Type** `SystemHealthDto` - TypeScript type inferred from system health response DTO.
+- **Type** `QueueHealthItem` - TypeScript type inferred from queue health item DTO.
+- **Type** `QueuesHealthResponseDto` - TypeScript type inferred from queues health response DTO.
+- **Type** `ClientWebVitalsDto` - TypeScript type inferred from client web vitals metric DTO.
 - **Function** `normalizeReasonCode(code: string)`: `"REVISION_CONFLICT" | "PARENT_MISSING" | "PARENT_INCOMPLETE" | "PARENT_TYPE_NOT_ALLOWED" | "DUPLICATE_NAME" | "CAPACITY_EXCEEDED" | "CYCLE" | "ENDPOINT_INCOMPLETE" | "NOT_QUALIFIED" | "PROJECT_LOCKED" | "PERMISSION_DENIED" | "SINGLE_PARENT_VIOLATION" | "INVALID_OPERATION" | "INSUFFICIENT_LAB_CAPACITY" | "MISSING_ALLOCATION" | "FACULTY_OVERLOAD" | "INVALID_GRAPH"` - Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation.
 - **Function** `normalizeAvailabilityMatrix(matrix: boolean[][] | null | undefined, daysCount: number, periodsCount: number)`: `boolean[][]` - Function normalizing availability matrix dimensions according to days and periods per day.
 - **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse` - Zod schema validating api error response.
@@ -437,4 +475,42 @@
 - **Zod Schema** `NotificationPreferencesDtoSchema` -> `NotificationPreferencesDto` - Zod schema validating notification preferences DTO.
 - **Zod Schema** `CreateAnnouncementDtoSchema` -> `CreateAnnouncementDto` - Zod schema validating create announcement DTO.
 - **Const** `NotificationSocketEvents`: `{ readonly SUBSCRIBE: "subscribe"; readonly MAR...` - Constant socket events for notifications namespace.
+- **Zod Schema** `AnalyticsMetricKeySchema` -> `AnalyticsMetricKey` - Zod schema validating analytics metric key.
+- **Zod Schema** `AnalyticsOverviewDtoSchema` -> `AnalyticsOverviewDto` - Zod schema validating analytics overview counts DTO.
+- **Zod Schema** `FacultyWorkloadDistributionItemSchema` -> `FacultyWorkloadDistributionItem` - Zod schema validating faculty workload distribution item.
+- **Zod Schema** `FacultyWorkloadDistributionDtoSchema` -> `FacultyWorkloadDistributionDto` - Zod schema validating faculty workload distribution DTO.
+- **Zod Schema** `RoomUtilizationItemSchema` -> `RoomUtilizationItem` - Zod schema validating room utilization item.
+- **Zod Schema** `RoomUtilizationDtoSchema` -> `RoomUtilizationDto` - Zod schema validating room utilization DTO.
+- **Zod Schema** `SubjectAllocationItemSchema` -> `SubjectAllocationItem` - Zod schema validating subject allocation item.
+- **Zod Schema** `SubjectAllocationDtoSchema` -> `SubjectAllocationDto` - Zod schema validating subject allocation DTO.
+- **Zod Schema** `PeriodUtilizationItemSchema` -> `PeriodUtilizationItem` - Zod schema validating period utilization item.
+- **Zod Schema** `PeriodUtilizationDtoSchema` -> `PeriodUtilizationDto` - Zod schema validating period utilization DTO.
+- **Zod Schema** `FacultyFreePeriodsItemSchema` -> `FacultyFreePeriodsItem` - Zod schema validating faculty free periods item.
+- **Zod Schema** `FacultyFreePeriodsDtoSchema` -> `FacultyFreePeriodsDto` - Zod schema validating faculty free periods DTO.
+- **Zod Schema** `DepartmentStatsItemSchema` -> `DepartmentStatsItem` - Zod schema validating department stats item.
+- **Zod Schema** `DepartmentStatsDtoSchema` -> `DepartmentStatsDto` - Zod schema validating department stats DTO.
+- **Zod Schema** `UnallocatedSubjectItemSchema` -> `UnallocatedSubjectItem` - Zod schema validating unallocated subject item.
+- **Zod Schema** `UnallocatedSubjectsDtoSchema` -> `UnallocatedSubjectsDto` - Zod schema validating unallocated subjects DTO.
+- **Zod Schema** `SchedulingEfficiencyDtoSchema` -> `SchedulingEfficiencyDto` - Zod schema validating scheduling efficiency DTO.
+- **Zod Schema** `WorkloadBalancingSuggestionSchema` -> `WorkloadBalancingSuggestion` - Zod schema validating workload balancing suggestion.
+- **Zod Schema** `WorkloadBalancingSuggestionsResponseSchema` -> `WorkloadBalancingSuggestionsResponse` - Zod schema validating workload balancing suggestions response DTO.
+- **Zod Schema** `AdminUserListItemDtoSchema` -> `AdminUserListItemDto` - Zod schema validating admin user list item DTO.
+- **Zod Schema** `ChangeUserRoleDtoSchema` -> `ChangeUserRoleDto` - Zod schema validating admin change user role DTO.
+- **Zod Schema** `RolePermissionsMatrixDtoSchema` -> `RolePermissionsMatrixDto` - Zod schema validating role permissions matrix DTO.
+- **Zod Schema** `AdminTimetableItemDtoSchema` -> `AdminTimetableItemDto` - Zod schema validating admin timetable overview item.
+- **Zod Schema** `AdminReportedConflictDtoSchema` -> `AdminReportedConflictDto` - Zod schema validating admin reported conflict item.
+- **Zod Schema** `SecurityEventDtoSchema` -> `SecurityEventDto` - Zod schema validating security event DTO.
+- **Zod Schema** `UserSessionItemDtoSchema` -> `UserSessionItemDto` - Zod schema validating user session item DTO.
+- **Zod Schema** `FeedbackTypeSchema` -> `FeedbackType` - Zod schema validating feedback type.
+- **Zod Schema** `FeedbackStatusSchema` -> `FeedbackStatus` - Zod schema validating feedback status.
+- **Zod Schema** `CreateFeedbackDtoSchema` -> `CreateFeedbackDto` - Zod schema validating create feedback DTO.
+- **Zod Schema** `FeedbackDtoSchema` -> `FeedbackDto` - Zod schema validating feedback DTO.
+- **Zod Schema** `UpdateFeedbackDtoSchema` -> `UpdateFeedbackDto` - Zod schema validating update feedback status and reply DTO.
+- **Zod Schema** `AuditQueryDtoSchema` -> `AuditQueryDto` - Zod schema validating audit query DTO.
+- **Zod Schema** `AuditLogDtoSchema` -> `AuditLogDto` - Zod schema validating single audit log entry DTO.
+- **Zod Schema** `AuditLogListDtoSchema` -> `AuditLogListDto` - Zod schema validating audit log list response DTO.
+- **Zod Schema** `SystemHealthDtoSchema` -> `SystemHealthDto` - Zod schema validating system health response DTO.
+- **Zod Schema** `QueueHealthItemSchema` -> `QueueHealthItem` - Zod schema validating queue health item DTO.
+- **Zod Schema** `QueuesHealthResponseDtoSchema` -> `QueuesHealthResponseDto` - Zod schema validating queues health response DTO.
+- **Zod Schema** `ClientWebVitalsDtoSchema` -> `ClientWebVitalsDto` - Zod schema validating client web vitals metric DTO.
 

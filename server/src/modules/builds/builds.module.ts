@@ -57,6 +57,7 @@ import { EventBus } from '../../common/events/event-bus.service';
     BuildsService,
     SCHEDULE_VERSION_REPOSITORY,
     CachedScheduleVersionRepository,
+    MongoScheduleVersionRepository,
   ],
 })
 export class BuildsModule {}

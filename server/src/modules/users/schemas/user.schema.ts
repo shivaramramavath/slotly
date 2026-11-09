@@ -80,6 +80,9 @@ export class User {
 
   @Prop({ default: false })
   mfaRequired!: boolean; // Forced by institution admin
+
+  @Prop({ default: false, type: Boolean })
+  mustResetPassword?: boolean;
 }
 
 /** Zod schema validating user. */
