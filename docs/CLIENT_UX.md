@@ -57,11 +57,12 @@ The route tree in this document is canonical. Some routes were built earlier und
 
 ### 1.4 Spacing, shape, depth, motion
 
-- 4px grid. Common gaps: 8, 12, 16, 24. Page padding 24 (16 on mobile).
-- Radius: 6 (inputs, badges), 8 (cards, nodes), 12 (dialogs).
-- No shadows. Depth comes from `--surface` versus `--bg` and 1px borders. Dialogs use a dimmed backdrop.
+- 4px grid. Common gaps: 8, 12, 16, 24. Page padding 24 (16 on mobile), centered content column max-w-5xl (1016px).
+- Radius: 6 (inputs, badges), 8 (nodes), 12 (dialogs, controls, select), 20 (grid surface cards).
+- Tokens: `--radius-card: 20px`, `--radius-control: 12px`, `--card-padding: 24px`, `--header-height: 72px`, `--page-max-width: 1016px`.
+- No shadows. Depth comes from `--surface` versus `--bg` and 1px borders. Dialogs use a dimmed backdrop. Surface cards hover border `--border-strong` (`#383838`), hover background `#161616`.
 - Motion 120 to 200 ms ease-out. Allowed: fade, short slide for sheets, snap-back, status ring transitions. Disabled entirely under `prefers-reduced-motion` (replace with instant changes).
-- Focus ring: 2px `--text` outline with 2px offset on every focusable element. Never removed.
+- Focus ring: 2px `--text` outline with 2px offset on every focusable element. Never removed. Surface cards use `focus-within:ring-2 focus-within:ring-[#FAFAFA]`.
 
 ### 1.5 Status vocabulary
 
@@ -79,13 +80,16 @@ The route tree in this document is canonical. Some routes were built earlier und
 
 ## 2. App shell
 
-### 2.1 Top bar (56px, all signed-in pages)
+### 2.1 Top bar (`AppHeader`, 72px, all signed-in pages)
 
-`Logo` · primary nav (Home, Projects, Institution, Library, Kits) · command search (⌘K) · notifications bell (unread dot) · user menu · **Create** (yellow, opens the new-project modal).
+`Logo` (sys0 wordmark lockup: "slotly" with yellow "o", 16px divider, "Beta" mono tag linking to `/home`) · primary nav (`AppNav`: plain text links, 14px, muted hover to white, active is white with 1px underline offset 6px decoration-white/60) · notifications bell (plain icon button, yellow dot for unread) · user menu (`UserMenu`: 32px circular avatar dropdown with initials, role badge, Profile, Security, Active Sessions, Sign Out).
 
-- Active nav item: white text with a 1px underline. Others muted.
+- Transparent background with sticky scroll-state blur and border after 12px scroll.
+- No header CTA: creation button moves to the page header of Projects.
+- Active nav item: white text with a 1px underline offset 6px in white at 60% opacity (never yellow). Others muted.
 - Role-based nav: FACULTY and STUDENT see "My timetable" instead of Projects, Institution, Library, Kits.
-- Below 768px the nav collapses into a menu sheet; Create becomes an icon button.
+- Below 768px the nav collapses into a menu sheet; the avatar and bell stay visible.
+- Compact variant (`compact=true`, 56px height, full-bleed) for workspace views (Blueprint canvas, Studio).
 
 ### 2.2 Project header (48px, inside `/projects/[projectId]/*`, stays mounted)
 
@@ -266,11 +270,17 @@ Good morning, Priya                          [New project]
 
 ### 5.3 Projects list `/projects`
 
-- Toolbar: search, status chips (All, Draft, Building, Ready, Pending, Published, Archived), sort (Recent, Name, Status), view toggle (table, cards).
-- Row: name (inline rename on double-click), term (mono), status badge, blueprint progress ring with percent, last opened, owner avatar, "⋯" menu (Open, Duplicate, Archive, Delete).
-- Optimistic: create, rename, duplicate, archive. Pessimistic: delete (type project name).
-- Loading: `ListRowSkeleton` × 8. Empty: see §3.2.
-- Mobile: cards, one per row, menu as bottom sheet.
+- Shell: `PageHeader` ("Academic Projects", description, quiet link "Templates and Kits" -> `/blueprint-templates`, single primary yellow button "New project" -> `/projects/new`).
+- Filter bar: single row with search input (40px, rounded 12px, surface bg) and compact status select (40px, rounded 12px).
+- Surface cards grid: 3-column responsive grid of `SurfaceCard` (20px radius, 24px padding, `#111111` surface, hover border `#383838`, hover bg `#161616`, focus-within white ring).
+- Card anatomy (`ProjectCard`):
+  - Primary stretched link overlay covering the card (`Link` to `/projects/:id/blueprint`).
+  - Top row: 32px calendar glyph, status label with arrow (nudges 2px on hover), isolated "..." action menu button (`MoreHorizontal`, opens Settings, Duplicate, Archive dropdown without navigating).
+  - Middle: title (20px, font-medium, clamp-2), subtitle (12px mono, term kind + dates), description (14px, 3-line clamp).
+  - Footer row: left has 3-bar progress glyph (`ProgressBars`: 1 bar draft/archived, 2 bars yellow building/pending, 2 bars green ready, 3 bars green published) + monospace status label (`StatusIndicator`, e.g. "Draft · 40% set up"); right has revision number and opened date ("Rev 1 · opened 9 Nov").
+- Concurrency & readiness: `ProjectDto.blueprintProgress` (0 to 100) computed server-side from cached Redis readiness without DB query.
+- Optimistic: create, duplicate, archive.
+- Loading: `ProjectCardSkeleton` × 6. Empty: `SurfaceCard` empty state with "New project" CTA. Error: `SurfaceCard` error state with Retry button.
 
 ### 5.4 New project (modal at `/projects/new`, full page on hard navigation)
 
@@ -519,6 +529,8 @@ Status refers to what exists in the repository as of Phase 8; confirm in code.
 | AvailabilityGrid, WorkloadBar | Library visuals | Built |
 | ConflictCard, ValidationPanel, ShortcutsDialog, RevisionConflictDialog, ImpactPreviewDialog, ParentRegressionBanner | Blueprint and engine UI | Built |
 | Skeleton family (§3.1), Boundary (Suspense + ErrorBoundary + Retry) | Loading and error | To build |
+| AppHeader, AppNav, UserMenu, PageContainer, PageHeader | App shell & page layout (sys0 visual spec) | Built |
+| SurfaceCard, ProgressBars, StatusIndicator, ProjectCard | Project grid & status indicators (sys0 visual spec) | Built |
 | StatusBadge, ProgressRing, ScorePill | Status visuals | Partly built |
 | SaveStatusChip, PresenceAvatars | Collaboration | To build or consolidate |
 | ReasonToast + GoFixLink | Gate rejection feedback | To build |

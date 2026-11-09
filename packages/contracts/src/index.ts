@@ -1366,6 +1366,7 @@ export const ProjectDtoSchema = z.object({
   strictness: ProjectStrictnessSchema,
   lastOpenedAt: z.string().optional(),
   revision: z.number().int().default(1),
+  blueprintProgress: z.number().min(0).max(100).nullable().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });

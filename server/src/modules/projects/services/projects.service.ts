@@ -23,6 +23,8 @@ import type { InstitutionRepository } from '../../institutions/repositories/inst
 import { ProjectStateFactory } from '../lifecycle/project-state.factory';
 import { AuditService } from '../../../common/audit/audit.service';
 import type { Project } from '../schemas/project.schema';
+import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
+import type { CacheService } from '../../../common/cache/cache.interface';
 
 function getId(
   doc:
@@ -48,9 +50,15 @@ export class ProjectsService {
     @Optional()
     @Inject(INSTITUTION_REPOSITORY)
     private readonly institutionRepo?: InstitutionRepository,
+    @Optional()
+    @Inject(CACHE_SERVICE)
+    private readonly cache?: CacheService,
   ) {}
 
-  private toDto(doc: Project): ProjectDto {
+  private toDto(
+    doc: Project,
+    blueprintProgress: number | null = null,
+  ): ProjectDto {
     const id = getId(doc);
     return {
       id,
@@ -63,8 +71,13 @@ export class ProjectsService {
       strictness: doc.strictness,
       lastOpenedAt: doc.lastOpenedAt?.toISOString?.() || undefined,
       revision: doc.revision,
-      createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
-      updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
+      blueprintProgress,
+      createdAt: doc.createdAt
+        ? new Date(doc.createdAt).toISOString()
+        : new Date().toISOString(),
+      updatedAt: doc.updatedAt
+        ? new Date(doc.updatedAt).toISOString()
+        : new Date().toISOString(),
     };
   }
 
@@ -214,8 +227,48 @@ export class ProjectsService {
       skip,
       limit,
     );
+    const dtos = await Promise.all(
+      items.map(async (p) => {
+        const pId = getId(p);
+        let progress: number | null = null;
+        if (this.cache && pId) {
+          try {
+            const cachedReadiness = await this.cache.get<{
+              percentComplete?: number;
+            }>(`slotly:blueprint:${pId}:readiness`);
+            if (
+              cachedReadiness &&
+              typeof cachedReadiness.percentComplete === 'number'
+            ) {
+              progress = cachedReadiness.percentComplete;
+            } else {
+              const cachedBlueprint = await this.cache.get<{
+                nodes?: Array<{ status?: string }>;
+              }>(`slotly:blueprint:${pId}`);
+              if (
+                cachedBlueprint?.nodes &&
+                Array.isArray(cachedBlueprint.nodes)
+              ) {
+                const totalNodes = cachedBlueprint.nodes.length;
+                if (totalNodes > 0) {
+                  const completed = cachedBlueprint.nodes.filter(
+                    (n) => n.status === 'complete',
+                  ).length;
+                  progress = Math.round((completed / totalNodes) * 100);
+                } else {
+                  progress = 0;
+                }
+              }
+            }
+          } catch {
+            // cache read failure is non-fatal
+          }
+        }
+        return this.toDto(p, progress);
+      }),
+    );
     return {
-      items: items.map((p) => this.toDto(p)),
+      items: dtos,
       total,
       page,
       limit,

@@ -1703,3 +1703,71 @@
   5. `POST /feedback` submits user feedback; `GET /feedback/me` retrieves it; `GET /admin/feedback` lists it for administrators; `PATCH /admin/feedback/:id` updates status with admin reply.
   6. `PATCH /admin/users/:userId/role` returns 403 `STEP_UP_REQUIRED` if caller session is not stepped up and no valid password is provided.
   7. `GET /analytics/projects/:projectId/overview` and `GET /analytics/projects/:projectId/metrics` return computed analytical metrics and cache them under tag `project:{projectId}:analytics`.
+
+
+---
+
+## UX Task 03: Sys0 Header & Project Cards Restyle
+
+Restyled application header and project cards to the sys0 visual language specification (`ux/03-sys0-header-cards`).
+
+### What Was Built
+
+1. **Contracts & Server Readiness Integration:**
+   - Extended `@slotly/contracts`: Added `blueprintProgress` (nullable number from 0 to 100) to `ProjectDtoSchema`.
+   - Updated `ProjectsService` in NestJS: Reads cached blueprint readiness (`slotly:blueprint:${id}:readiness`) or cached blueprint nodes from Redis to compute progress percentage dynamically with zero database overhead.
+
+2. **Design Tokens & Global Styles (`client/src/app/globals.css`):**
+   - Added visual spec tokens: `--radius-card: 20px`, `--radius-control: 12px`, `--card-padding: 24px`, `--header-height: 72px`, `--page-max-width: 1016px`, `--border-strong: #383838`.
+   - Preserved strict monochrome palette: background `#0A0A0A`, surface `#111111`, border `#232323`, text `#FAFAFA`, muted `#8A8A8A`.
+   - Accent yellow `#FACC15` restricted to under 5% (the wordmark "o", unread notification dot, and single primary "New project" button).
+
+3. **Core Layout & Navigation Components:**
+   - `PageContainer`: Centered 1016px content column (`max-w-5xl`, `px-4 sm:px-6`) with fluid mode for full-bleed workspaces.
+   - `PageHeader`: 36px title (30px mobile, tracking -0.02em), 15px description, quiet links, and actions slot, plus `PageHeaderSkeleton`.
+   - `AppNav`: Plain text links (14px, muted hover to white), active link white with 1px underline offset 6px in white at 60% opacity (`decoration-white/60`, never yellow), role filtering, accessible ARIA landmarks, and vertical variant for mobile sheets.
+   - `UserMenu`: 32px circular avatar dropdown showing user initials, email, role badge, Profile, Security, Active Sessions, and Sign out.
+   - `AppHeader`: 72px sticky header, wordmark lockup ("slotly" with yellow "o", 16px divider, "Beta" mono tag linking to `/home`), plain notification bell with unread dot, user avatar, scroll-state backdrop blur and border (after 12px scroll), mobile sheet, and compact mode (`compact=true`, 56px) for canvas workspaces.
+   - `AppLayout`: Composes `AppHeader` and `PageContainer` with route protection and zero-layout-shift shell skeletons.
+
+4. **Surface Card & Project Components:**
+   - `SurfaceCard`: 20px radius, 24px padding, `#111111` surface, `#232323` border, hover border `#383838`, hover bg `#161616`, focus-within ring.
+   - `ProgressBars`: 3-bar progress indicator glyph (6px, 10px, 14px) with status mapping (`getIndicatorConfig`: 1 bar draft/archived, 2 yellow bars building/pending, 2 green bars ready, 3 green bars published).
+   - `StatusIndicator`: Combines 3-bar indicator with monospace status label and percentage ("Draft · 40% set up").
+   - `ProjectCard`:
+     - Stretched link overlay covering the card (`Link` to `/projects/:id/blueprint`).
+     - Top row: 32px monochrome calendar glyph, status label with arrow (nudges 2px on hover), isolated "..." dropdown menu button (`MoreHorizontal`) opening Settings, Duplicate, and Archive options with stopPropagation.
+     - Middle: 20px title (clamp-2), monospace subtitle, 3-line description.
+     - Pinned footer row: 3-bar status indicator and revision/opened metadata ("Rev 1 · opened 9 Nov").
+     - `ProjectCardSkeleton`: Matching structure and dimensions in 6-card grid.
+
+5. **Projects Page (`client/src/app/projects/page.tsx`):**
+   - Restyled with `PageHeader` ("Academic Projects", "Templates and Kits" quiet link, single yellow "New project" button).
+   - Single-row filter bar: search input (40px, rounded 12px, surface bg) and compact status select (40px, rounded 12px).
+   - Responsive 3-column surface card grid.
+   - SurfaceCard-styled Empty and Error states.
+   - Duplicate and Archive modal dialog flows preserved.
+
+6. **Automated Tests:**
+   - Server: `projects.service.spec.ts` testing cached readiness, graph fallback, null fallback, and DTO validation.
+   - Client: `app-nav.spec.ts` testing `isNavActive` matching; `status-indicator.spec.ts` testing `getIndicatorConfig` and `formatStatusLabel`; `project-card.spec.ts` testing `formatOpenedMeta`, `getProjectDescription`, and `getStatusColorClass`.
+
+### Decisions Made
+
+- **Stretched Link Overlay Pattern:** Placed a full-card stretched link `Link` covering `absolute inset-0 z-10` with rounded corners. Isolated interactive elements (the `MoreHorizontal` menu button) with `relative z-20` and `e.stopPropagation(); e.preventDefault();` to allow menu interaction without navigating.
+- **Active Navigation Indicator:** Implemented active link styling strictly as white text with a 1px underline offset 6px (`decoration-white/60`), never using yellow accents, per design rules.
+- **Header Creation Button Migration:** Removed the header "Create Project" button, moving primary creation to the page header of `/projects` as "New project".
+- **Compact Header Mode:** Kept `compact` variant on `AppHeader` and `AppLayout` so full-bleed interactive workspaces (Blueprint canvas, Studio) preserve their existing layout.
+
+### Manual Test Checklist
+
+1. Navigate to `/projects`: App header displays wordmark "slotly" with yellow "o", 16px vertical divider, "Beta" mono tag linking to `/home`.
+2. Header navigation links (Projects, Institution, Library, Templates) are plain text without pill borders; active link ("Projects") is white with a subtle white underline.
+3. Notification bell appears as a clean icon button with a small yellow unread indicator dot.
+4. Clicking the 32px circular avatar opens the dropdown showing name, email, role, Profile, Security, and Sign Out.
+5. Projects page header shows "Academic Projects", "Templates and Kits" quiet link with arrow, and single yellow "New project" button.
+6. Filter bar shows search input and status select in a single clean row with 12px rounded corners.
+7. Project cards render in a responsive 3-column grid with 20px rounded corners, 24px padding, calendar glyph, status arrow nudging on hover, title, subtitle, description, and pinned footer with 3-bar indicator and opened date.
+8. Clicking a card navigates to `/projects/:id/blueprint`; clicking the "..." menu opens the options dropdown without navigating to the blueprint.
+
+Merged via `ux/03-sys0-header-cards`, tag `ux-03-sys0-header-cards-merged`.

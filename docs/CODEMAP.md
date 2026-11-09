@@ -196,6 +196,6 @@
 | [client-builds.md](docs/codemap/client-builds.md) | Client Builds Feature | 84 lines |
 | [client-institution.md](docs/codemap/client-institution.md) | Client Institution Feature | 125 lines |
 | [client-library.md](docs/codemap/client-library.md) | Client Library Feature | 86 lines |
-| [client-projects.md](docs/codemap/client-projects.md) | Client Projects Feature | 19 lines |
-| [client-shared.md](docs/codemap/client-shared.md) | Client Shared Components & Lib | 208 lines |
+| [client-projects.md](docs/codemap/client-projects.md) | Client Projects Feature | 34 lines |
+| [client-shared.md](docs/codemap/client-shared.md) | Client Shared Components & Lib | 291 lines |
 <!-- GENERATED:END -->
