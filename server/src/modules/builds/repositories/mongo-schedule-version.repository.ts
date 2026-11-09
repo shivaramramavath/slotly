@@ -37,10 +37,10 @@ export class MongoScheduleVersionRepository implements IScheduleVersionRepositor
       revision: doc.revision,
       status: doc.status,
       createdAt: doc.createdAt
-        ? doc.createdAt.toISOString()
+        ? new Date(doc.createdAt).toISOString()
         : new Date().toISOString(),
       updatedAt: doc.updatedAt
-        ? doc.updatedAt.toISOString()
+        ? new Date(doc.updatedAt).toISOString()
         : new Date().toISOString(),
     };
   }
