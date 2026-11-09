@@ -91,11 +91,83 @@
 - **Component** `RootLayout({ children }: { children: React.ReactNode; })` - React component rendering root layout.
 - **Const** `metadata`: `import("E:/Shiva Ram/Projects/slotly/node_modul...` - Constant representing metadata.
 
+### `client/src/app/library/faculty/error.tsx`
+*Error component handling runtime exceptions in faculty directory view.*
+
+- **Error Boundary:** `/library/faculty` -> renders `default`
+- **Component** `FacultyLibraryError({ error, reset }: FacultyLibraryErrorProps)` - Error component for faculty library route.
+
+### `client/src/app/library/faculty/loading.tsx`
+*Loading component rendering zero layout shift table skeleton for faculty directory.*
+
+- **Loading Boundary:** `/library/faculty` -> renders `default`
+- **Component** `FacultyLibraryLoading()` - Loading component for faculty library route.
+
+### `client/src/app/library/faculty/page.tsx`
+*React component rendering the faculty directory table, workload indicators, and resource actions.*
+
+- **Route Page:** `/library/faculty` -> renders `default`
+- **Component** `FacultyLibraryPage()` - React component rendering faculty library directory view.
+
+### `client/src/app/library/layout.tsx`
+*Shared application layout for resource library routes providing persistent header, tabs, and filter toolbar.*
+
+- **Layout:** `/library` -> renders `default`
+- **Component** `LibraryLayout({ children }: { children: React.ReactNode; })` - Shared layout for library sub-routes maintaining persistent header, tabs, and filter controls.
+
 ### `client/src/app/library/page.tsx`
-*React component for page.*
+*Server component redirecting base /library route to default /library/faculty route.*
 
 - **Route Page:** `/library` -> renders `default`
-- **Component** `LibraryPage()` - React component rendering library page.
+- **Component** `LibraryIndexPage()` - Server component redirecting /library to /library/faculty.
+
+### `client/src/app/library/room/page.tsx`
+*Server component redirecting singular /library/room route to /library/rooms.*
+
+- **Route Page:** `/library/room` -> renders `default`
+- **Component** `LibraryRoomRedirectPage()` - Server component redirecting /library/room to /library/rooms.
+
+### `client/src/app/library/rooms/error.tsx`
+*Error component handling runtime exceptions in rooms directory view.*
+
+- **Error Boundary:** `/library/rooms` -> renders `default`
+- **Component** `RoomsLibraryError({ error, reset }: RoomsLibraryErrorProps)` - Error component for rooms library route.
+
+### `client/src/app/library/rooms/loading.tsx`
+*Loading component rendering zero layout shift table skeleton for rooms directory.*
+
+- **Loading Boundary:** `/library/rooms` -> renders `default`
+- **Component** `RoomsLibraryLoading()` - Loading component for rooms library route.
+
+### `client/src/app/library/rooms/page.tsx`
+*React component rendering the facilities and rooms directory table, equipment, and resource actions.*
+
+- **Route Page:** `/library/rooms` -> renders `default`
+- **Component** `RoomsLibraryPage()` - React component rendering rooms library facilities view.
+
+### `client/src/app/library/subject/page.tsx`
+*Server component redirecting singular /library/subject route to /library/subjects.*
+
+- **Route Page:** `/library/subject` -> renders `default`
+- **Component** `LibrarySubjectRedirectPage()` - Server component redirecting /library/subject to /library/subjects.
+
+### `client/src/app/library/subjects/error.tsx`
+*Error component handling runtime exceptions in subject catalog view.*
+
+- **Error Boundary:** `/library/subjects` -> renders `default`
+- **Component** `SubjectsLibraryError({ error, reset }: SubjectsLibraryErrorProps)` - Error component for subjects library route.
+
+### `client/src/app/library/subjects/loading.tsx`
+*Loading component rendering zero layout shift table skeleton for subjects catalog.*
+
+- **Loading Boundary:** `/library/subjects` -> renders `default`
+- **Component** `SubjectsLibraryLoading()` - Loading component for subjects library route.
+
+### `client/src/app/library/subjects/page.tsx`
+*React component rendering the academic subject catalog table, requirements, and resource actions.*
+
+- **Route Page:** `/library/subjects` -> renders `default`
+- **Component** `SubjectsLibraryPage()` - React component rendering subjects library catalog view.
 
 ### `client/src/app/page.tsx`
 *React component for page.*

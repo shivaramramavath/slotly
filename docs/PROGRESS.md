@@ -1771,3 +1771,70 @@ Restyled application header and project cards to the sys0 visual language specif
 8. Clicking a card navigates to `/projects/:id/blueprint`; clicking the "..." menu opens the options dropdown without navigating to the blueprint.
 
 Merged via `ux/03-sys0-header-cards`, tag `ux-03-sys0-header-cards-merged`.
+
+
+---
+
+## UX Task 04: Library Routes & Layout Modernization
+
+Split monolithic Library page into dedicated route segments (`/library/faculty`, `/library/subjects`, `/library/rooms`) with shared persistent layout, export dropdown, per-route loading/error states, and unified spacing scale (`ux/04-library-routes`).
+
+### What Was Built
+
+1. **Routing & Server Redirects:**
+   - Dedicated route segments: `/library/faculty`, `/library/subjects`, `/library/rooms`.
+   - Permanent and temporary redirects: `/library` redirects to `/library/faculty`; `/library/subject` and `/library/room` redirect to `/library/subjects` and `/library/rooms` in `next.config.ts` and in route page fallbacks.
+   - Preserves query parameters across tab navigation: `search` and `archived` preserved globally; `department` preserved between Faculty and Subjects, and cleanly excluded from Rooms (which are institution-level facilities).
+
+2. **Shared Layout (`client/src/app/library/layout.tsx`):**
+   - Composes `AppLayout` (`activePath="/library"`), `LibraryProvider`, `PageHeader`, `LibraryTabs`, `LibraryToolbar`, and `{children}`.
+   - Header, tabs, and filter toolbar stay mounted during tab transitions (zero re-mounting).
+   - Strict spacing scale applied: PageContainer top padding to `PageHeader`, 40px gap (`mb-10`) to `LibraryTabs`, 16px gap (`mb-4`) to `LibraryToolbar`, 16px gap (`mb-4`) to table card, and 64px bottom padding (`pb-16`). All sharing the identical 1016px max-width gridline.
+
+3. **Segmented Link Navigation (`LibraryTabs`):**
+   - Segmented link navigation with icons (`Users`, `BookOpen`, `DoorOpen`), 40px height, 12px radius, surface active background (`#181818`), border `#232323`, and inactive muted text.
+   - Real Next.js `Link` components with `usePathname()` and `aria-current="page"`.
+   - Displays real counts when loaded or an inline skeleton bar when uncomputed (never misleading "0").
+
+4. **Unified Toolbar & Header Actions (`LibraryToolbar`, `LibraryHeaderActions`):**
+   - Flattened toolbar without nested bordered boxes: 40px search input with search icon, 40px department select, and 40px active/archived toggle button.
+   - `LibraryExportDropdown`: Single 40px outline button with download icon and chevron, menu options for "Excel (.xlsx)" and "CSV (.csv)", keyboard accessible (Enter/Space opens, arrow keys navigate, Escape closes with focus return).
+   - Single primary yellow button matching active tab: "Add faculty", "Add subject", or "Add room" (the only yellow element on the page besides the wordmark "o" and unread bell dot).
+
+5. **Table Surfaces & Per-Route States:**
+   - Flush `SurfaceCard` (static 20px radius, 1px border `#232323`, `#111111` surface, no outer table padding so borders reach edges, table scrolls horizontally inside card below 1024px).
+   - Fixed column min-widths preventing wrap at 1024px: "Teaching Workload" (`min-w-[220px]`), "Qualified Subjects" (`min-w-[140px]`).
+   - `LibraryTableSkeleton`: Zero-layout-shift skeleton for each route with 8 body rows matching column widths.
+   - `LibraryErrorPanel`: Isolated error card per route with Retry button calling `reset()` and return link to `/library/faculty`.
+   - `LibraryEmptyState`: Clean 48px vertically padded empty state inside table with primary create button and import link.
+
+6. **State & Dialog Architecture (`LibraryProvider`, `useLibrary`):**
+   - Context provider managing shared filter state, query parameter synchronization, tab counts, and dialog instances (`FacultyDialog`, `SubjectDialog`, `RoomDialog`, `ElectiveGroupDialog`, `ImportWizardDialog`, `ConfirmDialog`) mounted once at the layout level.
+
+7. **Automated Tests:**
+   - `library-tabs.spec.ts`: Tests `getActiveLibraryTab`, `getLibraryTabHref` query parameter preservation and room department filtering, and tab definitions.
+   - `library-empty-state.spec.ts`: Tests empty messages and primary button labels per entity.
+   - `library-columns.spec.ts`: Tests column definitions, min-widths, and alignment across all 3 tables.
+   - `library-redirects.spec.ts`: Validates `next.config.ts` redirects for `/library`, `/library/subject`, and `/library/room`.
+
+### Decisions Made
+
+- **Layout-Level Dialog Hosting:** Placed all entity edit/create/import/delete dialogs inside `LibraryProvider` at the layout level so dialog opening never remounts the table, and child route files remain strictly focused on table row rendering.
+- **Query Parameter Preservation Rule:** Preserved `search` and `archived` across all tabs. Preserved `department` between Faculty and Subjects, but excluded it from Rooms because rooms are institution-level entities.
+- **Loading State Skeleton Counts:** Replaced misleading "(0)" count on loading tabs with an inline skeleton pill so users are not mislead into thinking a directory is empty before data arrives.
+
+### Manual Test Checklist
+
+1. Navigate to `/library`: Confirmed server-side redirect to `/library/faculty`.
+2. Navigate to `/library/subject` and `/library/room`: Confirmed redirects to `/library/subjects` and `/library/rooms`.
+3. Verify top bar has "Library" active with a white 1px underline.
+4. Verify PageHeader displays "Resource Library" with 40px spacing to the tab bar.
+5. In `LibraryTabs`, verify 3 segmented tabs (Faculty, Subjects, Rooms & Facilities) with 40px height and 12px radius; active tab has surface background and 1px border.
+6. Verify clicking tabs updates URL without full page reload or layout remounting.
+7. Verify search, department, and active filters are plain controls on the page background without nested boxes.
+8. Verify "Export" is a single outline dropdown button with `.xlsx` and `.csv` items; test opening with Enter/Space and closing with Escape.
+9. Verify single yellow primary action button ("Add faculty", "Add subject", "Add room") per tab.
+10. Verify tables scroll horizontally inside the SurfaceCard below 1024px with zero horizontal page scroll at 390px.
+11. Confirm "Teaching Workload" and "Qualified Subjects" headers do not wrap or collide at 1024px.
+
+Merged via `ux/04-library-routes`, tag `ux-04-library-routes-merged`.

@@ -433,14 +433,42 @@ Tabs: General, Term, Timing and breaks, Danger zone. Timing editor shows a day s
 - Working days tab: day toggles and default period configuration with a day-strip preview.
 - Optimistic edits and creations; deletes show dependency impact and block when children exist.
 
-### 5.13 Library `/library/faculty|subjects|rooms`
+### 5.13 Library `/library/faculty`, `/library/subjects`, `/library/rooms`
 
-- Persistent tab bar in the layout. Toolbar: search, department filter, Active/Archived toggle, Add, Import, Export menu.
-- Table columns tuned per tab (Faculty: name, code, department, workload bar, qualifications count; Subjects: code, name, type, weekly hours, electives tag; Rooms: name, type, capacity, equipment count).
-- Row click opens a **drawer** (intercepted route `/library/faculty/[facultyId]`): details, `AvailabilityGrid` editor, workload bar, qualifications, mini timetable from the published version.
-- Create and edit open as modals (intercepted routes) with fallback pages.
-- Bulk select supports Archive and Restore. Optimistic create, edit, archive.
-- **Import wizard** (`/library/import`): Upload → Map columns → Preview and row errors → Import with progress → Summary. Errors are downloadable as CSV.
+- **Routes & Redirects:**
+  - Three distinct routes: `/library/faculty`, `/library/subjects`, `/library/rooms`.
+  - Automatic redirects: `/library` redirects to `/library/faculty`; singular aliases `/library/subject` and `/library/room` redirect to `/library/subjects` and `/library/rooms`.
+  - Deep-linkable with browser back/forward support.
+  - Query parameter preservation rule: Search and active-only filters are preserved across all tabs. Department filter is preserved between Faculty and Subjects, but excluded from Rooms as rooms are institution-level facilities without department assignments.
+- **Shared Layout (`app/library/layout.tsx`):**
+  - Renders inside `PageContainer` (max width 1016px, 24px horizontal padding, 16px mobile, 64px bottom padding).
+  - Renders once and stays mounted while switching tabs (zero re-mounting of header, tabs, or toolbar).
+  - Strict spacing scale:
+    - nav to PageHeader: PageContainer top padding.
+    - PageHeader to tabs: 40px (`mb-10`).
+    - tabs to toolbar: 16px (`mb-4`).
+    - toolbar to table card: 16px (`mb-4`).
+    - table card to page bottom: 64px (`pb-16`).
+  - Structure top to bottom:
+    1. `PageHeader`: Title "Resource Library", catalog description, `LibraryHeaderActions` slot on the right.
+    2. `LibraryTabs`: Segmented link tabs (`Link` with `usePathname` and `aria-current="page"`). Height 40px, radius 12px (`--radius-control`), surface background (`#181818`) and 1px border (`#232323`) for active tab, muted text for inactive. Displays loaded counts (e.g. "Faculty 12", "Subjects 24", "Rooms & Facilities 8") or a skeleton bar while data is loading.
+    3. `LibraryToolbar`: Plain controls on page background (no outer bordered box!). Search input (40px, rounded 12px, surface bg), Department select (40px, rounded 12px, hidden on Rooms tab), Active-only toggle button (40px, rounded 12px).
+    4. `{children}`: Table surface card for the active route segment.
+- **Header Actions (`LibraryHeaderActions`):**
+  - Single `LibraryExportDropdown` button (40px high, outline style, Download icon + ChevronDown) offering "Excel (.xlsx)" and "CSV (.csv)". Keyboard accessible (Enter/Space opens, arrow keys navigate, Escape closes with focus return).
+  - "Import" outline button (40px high).
+  - "Elective Groups" outline button on Subjects tab (40px high).
+  - Single yellow primary button matching active tab: "Add faculty", "Add subject", or "Add room" (the only yellow element on the page besides the wordmark "o" and unread bell dot).
+- **Table Surface (`SurfaceCard` flush):**
+  - Static 20px radius card (`flush={true}`) with no outer table padding so borders reach the edges.
+  - Header row padding: 12px vertical, 16px horizontal (`px-4 py-3`, `bg-[#111111]`, `border-b border-[#232323]`).
+  - Body row padding: 12px vertical, 16px horizontal (`px-4 py-3`, `divide-y divide-[#232323]`).
+  - Fixed min-widths preventing wrap at 1024px: Teaching Workload (`min-w-[220px]`), Qualified Subjects (`min-w-[140px]`).
+  - Table scrolls horizontally inside the card below 1024px; page never scrolls horizontally at 390px.
+- **Loading & Error Files per Route:**
+  - `loading.tsx`: Renders `LibraryTableSkeleton` (flush card, header row + 8 body rows matching column widths, delayed 150ms, reduced-motion respected).
+  - `error.tsx`: Renders `LibraryErrorPanel` (SurfaceCard with error icon, heading, error message, Retry button calling `reset()`, and text link to `/library/faculty`).
+  - Empty state: Renders `LibraryEmptyState` (centered panel inside table card with 48px vertical padding, action button, and import link).
 
 ### 5.14 Timetable viewers `/timetables/*`
 
@@ -531,6 +559,8 @@ Status refers to what exists in the repository as of Phase 8; confirm in code.
 | Skeleton family (§3.1), Boundary (Suspense + ErrorBoundary + Retry) | Loading and error | To build |
 | AppHeader, AppNav, UserMenu, PageContainer, PageHeader | App shell & page layout (sys0 visual spec) | Built |
 | SurfaceCard, ProgressBars, StatusIndicator, ProjectCard | Project grid & status indicators (sys0 visual spec) | Built |
+| LibraryTabs, LibraryToolbar, LibraryExportDropdown, LibraryHeaderActions | Library navigation, toolbar & actions (split routes) | Built |
+| LibraryTableSkeleton, LibraryErrorPanel, LibraryEmptyState, LibraryProvider | Library table loading, error, empty states & state provider | Built |
 | StatusBadge, ProgressRing, ScorePill | Status visuals | Partly built |
 | SaveStatusChip, PresenceAvatars | Collaboration | To build or consolidate |
 | ReasonToast + GoFixLink | Gate rejection feedback | To build |
