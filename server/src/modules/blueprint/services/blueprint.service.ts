@@ -79,7 +79,7 @@ export class BlueprintService {
       revision: blueprint.revision,
       nodes: updatedNodes,
       edges: blueprint.edges,
-      updatedAt: blueprint.updatedAt?.toISOString() || new Date().toISOString(),
+      updatedAt: new Date(blueprint.updatedAt || Date.now()).toISOString(),
     };
   }
 
