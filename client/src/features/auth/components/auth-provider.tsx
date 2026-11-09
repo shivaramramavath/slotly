@@ -1,7 +1,7 @@
 // React component for auth-provider.
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/auth.store';
 import { authApi } from '../services/auth.api';
 import { StepUpDialog } from './step-up-dialog';
@@ -13,54 +13,50 @@ interface AuthProviderProps {
 
 /** React component rendering auth provider. */
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { status, setAuth, clearAuth, setStatus } = useAuthStore();
+  const initStartedRef = useRef(false);
 
   useEffect(() => {
-    let isMounted = true;
+    if (initStartedRef.current) return;
+    initStartedRef.current = true;
 
     async function initAuth() {
-      if (status !== 'idle') return;
-      setStatus('loading');
+      const currentStatus = useAuthStore.getState().status;
+      if (currentStatus !== 'idle') return;
+
+      useAuthStore.getState().setStatus('loading');
 
       try {
         const res = await authApi.refresh();
-        if (isMounted) {
-          if (res.accessToken && res.user) {
-            setAuth(res.user, res.accessToken);
-          } else {
-            clearAuth();
-          }
+        if (res?.accessToken && res?.user) {
+          useAuthStore.getState().setAuth(res.user, res.accessToken);
+        } else {
+          useAuthStore.getState().clearAuth();
         }
       } catch {
-        if (isMounted) {
-          clearAuth();
-        }
+        useAuthStore.getState().clearAuth();
       }
     }
 
     void initAuth();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [status, setAuth, clearAuth, setStatus]);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthEvents((msg) => {
       if (msg.type === 'logout') {
-        clearAuth();
+        useAuthStore.getState().clearAuth();
       } else if (msg.type === 'login' || msg.type === 'token_refreshed') {
-        if (status === 'unauthenticated' || status === 'idle') {
+        const currentStatus = useAuthStore.getState().status;
+        if (currentStatus === 'unauthenticated' || currentStatus === 'idle') {
           void authApi.refresh().then((res) => {
-            if (res.accessToken && res.user) {
-              setAuth(res.user, res.accessToken);
+            if (res?.accessToken && res?.user) {
+              useAuthStore.getState().setAuth(res.user, res.accessToken);
             }
           }).catch(() => {});
         }
       }
     });
     return () => unsubscribe();
-  }, [clearAuth, setAuth, status]);
+  }, []);
 
   return (
     <>

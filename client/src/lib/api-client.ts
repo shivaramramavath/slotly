@@ -53,14 +53,28 @@ export async function silentRefresh(): Promise<string> {
     });
 
     if (refreshRes.ok) {
-      const data = (await refreshRes.json()) as { accessToken: string };
+      const data = (await refreshRes.json()) as { accessToken: string; user?: unknown };
       setAccessToken(data.accessToken);
+      if (data.user) {
+        try {
+          const { useAuthStore } = await import('@/features/auth/store/auth.store');
+          useAuthStore.getState().setAuth(data.user as never, data.accessToken);
+        } catch {
+          // ignore
+        }
+      }
       broadcastAuthEvent({ type: 'token_refreshed', timestamp: Date.now() });
       return data.accessToken;
     }
 
     if (refreshRes.status === 401 || refreshRes.status === 403) {
       setAccessToken(null);
+      try {
+        const { useAuthStore } = await import('@/features/auth/store/auth.store');
+        useAuthStore.getState().clearAuth();
+      } catch {
+        // ignore
+      }
       await executeLogoutCleanup();
       broadcastAuthEvent({ type: 'logout' });
       toast.error('Session expired', 'Please sign in again.');
