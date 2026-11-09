@@ -217,6 +217,7 @@
 - **Interface** `SurfaceCardProps` extends `HTMLAttributes<HTMLDivElement>` - Props for SurfaceCard component.
 - **Component** `SurfaceCard({
   variant = 'static',
+  flush = false,
   children,
   className = '',
   ...props
