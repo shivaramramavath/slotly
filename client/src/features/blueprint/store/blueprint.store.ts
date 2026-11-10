@@ -69,6 +69,7 @@ interface BlueprintState {
   isShortcutsOpen: boolean;
   isReadinessOpen: boolean;
   isSaveTemplateOpen: boolean;
+  isMinimapOpen: boolean;
   activeCommentsNodeId: string | null;
 
   // Actions
@@ -128,6 +129,8 @@ interface BlueprintState {
   setIsShortcutsOpen: (open: boolean) => void;
   setIsReadinessOpen: (open: boolean) => void;
   setIsSaveTemplateOpen: (open: boolean) => void;
+  setIsMinimapOpen: (open: boolean) => void;
+  toggleMinimap: () => void;
   setActiveCommentsNodeId: (nodeId: string | null) => void;
 
   // Align and Distribute
@@ -199,6 +202,7 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
   isShortcutsOpen: false,
   isReadinessOpen: false,
   isSaveTemplateOpen: false,
+  isMinimapOpen: false,
   activeCommentsNodeId: null,
 
   initGraph: (projectId, graph) => {
@@ -439,6 +443,8 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
   setIsReadinessOpen: (isReadinessOpen) => set({ isReadinessOpen }),
   setIsSaveTemplateOpen: (isSaveTemplateOpen) => set({ isSaveTemplateOpen }),
   setActiveCommentsNodeId: (activeCommentsNodeId) => set({ activeCommentsNodeId }),
+  setIsMinimapOpen: (isMinimapOpen) => set({ isMinimapOpen }),
+  toggleMinimap: () => set((state) => ({ isMinimapOpen: !state.isMinimapOpen })),
 
   // Align nodes: Left, Center, Right, Top, Middle, Bottom
   alignSelectedNodes: (type) =>
@@ -446,8 +452,8 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
       const selected = state.nodes.filter((n) => n.selected || state.selectedNodeIds.includes(n.id));
       if (selected.length < 2) return state;
 
-      const NODE_WIDTH = 240;
-      const NODE_HEIGHT = 130;
+      const NODE_WIDTH = 200;
+      const NODE_HEIGHT = 90;
 
       const minX = Math.min(...selected.map((n) => n.position.x));
       const maxX = Math.max(...selected.map((n) => n.position.x + NODE_WIDTH));

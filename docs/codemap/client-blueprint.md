@@ -30,12 +30,33 @@
 
 - **Component** `BlueprintFloatingAlignBar()` - React component rendering blueprint floating align bar.
 
+### `client/src/features/blueprint/components/canvas/dotted-edge.tsx`
+*React component for dotted-edge.*
+
+- **Interface** `EdgeLabelPillProps`
+- **Component** `EdgeLabelPill()` - Edge Label Pill rendered at edge midpoint
+- **Component** `DottedEdge()` - Custom React Flow Edge with dotted styling and slow flow animation when connected to selected node
+
+### `client/src/features/blueprint/components/canvas/node-card.tsx`
+*Presentation component rendering NodeCard and its subcomponents.*
+
+- **Interface** `NodeCardProps`
+- **Function** `calculateNodeProgress(node: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/types/canvas.types").BlueprintCanvasNode)`: `number` - Compute completion percentage based on filled vs missing required fields
+- **Function** `getNodeMetricLine(node: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/types/canvas.types").BlueprintCanvasNode)`: `string` - Get single metric line text for Row 2
+- **Const** `TYPE_ICONS`: `Record<"institution" | "department" | "program"...`
+- **Const** `TYPE_LABELS`: `Record<"institution" | "department" | "program"...`
+- **Component** `NodeProgress()` - Subcomponent: Progress Bar in Row 3
+- **Component** `HandleRing()` - Subcomponent: Target Ring Handle at Top Edge
+- **Component** `HandlePill()` - Subcomponent: Source Pill Handle at Bottom Edge
+- **Component** `AddChildButton()` - Subcomponent: Add Child Control Button
+- **Component** `NodeCard()` - Base NodeCard component matching reference visual spec
+
 ### `client/src/features/blueprint/components/canvas/node-factory.tsx`
 *React component for node-factory.*
 
-- **Component** `BlueprintNode()` - React component rendering blueprint node.
+- **Component** `BlueprintNode()` - React component rendering standard blueprint node
 - **Component** `BlueprintGroupNode()` - React component rendering blueprint group node.
-- **Const** `nodeTypes`: `{ blueprint: React.MemoExoticComponent<({ id, d...` - Constant representing node types.
+- **Const** `nodeTypes`: `{ blueprint: React.MemoExoticComponent<({ id, d...` - Constant representing node types for React Flow.
 
 ### `client/src/features/blueprint/components/dialogs/bulk-add-dialog.tsx`
 *React component for bulk-add-dialog.*
@@ -110,15 +131,38 @@
 
 - **Component** `ValidationPanel({ isOpen, onClose }: ValidationPanelProps)` - React component rendering validation panel.
 
+### `client/src/features/blueprint/components/header/blueprint-header.tsx`
+*React component for blueprint-header.*
+
+- **Interface** `BlueprintHeaderProps`
+- **Component** `BlueprintHeader({
+  projectId,
+  onOpenValidation,
+  onBuildSchedule,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/header/blueprint-header").BlueprintHeaderProps)` - React component rendering single 48px Blueprint Header matching reference spec
+
+### `client/src/features/blueprint/components/hint/first-run-hint.tsx`
+*React component for first-run-hint.*
+
+- **Component** `FirstRunHint()` - React component rendering first-run onboarding hint for empty canvas
+
 ### `client/src/features/blueprint/components/palette/blueprint-palette.tsx`
 *React component for blueprint-palette.*
 
+- **Interface** `PaletteItem`
 - **Component** `BlueprintPalette({ onAddNode }: BlueprintPaletteProps)` - React component rendering blueprint palette.
+- **Const** `PALETTE_ITEMS`: `import("E:/Shiva Ram/Projects/slotly/client/src...`
 
 ### `client/src/features/blueprint/components/sidebar/blueprint-sidebar.tsx`
 *React component for blueprint-sidebar.*
 
 - **Component** `BlueprintSidebar({ projectId, onUpdateConfig }: BlueprintSidebarProps)` - React component rendering blueprint sidebar.
+
+### `client/src/features/blueprint/components/sidebar/side-panel-tabs.tsx`
+*React component for side-panel-tabs.*
+
+- **Interface** `SidePanelTabsProps`
+- **Component** `SidePanelTabs({ activeTab, onTabChange }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/side-panel-tabs").SidePanelTabsProps)` - React component rendering underlined text tabs matching the reference spec
 
 ### `client/src/features/blueprint/components/sidebar/tabs/blueprint-constraints-tab.tsx`
 *React component for blueprint-constraints-tab.*
@@ -134,6 +178,23 @@
 *React component for blueprint-toolbar.*
 
 - **Component** `BlueprintToolbar({ onToggleValidation, showValidation }: BlueprintToolbarProps)` - React component rendering blueprint toolbar.
+
+### `client/src/features/blueprint/components/toolbar/floating-toolbar.tsx`
+*React component for floating-toolbar.*
+
+- **Interface** `FloatingToolbarProps`
+- **Component** `FloatingToolbar({
+  onAddNode,
+  onCopy,
+  onPaste,
+  onDuplicate,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/toolbar/floating-toolbar").FloatingToolbarProps)` - React component rendering floating bottom pill toolbar
+
+### `client/src/features/blueprint/components/toolbar/toolbar-menu.tsx`
+*React component for toolbar-menu.*
+
+- **Interface** `ToolbarMenuProps`
+- **Component** `ToolbarMenu({ onCopy, onPaste, onDuplicate }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/toolbar/toolbar-menu").ToolbarMenuProps)` - React component rendering More menu dropdown for floating toolbar
 
 ### `client/src/features/blueprint/components/validation/conflict-card.tsx`
 *React component for conflict-card.*
