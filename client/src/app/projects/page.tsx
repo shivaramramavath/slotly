@@ -1,8 +1,9 @@
-// React component rendering academic projects list with sys0 cards, filters, and lifecycle dialogs.
+// React component rendering academic projects list with slots, layout modes, view settings, and lifecycle dialogs.
 'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
@@ -20,19 +21,150 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { ProjectCard, ProjectCardSkeleton } from '@/features/projects/components/project-card';
+import { toast } from '@/components/ui/toast';
 import { projectsApi } from '@/features/projects/services/projects.api';
+import {
+  ProjectsSections,
+} from '@/features/projects/components/projects-sections';
+import {
+  ProjectCollectionSkeleton,
+  type ProjectLayoutMode,
+} from '@/features/projects/components/project-collection';
+import { ViewMenu } from '@/features/projects/components/view-menu';
 import type { ProjectDto } from '@slotly/contracts';
 
-/** React component rendering projects page matching sys0 visual guidelines. */
-export default function ProjectsPage() {
+function ProjectsContent() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlView = searchParams.get('view') as ProjectLayoutMode | null;
+
   const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('');
   const [duplicateTarget, setDuplicateTarget] = React.useState<ProjectDto | null>(null);
   const [duplicateName, setDuplicateName] = React.useState('');
   const [archiveTarget, setArchiveTarget] = React.useState<ProjectDto | null>(null);
 
+  // Layout & Section state with lazy hydration
+  const [storedLayout, setStoredLayout] = React.useState<ProjectLayoutMode>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('slotly:projects:view-settings');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.layout === 'grid' || parsed.layout === 'list' || parsed.layout === 'compact') {
+            return parsed.layout;
+          }
+        }
+      } catch {}
+    }
+    return 'grid';
+  });
+
+  const layout: ProjectLayoutMode =
+    urlView === 'grid' || urlView === 'list' || urlView === 'compact'
+      ? urlView
+      : storedLayout;
+
+  const [visibleSections, setVisibleSections] = React.useState<Record<string, boolean>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('slotly:projects:view-settings');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.visibleSections) return parsed.visibleSections;
+        }
+      } catch {}
+    }
+    return {
+      pinned: true,
+      recent: true,
+      all: true,
+      archived: true,
+    };
+  });
+
+  const [collapsedSections, setCollapsedSections] = React.useState<Record<string, boolean>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('slotly:projects:view-settings');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.collapsedSections) return parsed.collapsedSections;
+        }
+      } catch {}
+    }
+    return {
+      archived: true,
+    };
+  });
+
+  const handleLayoutChange = (newLayout: ProjectLayoutMode) => {
+    setStoredLayout(newLayout);
+    try {
+      const current = JSON.parse(localStorage.getItem('slotly:projects:view-settings') || '{}');
+      localStorage.setItem(
+        'slotly:projects:view-settings',
+        JSON.stringify({ ...current, layout: newLayout }),
+      );
+    } catch {}
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('view', newLayout);
+    router.replace(`/projects?${params.toString()}`, { scroll: false });
+  };
+
+  const handleToggleSection = (sectionId: string) => {
+    setVisibleSections((prev) => {
+      const next = { ...prev, [sectionId]: prev[sectionId] === false ? true : false };
+      try {
+        const current = JSON.parse(localStorage.getItem('slotly:projects:view-settings') || '{}');
+        localStorage.setItem(
+          'slotly:projects:view-settings',
+          JSON.stringify({ ...current, visibleSections: next }),
+        );
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleToggleCollapse = (sectionId: string) => {
+    setCollapsedSections((prev) => {
+      const next = { ...prev, [sectionId]: !prev[sectionId] };
+      try {
+        const current = JSON.parse(localStorage.getItem('slotly:projects:view-settings') || '{}');
+        localStorage.setItem(
+          'slotly:projects:view-settings',
+          JSON.stringify({ ...current, collapsedSections: next }),
+        );
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleResetView = () => {
+    setStoredLayout('grid');
+    setVisibleSections({
+      pinned: true,
+      recent: true,
+      all: true,
+      archived: true,
+    });
+    setCollapsedSections({
+      archived: true,
+    });
+    try {
+      localStorage.removeItem('slotly:projects:view-settings');
+    } catch {}
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('view');
+    router.replace(params.toString() ? `/projects?${params.toString()}` : '/projects', {
+      scroll: false,
+    });
+  };
+
+  // Queries & Mutations
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['projects', statusFilter, search],
     queryFn: () =>
@@ -49,18 +181,112 @@ export default function ProjectsPage() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setDuplicateTarget(null);
       setDuplicateName('');
+      toast.success('Project Duplicated', 'New project copy created successfully.');
+    },
+    onError: () => {
+      toast.error('Duplicate Failed', 'Could not duplicate project.');
     },
   });
 
   const archiveMutation = useMutation({
     mutationFn: (id: string) => projectsApi.archiveProject(id),
-    onSuccess: () => {
+    onSuccess: (archived) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setArchiveTarget(null);
+      toast.info('Project Archived', `"${archived.name}" has been moved to Archived.`);
+    },
+    onError: () => {
+      toast.error('Archive Failed', 'Could not archive project.');
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => projectsApi.restoreProject(id),
+    onSuccess: (restored) => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Project Restored', `"${restored.name}" has been restored to draft.`);
+    },
+    onError: () => {
+      toast.error('Restore Failed', 'Could not restore archived project.');
+    },
+  });
+
+  const togglePinMutation = useMutation({
+    mutationFn: async ({ id, pinned }: { id: string; pinned: boolean }) => {
+      if (pinned) {
+        return projectsApi.unpinProject(id);
+      } else {
+        return projectsApi.pinProject(id);
+      }
+    },
+    onMutate: async ({ id, pinned }) => {
+      await queryClient.cancelQueries({ queryKey: ['projects'] });
+      const previousData = queryClient.getQueryData<{
+        items: ProjectDto[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }>(['projects', statusFilter, search]);
+
+      if (previousData) {
+        queryClient.setQueryData(['projects', statusFilter, search], {
+          ...previousData,
+          items: previousData.items.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  pinned: !pinned,
+                  pinnedAt: !pinned ? new Date().toISOString() : null,
+                }
+              : p,
+          ),
+        });
+      }
+
+      return { previousData };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          ['projects', statusFilter, search],
+          context.previousData,
+        );
+      }
+      toast.error('Pin Update Failed', 'Please verify your network connection and try again.');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
   });
 
   const projects = data?.items || [];
+
+  const handleTogglePin = (project: ProjectDto) => {
+    if (!project.pinned) {
+      const currentPins = projects.filter((p) => p.pinned).length;
+      if (currentPins >= 12) {
+        toast.warning(
+          'Maximum Limit Reached',
+          'You can pin up to 12 projects. Unpin another project first.',
+        );
+        return;
+      }
+    }
+
+    togglePinMutation.mutate({
+      id: project.id,
+      pinned: Boolean(project.pinned),
+    });
+  };
+
+  const pendingIds = new Set<string>();
+  if (duplicateMutation.isPending && duplicateTarget) {
+    pendingIds.add(duplicateTarget.id);
+  }
+  if (archiveMutation.isPending && archiveTarget) {
+    pendingIds.add(archiveTarget.id);
+  }
 
   return (
     <AppLayout>
@@ -87,7 +313,7 @@ export default function ProjectsPage() {
         }
       />
 
-      {/* Filter Row: Single clean row with search input and compact status selector */}
+      {/* Filter & View Toolbar: Single clean row with search input, compact status selector, and View menu */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3.5 top-3 text-[#8A8A8A]" aria-hidden="true" />
@@ -117,15 +343,19 @@ export default function ProjectsPage() {
             <option value="archived">Archived</option>
           </Select>
         </div>
+
+        <ViewMenu
+          layout={layout}
+          onLayoutChange={handleLayoutChange}
+          visibleSections={visibleSections}
+          onToggleSection={handleToggleSection}
+          onResetView={handleResetView}
+        />
       </div>
 
       {/* Content Viewport */}
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <ProjectCardSkeleton key={i} />
-          ))}
-        </div>
+        <ProjectCollectionSkeleton layout={layout} count={6} />
       ) : isError ? (
         <SurfaceCard className="p-8 text-center items-center justify-center min-h-[300px]">
           <AlertCircle className="w-10 h-10 text-[#EF4444] mb-3" />
@@ -172,23 +402,23 @@ export default function ProjectsPage() {
           </div>
         </SurfaceCard>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((proj) => (
-            <ProjectCard
-              key={proj.id}
-              project={proj}
-              onDuplicate={(p) => {
-                setDuplicateTarget(p);
-                setDuplicateName(`${p.name} (Copy)`);
-              }}
-              onArchive={(p) => setArchiveTarget(p)}
-              isPending={
-                (duplicateMutation.isPending && duplicateTarget?.id === proj.id) ||
-                (archiveMutation.isPending && archiveTarget?.id === proj.id)
-              }
-            />
-          ))}
-        </div>
+        <ProjectsSections
+          projects={projects}
+          layout={layout}
+          search={search}
+          statusFilter={statusFilter}
+          visibleSections={visibleSections}
+          collapsedSections={collapsedSections}
+          onToggleCollapse={handleToggleCollapse}
+          onDuplicate={(p) => {
+            setDuplicateTarget(p);
+            setDuplicateName(`${p.name} (Copy)`);
+          }}
+          onArchive={(p) => setArchiveTarget(p)}
+          onRestore={(p) => restoreMutation.mutate(p.id)}
+          onTogglePin={handleTogglePin}
+          pendingProjectIds={pendingIds}
+        />
       )}
 
       {/* Duplicate Dialog */}
@@ -252,5 +482,14 @@ export default function ProjectsPage() {
         }}
       />
     </AppLayout>
+  );
+}
+
+/** React component rendering academic projects page matching sys0 visual guidelines and layout modes. */
+export default function ProjectsPage() {
+  return (
+    <React.Suspense fallback={<ProjectCollectionSkeleton layout="grid" count={6} />}>
+      <ProjectsContent />
+    </React.Suspense>
   );
 }

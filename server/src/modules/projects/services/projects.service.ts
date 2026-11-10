@@ -1,5 +1,6 @@
 // Domain service orchestrating projects.service business logic.
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Inject,
@@ -58,6 +59,8 @@ export class ProjectsService {
   private toDto(
     doc: Project,
     blueprintProgress: number | null = null,
+    pinned = false,
+    pinnedAt: string | null = null,
   ): ProjectDto {
     const id = getId(doc);
     return {
@@ -72,6 +75,8 @@ export class ProjectsService {
       lastOpenedAt: doc.lastOpenedAt?.toISOString?.() || undefined,
       revision: doc.revision,
       blueprintProgress,
+      pinned,
+      pinnedAt,
       createdAt: doc.createdAt
         ? new Date(doc.createdAt).toISOString()
         : new Date().toISOString(),
@@ -208,6 +213,7 @@ export class ProjectsService {
     search?: string,
     page = 1,
     limit = 20,
+    requestingUserId?: string,
   ): Promise<{
     items: ProjectDto[];
     total: number;
@@ -227,6 +233,14 @@ export class ProjectsService {
       skip,
       limit,
     );
+
+    const userPins = requestingUserId
+      ? await this.projectRepo.getUserPins(requestingUserId)
+      : [];
+    const pinMap = new Map(
+      userPins.map((pin) => [pin.projectId, pin.pinnedAt]),
+    );
+
     const dtos = await Promise.all(
       items.map(async (p) => {
         const pId = getId(p);
@@ -264,7 +278,10 @@ export class ProjectsService {
             // cache read failure is non-fatal
           }
         }
-        return this.toDto(p, progress);
+        const pinnedDate = pinMap.get(pId);
+        const pinned = Boolean(pinnedDate);
+        const pinnedAt = pinnedDate ? new Date(pinnedDate).toISOString() : null;
+        return this.toDto(p, progress, pinned, pinnedAt);
       }),
     );
     return {
@@ -276,7 +293,10 @@ export class ProjectsService {
     };
   }
 
-  async findById(projectId: string): Promise<ProjectDto> {
+  async findById(
+    projectId: string,
+    requestingUserId?: string,
+  ): Promise<ProjectDto> {
     const project = await this.projectRepo.findById(projectId);
     if (!project || project.isDeleted) {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
@@ -285,7 +305,48 @@ export class ProjectsService {
     // NON-CRITICAL: update lastOpenedAt asynchronously
     void this.projectRepo.updateLastOpened(projectId).catch(() => {});
 
-    return this.toDto(project);
+    let pinned = false;
+    let pinnedAt: string | null = null;
+    if (requestingUserId) {
+      const pins = await this.projectRepo.getUserPins(requestingUserId);
+      const match = pins.find((p) => p.projectId === projectId);
+      if (match) {
+        pinned = true;
+        pinnedAt = new Date(match.pinnedAt).toISOString();
+      }
+    }
+
+    return this.toDto(project, null, pinned, pinnedAt);
+  }
+
+  async pinProject(
+    projectId: string,
+    userId: string,
+  ): Promise<{ success: boolean; pinned: boolean }> {
+    const project = await this.projectRepo.findById(projectId);
+    if (!project || project.isDeleted) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+
+    const pins = await this.projectRepo.getUserPins(userId);
+    const isAlreadyPinned = pins.some((p) => p.projectId === projectId);
+
+    if (!isAlreadyPinned && pins.length >= 12) {
+      throw new BadRequestException(
+        'Maximum limit of 12 pinned projects reached',
+      );
+    }
+
+    await this.projectRepo.pinProject(userId, projectId);
+    return { success: true, pinned: true };
+  }
+
+  async unpinProject(
+    projectId: string,
+    userId: string,
+  ): Promise<{ success: boolean; pinned: boolean }> {
+    await this.projectRepo.unpinProject(userId, projectId);
+    return { success: true, pinned: false };
   }
 
   async update(
@@ -424,6 +485,30 @@ export class ProjectsService {
     });
 
     await this.auditService.log('PROJECT_ARCHIVED', userId, {
+      type: 'project',
+      id: projectId,
+    });
+
+    return this.toDto(updated!);
+  }
+
+  async restore(projectId: string, userId: string): Promise<ProjectDto> {
+    const project = await this.projectRepo.findById(projectId);
+    if (!project || project.isDeleted) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+
+    if (project.status !== 'archived') {
+      throw new ConflictException(
+        `Project in status "${project.status}" is not archived`,
+      );
+    }
+
+    const updated = await this.projectRepo.update(projectId, {
+      status: 'draft',
+    });
+
+    await this.auditService.log('PROJECT_RESTORED', userId, {
       type: 'project',
       id: projectId,
     });

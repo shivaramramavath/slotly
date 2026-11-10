@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { MongoBaseRepository } from '../../../common/database/mongo-base.repository';
 import { Project, ProjectDocument } from '../schemas/project.schema';
+import { ProjectPin, ProjectPinDocument } from '../schemas/project-pin.schema';
 import type {
   FindProjectsFilter,
   IProjectRepository,
@@ -15,7 +16,11 @@ export class MongoProjectRepository
   extends MongoBaseRepository<Project, ProjectDocument>
   implements IProjectRepository
 {
-  constructor(@InjectModel(Project.name) model: Model<ProjectDocument>) {
+  constructor(
+    @InjectModel(Project.name) model: Model<ProjectDocument>,
+    @InjectModel(ProjectPin.name)
+    private readonly pinModel: Model<ProjectPinDocument>,
+  ) {
     super(model);
   }
 
@@ -85,5 +90,38 @@ export class MongoProjectRepository
       )
       .lean<Project>()
       .exec();
+  }
+
+  async countUserPins(userId: string): Promise<number> {
+    return this.pinModel.countDocuments({ userId }).exec();
+  }
+
+  async pinProject(userId: string, projectId: string): Promise<void> {
+    await this.pinModel
+      .updateOne(
+        { userId, projectId },
+        { $setOnInsert: { pinnedAt: new Date() } },
+        { upsert: true },
+      )
+      .exec();
+  }
+
+  async unpinProject(userId: string, projectId: string): Promise<void> {
+    await this.pinModel.deleteOne({ userId, projectId }).exec();
+  }
+
+  async getUserPins(
+    userId: string,
+  ): Promise<Array<{ projectId: string; pinnedAt: Date }>> {
+    const pins = await this.pinModel
+      .find({ userId })
+      .sort({ pinnedAt: -1 })
+      .lean<ProjectPin[]>()
+      .exec();
+
+    return pins.map((p) => ({
+      projectId: (p.projectId as unknown as { toString(): string }).toString(),
+      pinnedAt: p.pinnedAt,
+    }));
   }
 }

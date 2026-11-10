@@ -338,10 +338,13 @@
   - `POST /projects` -> `create()` [perm: 'PROJECT_CREATE']
   - `GET /projects` -> `list()` [perm: 'PROJECT_READ']
   - `GET /projects/:projectId` -> `getById()` [perm: 'PROJECT_READ']
+  - `PUT /projects/:projectId/pin` -> `pin()` [perm: 'PROJECT_READ']
+  - `DELETE /projects/:projectId/pin` -> `unpin()` [perm: 'PROJECT_READ']
   - `PATCH /projects/:projectId` -> `update()` [perm: 'PROJECT_MANAGE']
   - `DELETE /projects/:projectId` -> `delete()` [perm: 'PROJECT_DELETE']
   - `POST /projects/:projectId/duplicate` -> `duplicate()` [perm: 'PROJECT_CREATE']
   - `POST /projects/:projectId/archive` -> `archive()` [perm: 'PROJECT_ARCHIVE']
+  - `POST /projects/:projectId/restore` -> `restore()` [perm: 'PROJECT_ARCHIVE']
 
 ### `server/src/modules/projects/lifecycle/project-state.factory.ts`
 *Core implementation for project-state.factory in server/src/modules/projects/lifecycle.*
@@ -372,13 +375,20 @@
 ### `server/src/modules/projects/repositories/mongo-project.repository.ts`
 *Database repository managing mongo-project.repository persistence.*
 
-- **Injectable** `MongoProjectRepository` implements `IProjectRepository` (deps: ObjectId; }> & { __v: number; }>) - Injectable service providing mongo project repository logic.
+- **Injectable** `MongoProjectRepository` implements `IProjectRepository` (deps: ObjectId; }> & { __v: number; }>, ObjectId; }> & { __v: number; }>) - Injectable service providing mongo project repository logic.
 
 ### `server/src/modules/projects/repositories/project.repository.interface.ts`
 *Database repository managing project.repository.interface persistence.*
 
 - **Interface** `FindProjectsFilter` - Interface defining structure for find projects filter.
 - **Interface** `IProjectRepository` extends `BaseRepository<Project>` - Interface defining structure for project repository.
+
+### `server/src/modules/projects/schemas/project-pin.schema.ts`
+*Data schema and persistence model for user pinned projects.*
+
+- **Mongoose Schema** `ProjectPin` (collection: `project_pins` (indexes: userId, projectId)) - Class representing a user-pinned project entry.
+- **Type** `ProjectPinDocument` - Type alias for ProjectPin document.
+- **Zod Schema** `ProjectPinSchema` -> `ProjectPin` - Mongoose schema validating project pin entries.
 
 ### `server/src/modules/projects/schemas/project.schema.ts`
 *Data schema and persistence model for project.schema.*

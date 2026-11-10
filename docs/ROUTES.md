@@ -81,6 +81,8 @@ GET /projects/:projectId
 PATCH /projects/:projectId
 DELETE /projects/:projectId
 POST /projects/:projectId/duplicate
+PUT /projects/:projectId/pin
+DELETE /projects/:projectId/pin
 
 BLUEPRINT
 GET /projects/:projectId/blueprint

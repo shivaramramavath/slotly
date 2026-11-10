@@ -3,18 +3,22 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Calendar, MoreHorizontal, Settings, Copy, Archive, Loader2 } from 'lucide-react';
+import { Calendar, MoreHorizontal, Settings, Copy, Archive, RotateCcw, Loader2 } from 'lucide-react';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { StatusIndicator } from '@/components/ui/status-indicator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PinButton } from './pin-button';
 import type { ProjectDto, ProjectLifecycleStatus } from '@slotly/contracts';
 
 /** Props for ProjectCard component. */
 export interface ProjectCardProps {
   project: ProjectDto;
-  onDuplicate?: (project: ProjectDto) => void;
-  onArchive?: (project: ProjectDto) => void;
-  isPending?: boolean;
+  onDuplicate?: ((project: ProjectDto) => void) | undefined;
+  onArchive?: ((project: ProjectDto) => void) | undefined;
+  onRestore?: ((project: ProjectDto) => void) | undefined;
+  onTogglePin?: ((project: ProjectDto) => void) | undefined;
+  isPending?: boolean | undefined;
+  density?: 'normal' | 'compact' | undefined;
 }
 
 /** Formats opened date to compact visual format: "opened 9 Nov". */
@@ -29,6 +33,16 @@ export function formatOpenedMeta(revision: number, lastOpenedAt?: string | null)
   const day = date.getDate();
   const month = date.toLocaleDateString('en-US', { month: 'short' });
   return `Rev ${revision} · opened ${day} ${month}`;
+}
+
+/** Formats only the date portion for responsive truncation. */
+export function formatOpenedDate(lastOpenedAt?: string | null): string {
+  if (!lastOpenedAt) return 'Not opened yet';
+  const date = new Date(lastOpenedAt);
+  if (isNaN(date.getTime())) return 'Not opened yet';
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  return `opened ${day} ${month}`;
 }
 
 /** Helper generating fallback description text based on project configuration. */
@@ -63,7 +77,10 @@ export function ProjectCard({
   project,
   onDuplicate,
   onArchive,
+  onRestore,
+  onTogglePin,
   isPending = false,
+  density = 'normal',
 }: ProjectCardProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
@@ -94,6 +111,7 @@ export function ProjectCard({
   const settingsHref = `/projects/${project.id}/settings`;
   const statusColor = getStatusColorClass(project.status);
   const openedMeta = formatOpenedMeta(project.revision, project.lastOpenedAt);
+  const openedDate = formatOpenedDate(project.lastOpenedAt);
   const description = getProjectDescription(project);
 
   const termKind = project.term?.kind ? project.term.kind.toUpperCase() : 'TERM';
@@ -102,11 +120,167 @@ export function ProjectCard({
       ? `${project.term.startDate} to ${project.term.endDate}`
       : 'Dates not set';
   const subtitle = `${termKind} term ${termRange}`;
+  const isArchived = project.status === 'archived';
+
+  if (density === 'compact') {
+    return (
+      <div
+        className={`group relative rounded-[16px] border border-[#232323] bg-[#111111] p-4 min-h-[140px] flex flex-col justify-between transition-all duration-150 hover:border-[#383838] hover:bg-[#161616] focus-within:ring-2 focus-within:ring-[#FAFAFA] focus-within:ring-offset-2 focus-within:ring-offset-[#0A0A0A] ${
+          isArchived ? 'opacity-70 hover:opacity-90' : ''
+        } ${isPending ? 'opacity-70 pointer-events-none' : ''}`}
+      >
+        <Link
+          href={canvasHref}
+          aria-label={`Open project canvas for ${project.name}`}
+          className="absolute inset-0 z-10 rounded-[16px] focus:outline-none"
+        />
+
+        {/* Top Header Row */}
+        <div className="flex items-center justify-between gap-2">
+          <div
+            className="h-8 w-8 rounded-lg bg-[#181818] border border-[#232323] flex items-center justify-center text-[#FAFAFA]/90 shrink-0"
+            aria-hidden="true"
+          >
+            <Calendar className="h-4 w-4" />
+          </div>
+
+          <div className="flex items-center gap-1 relative z-20">
+            <PinButton
+              pinned={project.pinned}
+              projectName={project.name}
+              onToggle={() => onTogglePin?.(project)}
+              disabled={isPending}
+            />
+
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                aria-label={`Options for ${project.name}`}
+                aria-expanded={menuOpen}
+                aria-haspopup="true"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMenuOpen(!menuOpen);
+                }}
+                className="h-8 w-8 rounded-lg border border-transparent hover:border-[#232323] hover:bg-[#181818] text-[#8A8A8A] hover:text-[#FAFAFA] flex items-center justify-center transition-all cursor-pointer opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FAFAFA]"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+
+              {menuOpen && (
+                <div
+                  role="menu"
+                  aria-orientation="vertical"
+                  className="absolute right-0 mt-1.5 w-44 rounded-xl border border-[#232323] bg-[#111111] p-1 shadow-2xl text-xs z-30 animate-in fade-in zoom-in-95 duration-100"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onTogglePin?.(project);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-[#FAFAFA] hover:bg-[#181818] transition-colors cursor-pointer text-left"
+                  >
+                    <span>{project.pinned ? 'Unpin' : 'Pin to top'}</span>
+                  </button>
+
+                  <Link
+                    href={settingsHref}
+                    role="menuitem"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#FAFAFA] hover:bg-[#181818] transition-colors"
+                  >
+                    <Settings className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                    <span>Settings</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onDuplicate?.(project);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-[#FAFAFA] hover:bg-[#181818] transition-colors cursor-pointer text-left"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                    <span>Duplicate</span>
+                  </button>
+
+                  {isArchived ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        onRestore?.(project);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-[#FAFAFA] hover:bg-[#181818] transition-colors cursor-pointer text-left"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                      <span>Restore</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        onArchive?.(project);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors cursor-pointer text-left"
+                    >
+                      <Archive className="h-3.5 w-3.5" />
+                      <span>Archive</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Middle Content */}
+        <div className="my-2">
+          <h2
+            title={`${project.name} · ${openedMeta}`}
+            className="text-sm font-medium text-[#FAFAFA] tracking-tight leading-snug line-clamp-2"
+          >
+            {project.name}
+          </h2>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-auto pt-2 border-t border-[#181818] flex items-center justify-between text-xs font-mono text-[#8A8A8A]">
+          <StatusIndicator
+            status={project.status}
+            blueprintProgress={project.blueprintProgress}
+          />
+          {isPending && <Loader2 className="h-3 w-3 animate-spin text-[#FACC15]" />}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SurfaceCard
       variant="link"
-      className={`${isPending ? 'opacity-70 pointer-events-none' : ''}`}
+      className={`@container h-full flex flex-col justify-between ${
+        isArchived ? 'opacity-70 hover:opacity-90' : ''
+      } ${isPending ? 'opacity-70 pointer-events-none' : ''}`}
     >
       {/* Primary Stretched Link Overlay - Covers the entire card */}
       <Link
@@ -116,7 +290,7 @@ export function ProjectCard({
       />
 
       {/* Top Header Row */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="h-8 flex items-center justify-between gap-3">
         {/* Glyph Icon */}
         <div
           className="h-8 w-8 rounded-lg bg-[#181818] border border-[#232323] flex items-center justify-center text-[#FAFAFA]/90 shrink-0"
@@ -125,10 +299,10 @@ export function ProjectCard({
           <Calendar className="h-4 w-4" />
         </div>
 
-        {/* Status label + Arrow + Actions menu button */}
-        <div className="flex items-center gap-2 relative z-20">
+        {/* Status label + Arrow + Pin Button + Actions menu button */}
+        <div className="flex items-center gap-1.5 relative z-20">
           <div
-            className={`flex items-center gap-1 font-mono text-xs ${statusColor} select-none`}
+            className={`flex items-center gap-1 font-mono text-xs ${statusColor} select-none mr-1`}
           >
             <span className="capitalize">{project.status.replace('_', ' ')}</span>
             <span
@@ -138,6 +312,13 @@ export function ProjectCard({
               &rarr;
             </span>
           </div>
+
+          <PinButton
+            pinned={project.pinned}
+            projectName={project.name}
+            onToggle={() => onTogglePin?.(project)}
+            disabled={isPending}
+          />
 
           {/* Action Menu (Visible on hover, on focus-within, and always on touch) */}
           <div className="relative" ref={menuRef}>
@@ -162,6 +343,20 @@ export function ProjectCard({
                 aria-orientation="vertical"
                 className="absolute right-0 mt-1.5 w-44 rounded-xl border border-[#232323] bg-[#111111] p-1 shadow-2xl text-xs z-30 animate-in fade-in zoom-in-95 duration-100"
               >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    onTogglePin?.(project);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-[#FAFAFA] hover:bg-[#181818] transition-colors cursor-pointer text-left"
+                >
+                  <span>{project.pinned ? 'Unpin' : 'Pin to top'}</span>
+                </button>
+
                 <Link
                   href={settingsHref}
                   role="menuitem"
@@ -190,7 +385,22 @@ export function ProjectCard({
                   <span>Duplicate</span>
                 </button>
 
-                {project.status !== 'archived' && (
+                {isArchived ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onRestore?.(project);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-[#FAFAFA] hover:bg-[#181818] transition-colors cursor-pointer text-left"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                    <span>Restore</span>
+                  </button>
+                ) : (
                   <button
                     type="button"
                     role="menuitem"
@@ -213,7 +423,7 @@ export function ProjectCard({
       </div>
 
       {/* Middle Content: Title, Subtitle, Description */}
-      <div className="my-5 space-y-2">
+      <div className="mt-4 mb-4 space-y-2 flex-1 flex flex-col justify-start">
         <h2 className="text-[20px] font-medium text-[#FAFAFA] tracking-tight leading-snug line-clamp-2">
           {project.name}
         </h2>
@@ -226,17 +436,24 @@ export function ProjectCard({
       </div>
 
       {/* Pinned Footer Row */}
-      <div className="flex items-center justify-between pt-2 border-t border-[#181818] text-xs font-mono text-[#8A8A8A]">
-        {/* Left: 3-bar indicator + label */}
+      <div className="mt-auto pt-3 border-t border-[#181818] h-9 min-h-[36px] flex items-center justify-between text-xs font-mono text-[#8A8A8A] min-w-0">
+        {/* Left: 3-bar indicator + label (single-line, truncated with tooltip) */}
         <StatusIndicator
           status={project.status}
           blueprintProgress={project.blueprintProgress}
+          className="min-w-0 max-w-[65%]"
         />
 
-        {/* Right: Revision + Opened metadata */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Right: Revision + Opened metadata with responsive cutoff */}
+        <div className="flex items-center gap-1 shrink-0 ml-2 text-right">
           {isPending && <Loader2 className="h-3 w-3 animate-spin text-[#FACC15]" />}
-          <span className="truncate">{openedMeta}</span>
+          <span className="whitespace-nowrap">Rev {project.revision}</span>
+          <span
+            className="hidden @[260px]:inline text-[#8A8A8A]/70 truncate max-w-[110px]"
+            title={`opened ${openedDate}`}
+          >
+            · {openedDate}
+          </span>
         </div>
       </div>
     </SurfaceCard>
@@ -244,18 +461,39 @@ export function ProjectCard({
 }
 
 /** Skeleton placeholder component matching ProjectCard structure and dimensions. */
-export function ProjectCardSkeleton() {
+export function ProjectCardSkeleton({ density = 'normal' }: { density?: 'normal' | 'compact' }) {
+  if (density === 'compact') {
+    return (
+      <div
+        className="rounded-[16px] border border-[#232323] bg-[#111111] p-4 min-h-[140px] flex flex-col justify-between"
+        aria-busy="true"
+      >
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-8 rounded-lg bg-[#181818] motion-reduce:animate-none" />
+          <Skeleton className="h-4 w-12 bg-[#181818] rounded motion-reduce:animate-none" />
+        </div>
+        <div className="my-2 space-y-1.5">
+          <Skeleton className="h-4 w-4/5 bg-[#181818] rounded motion-reduce:animate-none" />
+          <Skeleton className="h-4 w-2/3 bg-[#181818] rounded motion-reduce:animate-none" />
+        </div>
+        <div className="pt-2 border-t border-[#181818] flex items-center justify-between">
+          <Skeleton className="h-3 w-16 bg-[#181818] rounded motion-reduce:animate-none" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="rounded-[20px] border border-[#232323] bg-[#111111] p-6 min-h-[270px] flex flex-col justify-between"
       aria-busy="true"
     >
-      <div className="flex items-center justify-between">
+      <div className="h-8 flex items-center justify-between">
         <Skeleton className="h-8 w-8 rounded-lg bg-[#181818] motion-reduce:animate-none" />
         <Skeleton className="h-4 w-16 bg-[#181818] rounded motion-reduce:animate-none" />
       </div>
 
-      <div className="my-5 space-y-2.5">
+      <div className="mt-4 mb-4 space-y-2.5 flex-1">
         <Skeleton className="h-6 w-3/4 bg-[#181818] rounded motion-reduce:animate-none" />
         <Skeleton className="h-3 w-1/2 bg-[#181818] rounded motion-reduce:animate-none" />
         <div className="space-y-1.5 pt-1">
@@ -264,7 +502,7 @@ export function ProjectCardSkeleton() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-2 border-t border-[#181818]">
+      <div className="h-9 min-h-[36px] mt-auto pt-3 border-t border-[#181818] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Skeleton className="h-3.5 w-3 bg-[#181818] rounded-sm motion-reduce:animate-none" />
           <Skeleton className="h-3.5 w-16 bg-[#181818] rounded motion-reduce:animate-none" />

@@ -437,10 +437,10 @@
 - **Component** `NewProjectWizardPage()` - React component rendering new project wizard page.
 
 ### `client/src/app/projects/page.tsx`
-*React component rendering academic projects list with sys0 cards, filters, and lifecycle dialogs.*
+*React component rendering academic projects list with slots, layout modes, view settings, and lifecycle dialogs.*
 
 - **Route Page:** `/projects` -> renders `default`
-- **Component** `ProjectsPage()` - React component rendering projects page matching sys0 visual guidelines.
+- **Component** `ProjectsPage()` - React component rendering academic projects page matching sys0 visual guidelines and layout modes.
 
 ### `client/src/app/templates/error.tsx`
 *Route error boundary component for templates.*

@@ -2,6 +2,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Project, ProjectSchema } from './schemas/project.schema';
+import { ProjectPin, ProjectPinSchema } from './schemas/project-pin.schema';
 import { MongoProjectRepository } from './repositories/mongo-project.repository';
 import { CachedProjectRepository } from './repositories/cached-project.repository';
 import { ProjectsService } from './services/projects.service';
@@ -16,7 +17,10 @@ import { UsersModule } from '../users/users.module';
 /** Class implementing projects module. */
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Project.name, schema: ProjectSchema }]),
+    MongooseModule.forFeature([
+      { name: Project.name, schema: ProjectSchema },
+      { name: ProjectPin.name, schema: ProjectPinSchema },
+    ]),
     CacheModule,
     AppQueueModule,
     AuditModule,

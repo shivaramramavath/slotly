@@ -43,9 +43,12 @@ export function StatusIndicator({
   const label = formatStatusLabel(status, blueprintProgress);
 
   return (
-    <div className={`inline-flex items-center gap-2 ${className}`}>
+    <div className={`inline-flex items-center gap-2 min-w-0 ${className}`}>
       <ProgressBars status={status} />
-      <span className="font-mono text-xs text-[#8A8A8A] capitalize">
+      <span
+        title={label}
+        className="font-mono text-xs text-[#8A8A8A] capitalize whitespace-nowrap truncate"
+      >
         {label}
       </span>
     </div>
