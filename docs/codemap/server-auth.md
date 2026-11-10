@@ -58,6 +58,7 @@
   - `POST /auth/password/reset` -> `resetPassword()` [public]
   - `PATCH /auth/password` -> `changePassword()` [guards: AuthGuard, StepUpGuard]
   - `GET /auth/sessions` -> `listSessions()` [guards: AuthGuard]
+  - `GET /auth/sessions/:sessionId` -> `getSessionStatus()` [public]
   - `DELETE /auth/sessions/:sessionId` -> `revokeSession()` [guards: AuthGuard]
   - `DELETE /auth/sessions` -> `revokeAllOtherSessions()` [guards: AuthGuard]
   - `POST /auth/mfa/enroll` -> `enrollMfa()` [guards: AuthGuard, StepUpGuard]

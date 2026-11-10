@@ -1907,3 +1907,65 @@ Restyled the Blueprint Templates and Kits page (`/templates`, `/blueprint-templa
 12. Verify responsive layout at 1440px (3 cols), 768px (2 cols), 390px (1 col, no horizontal page overflow).
 
 Merged via `ux/05-templates-restyle`, tag `ux-05-templates-restyle-merged`.
+
+
+---
+
+## UX 06: Landing Page Restyle and Auth Redirect
+
+Visual restyle of the public marketing landing page (`/`) conforming to the sys0 visual language established in `ux/03` and `ux/05`, and implementation of server-side session redirection to `/dashboard`.
+
+### What Was Built
+
+1. **Server-Side Session Validation & Redirect (`/`):**
+   - Implemented an async Next.js Server Component in `client/src/app/page.tsx` that reads cookies and verifies the visitor's session against the backend Redis session endpoint before returning any HTML.
+   - `validateSessionServer` helper in `client/src/features/auth/services/session-validator.ts` extracts the `sessionId` from `slotly_session` or raw tokens and calls the backend session check `GET /auth/sessions/:sessionId`.
+   - Valid sessions trigger an immediate Next.js HTTP 307 temporary redirect to `/dashboard` with 0 flash of landing page content.
+   - Expired, revoked, malformed, or missing sessions cleanly render the landing page with HTTP 200 without redirect loops.
+   - Added `@Public() @Get('sessions/:sessionId')` endpoint in `server/src/modules/auth/auth.controller.ts` fulfilling `docs/ROUTES.md` line 6.
+
+2. **Public Header Lockup (`PublicHeader`):**
+   - 72px transparent header (`h-[72px] pt-4 sm:pt-6`) that transitions on scroll (`window.scrollY > 12`) to a subtle dark backdrop with thin bottom border (`bg-[#0A0A0A]/85 backdrop-blur-md border-b border-[#232323]`).
+   - Wordmark lockup: "slotly" (20px semibold, accent yellow "o") + 1px vertical divider + mono "Beta" label, linking to `/`.
+   - Right action controls: plain text "Sign in" link (14px, muted text `#8A8A8A`, hover white, href `/login`) and outline "Get started" button (1px border, 40px high, 12px radius, href `/register`). Unaccented to reserve the single yellow primary for the hero CTA.
+
+3. **Hero & Features Grid Shell (`HomePage` & `PublicLayout`):**
+   - Contained within `PageContainer` (max width 1016px, px-6 / px-4 on mobile).
+   - Removed internal developer phase badges ("PHASE 1 FOUNDATION", "SYSTEM OPERATIONAL").
+   - Headline: 56px (36px mobile) semibold with balanced text wrapping: "Academic Scheduling, Architected for Zero Conflicts."
+   - Description: 17px (15px mobile) muted text `#8A8A8A` (max width 620px).
+   - Actions row: exactly ONE yellow primary button on the entire page: "Launch Studio" (height 44px, radius 12px, href `/dashboard`, ArrowRight icon) + outline button "Explore Templates" (height 44px, radius 12px, href `/templates`).
+   - Features grid: 4 columns desktop ($\ge 1024$px), 2 columns tablet (640–1023px), 1 column mobile, 16px gap (`gap-4`), sitting 72px below hero actions.
+   - 4 feature cards using `SurfaceCard variant="static"` (20px radius, 24px padding, `#111111` surface, `#232323` border):
+     - All-white 32px glyphs (`Sliders`, `Cpu`, `Layers`, `ShieldCheck`), eliminating inconsistent colored icon styling.
+     - 18px semibold white titles: Visual Blueprint, Constraint Solver, Interactive Studio, Enterprise Security.
+     - 14px muted descriptions clamped to 4 lines.
+
+4. **Minimal Site Footer (`SiteFooter`):**
+   - Contained within `PageContainer`, positioned 96px (64px mobile) below features grid.
+   - 1px top border (`#232323`), 24px vertical padding. Left: "© 2026 Slotly Academic Scheduling" (13px muted); right: "v0.1.0" (mono 12px muted).
+
+5. **Automated Tests:**
+   - `session-validator.spec.ts`: Tests `extractSessionId` (null, undefined, empty, legacy '1', malformed, `ses_...`, `s_ses_...`) and `validateSessionServer` (missing session, active session in Redis, 401 expired/revoked, network failure).
+   - `landing-redirect.spec.ts`: Tests `getLandingAuthRedirect` resolving `'/dashboard'` for valid sessions and `null` for unauthenticated or revoked visitors.
+
+### Decisions Made
+
+- **Server Component Over Edge Middleware for Session Check:** Performed session validation in `client/src/app/page.tsx` async Server Component rather than Edge Middleware to allow Redis session verification without introducing Edge runtime Node compatibility constraints.
+- **Single Yellow Element Rule:** The "Launch Studio" hero button and the wordmark "o" are the only yellow elements on the page. Header buttons, feature icons, and footer are strictly monochrome.
+
+### Manual Test Checklist
+
+1. Navigate to `http://localhost:3000/` without an active session:
+   - Verify landing page renders immediately with HTTP 200 and no redirect.
+   - Verify PublicHeader has wordmark "slotly" (yellow "o", divider, "Beta"), plain text "Sign in", and outline "Get started".
+   - Scroll page: verify header transitions to dark backdrop blur with subtle bottom border.
+   - Verify hero has headline, description, yellow "Launch Studio", and outline "Explore Templates". No phase badges visible.
+   - Verify 4 cards have all-white 32px icons, 18px titles, and descriptions.
+   - Verify footer has copyright and mono "v0.1.0".
+2. Sign in to an account, then navigate to `http://localhost:3000/`:
+   - Verify browser is automatically and immediately redirected to `/dashboard` (HTTP 307) without flashing landing page content.
+3. In browser dev tools, corrupt or delete the session cookie and reload `/`:
+   - Verify page renders the landing page cleanly without redirect loops.
+
+Merged via `ux/06-landing-redirect`, tag `ux-06-landing-redirect-merged`.

@@ -26,7 +26,7 @@ interface AuthState {
 }
 
 /** Zustand store managing use auth store state. */
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   status: 'idle',
@@ -38,7 +38,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: (user, token) => {
     setAccessToken(token);
     if (typeof document !== 'undefined') {
-      document.cookie = 'slotly_session=1; path=/; max-age=604800; SameSite=Lax';
+      let sid = '';
+      try {
+        const payload = token ? JSON.parse(atob(token.split('.')[1] || '')) : {};
+        if (typeof payload?.sid === 'string' && payload.sid.startsWith('ses_')) {
+          sid = payload.sid;
+        }
+      } catch {
+        // ignore malformed token payload
+      }
+      document.cookie = `slotly_session=${sid || '1'}; path=/; max-age=604800; SameSite=Lax`;
     }
     set({
       user,
@@ -51,8 +60,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setUser: (user) => {
+    const token = get().accessToken;
     if (typeof document !== 'undefined' && user) {
-      document.cookie = 'slotly_session=1; path=/; max-age=604800; SameSite=Lax';
+      let sid = '';
+      try {
+        const payload = token ? JSON.parse(atob(token.split('.')[1] || '')) : {};
+        if (typeof payload?.sid === 'string' && payload.sid.startsWith('ses_')) {
+          sid = payload.sid;
+        }
+      } catch {
+        // ignore malformed token payload
+      }
+      document.cookie = `slotly_session=${sid || '1'}; path=/; max-age=604800; SameSite=Lax`;
     }
     set({ user });
   },
