@@ -73,4 +73,24 @@ export const projectsApi = {
       body: JSON.stringify({}),
     });
   },
+
+  async restoreProject(projectId: string): Promise<ProjectDto> {
+    return apiClient<ProjectDto>(`/projects/${projectId}/restore`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  },
+
+  async pinProject(projectId: string): Promise<{ success: boolean; pinned: boolean }> {
+    return apiClient<{ success: boolean; pinned: boolean }>(`/projects/${projectId}/pin`, {
+      method: 'PUT',
+      body: JSON.stringify({}),
+    });
+  },
+
+  async unpinProject(projectId: string): Promise<{ success: boolean; pinned: boolean }> {
+    return apiClient<{ success: boolean; pinned: boolean }>(`/projects/${projectId}/pin`, {
+      method: 'DELETE',
+    });
+  },
 };
