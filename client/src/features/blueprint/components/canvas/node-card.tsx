@@ -1,7 +1,7 @@
-// Presentation component rendering NodeCard and its subcomponents.
+// Presentation component rendering compact NodeCard and its subcomponents.
 'use client';
 
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import {
   Building2,
@@ -19,9 +19,12 @@ import {
   Plus,
   AlertTriangle,
   MessageSquare,
+  Check,
 } from 'lucide-react';
 import type { BlueprintCanvasNode } from '../../types/canvas.types';
 import type { BlueprintNodeType } from '@slotly/contracts';
+import { useBlueprintStore } from '../../store/blueprint.store';
+import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 
 export const TYPE_ICONS: Record<BlueprintNodeType, React.ElementType> = {
@@ -81,11 +84,11 @@ export function calculateNodeProgress(node: BlueprintCanvasNode): number {
   return Math.min(95, Math.round((filled / Math.max(totalRequired, missingCount + filled)) * 100));
 }
 
-/** Get single metric line text for Row 2 */
+/** Get single metric line text for subtitle */
 export function getNodeMetricLine(node: BlueprintCanvasNode): string {
   const { nodeType, config } = node.data;
 
-  // Check if node has pool data (v2 preparation)
+  // Check if node has pool data
   const pool = (node.data as Record<string, unknown>)['pool'] as { additions?: unknown[] } | undefined;
   if (pool?.additions && pool.additions.length > 0) {
     const adds = pool.additions as Array<{ itemType: string }>;
@@ -128,7 +131,7 @@ export function getNodeMetricLine(node: BlueprintCanvasNode): string {
   }
 }
 
-/** Subcomponent: Progress Bar in Row 3 */
+/** Subcomponent: Progress Bar kept for feature parity */
 export const NodeProgress = memo(function NodeProgress({
   percent,
   isComplete,
@@ -137,7 +140,7 @@ export const NodeProgress = memo(function NodeProgress({
   isComplete: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2 w-full pt-1">
+    <div className="flex items-center gap-2 w-full pt-1" data-testid="node-progress-bar">
       <div className="h-1 flex-1 rounded-[2px] bg-[#222222] overflow-hidden">
         <div
           className={cn(
@@ -157,15 +160,20 @@ export const NodeProgress = memo(function NodeProgress({
 /** Subcomponent: Target Ring Handle at Top Edge */
 export const HandleRing = memo(function HandleRing({
   position = Position.Top,
+  isVisible = false,
 }: {
   position?: Position;
+  isVisible?: boolean;
 }) {
   return (
     <Handle
       type="target"
       position={position}
-      className="!w-2.5 !h-2.5 !rounded-full !border-[1.5px] !border-[#8A8A8A] !bg-[#0A0A0A] hover:!border-[#FAFAFA] hover:!bg-[#FAFAFA] transition-colors"
-      style={{ top: '-5px' }}
+      className={cn(
+        '!w-2 !h-2 !rounded-full !border !border-[#383838] !bg-[#111111] hover:!border-[#FAFAFA] hover:!bg-[#FAFAFA] transition-opacity duration-150',
+        isVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+      )}
+      style={{ top: '-4px' }}
     />
   );
 });
@@ -173,14 +181,19 @@ export const HandleRing = memo(function HandleRing({
 /** Subcomponent: Source Pill Handle at Bottom Edge */
 export const HandlePill = memo(function HandlePill({
   position = Position.Bottom,
+  isVisible = false,
 }: {
   position?: Position;
+  isVisible?: boolean;
 }) {
   return (
     <Handle
       type="source"
       position={position}
-      className="!w-4 !h-2 !rounded-full !bg-[#8A8A8A]/50 hover:!bg-[#FAFAFA] !border !border-[#232323] transition-colors"
+      className={cn(
+        '!w-2 !h-2 !rounded-full !border !border-[#383838] !bg-[#111111] hover:!border-[#FAFAFA] hover:!bg-[#FAFAFA] transition-opacity duration-150',
+        isVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+      )}
       style={{ bottom: '-4px' }}
     />
   );
@@ -206,7 +219,9 @@ export const AddChildButton = memo(function AddChildButton({
     <div
       className={cn(
         'absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 transition-opacity duration-150',
-        isHovered || isSelected || open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none md:pointer-events-none',
+        isHovered || isSelected || open
+          ? 'opacity-100 pointer-events-auto'
+          : 'opacity-0 pointer-events-none md:pointer-events-none',
       )}
     >
       <button
@@ -216,14 +231,14 @@ export const AddChildButton = memo(function AddChildButton({
           e.stopPropagation();
           setOpen(!open);
         }}
-        className="w-[22px] h-[22px] rounded-full bg-[#181818] border border-[#FAFAFA]/40 text-[#FAFAFA] flex items-center justify-center hover:bg-[#FAFAFA] hover:text-[#0A0A0A] transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="w-[20px] h-[20px] rounded-full bg-[#181818] border border-[#383838] text-[#FAFAFA] flex items-center justify-center hover:bg-[#FAFAFA] hover:text-[#0A0A0A] hover:border-[#FAFAFA] transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
       >
         <Plus className="h-3 w-3" />
       </button>
 
       {open && (
         <div
-          className="absolute top-7 left-1/2 -translate-x-1/2 w-44 bg-[#111111] border border-[#232323] rounded-[10px] shadow-xl py-1 z-50 text-left overflow-hidden"
+          className="absolute top-6 left-1/2 -translate-x-1/2 w-44 bg-[#111111] border border-[#232323] rounded-[10px] shadow-2xl py-1 z-50 text-left overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="px-3 py-1 text-[10px] font-mono text-[#8A8A8A] border-b border-[#232323]">
@@ -245,7 +260,7 @@ export const AddChildButton = memo(function AddChildButton({
                 }}
                 className="w-full text-left px-3 py-1.5 text-xs text-[#FAFAFA] hover:bg-[#1a1a1a] flex items-center gap-2 transition-colors"
               >
-                <ChildIcon className="h-3 w-3 text-[#8A8A8A]" />
+                <ChildIcon className="h-3.5 w-3.5 text-[#8A8A8A]" />
                 <span className="font-mono text-[11px] truncate">
                   {TYPE_LABELS[childType] || childType}
                 </span>
@@ -268,17 +283,21 @@ export interface NodeCardProps {
   onOpenComments?: () => void;
 }
 
-/** Base NodeCard component matching reference visual spec */
+/** Base NodeCard component matching compact 232px specification */
 export const NodeCard = memo(function NodeCard({
   node,
   selected = false,
   allowedChildTypes = [],
-  childCount = 0,
   onSelect,
   onContextMenu,
   onOpenComments,
 }: NodeCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isDragValid, setIsDragValid] = useState(false);
+  const [activeDraggedType, setActiveDraggedType] = useState<BlueprintNodeType | null>(null);
+
+  const isCanvasLocked = useBlueprintStore((s) => s.isCanvasLocked);
 
   const { id, data } = node;
   const nodeType = data.nodeType || 'institution';
@@ -293,19 +312,45 @@ export const NodeCard = memo(function NodeCard({
   const commentsCount = data.commentsCount || 0;
   const missingCount = data.missing?.length || 0;
 
-  const progressPercent = calculateNodeProgress(node);
+  // Total issues count (errors + warnings)
+  const hasIssues = !isComplete && (isBlocked || isIncomplete || missingCount > 0);
+  const issueCount = isBlocked ? 1 : Math.max(1, missingCount);
+
   const metricText = getNodeMetricLine(node);
 
-  // States styling
+  // Listen to drag-node start/end events across the window
+  useEffect(() => {
+    const handleDragStart = (e: Event) => {
+      const { type } = (e as CustomEvent<{ type: BlueprintNodeType }>).detail;
+      setActiveDraggedType(type);
+    };
+
+    const handleDragEnd = () => {
+      setActiveDraggedType(null);
+      setIsDragOver(false);
+    };
+
+    window.addEventListener('slotly:drag-node-start', handleDragStart);
+    window.addEventListener('slotly:drag-node-end', handleDragEnd);
+
+    return () => {
+      window.removeEventListener('slotly:drag-node-start', handleDragStart);
+      window.removeEventListener('slotly:drag-node-end', handleDragEnd);
+    };
+  }, []);
+
+  // Card Border Styling
   let cardBorder = 'border-[#232323] hover:border-[#383838]';
-  if (selected) {
-    cardBorder = 'border-white/60 ring-2 ring-white/10';
+  if (isDragOver) {
+    if (isDragValid) {
+      cardBorder = 'border-[#FAFAFA] ring-2 ring-[#FAFAFA]/70';
+    } else {
+      cardBorder = 'border-[#EF4444] ring-1 ring-[#EF4444]/60 cursor-not-allowed';
+    }
+  } else if (selected) {
+    cardBorder = 'border-[#FAFAFA] ring-1 ring-[#FAFAFA] ring-offset-2 ring-offset-[#0A0A0A]';
   } else if (isBlocked) {
-    cardBorder = 'border-[#232323] opacity-50';
-  } else if (isComplete) {
-    cardBorder = 'border-[#232323] hover:border-[#383838]';
-  } else if (isIncomplete) {
-    cardBorder = 'border-dashed border-[#FACC15]/50';
+    cardBorder = 'border-[#232323] opacity-60';
   }
 
   const handleMouseEnter = () => {
@@ -334,11 +379,101 @@ export const NodeCard = memo(function NodeCard({
     );
   };
 
+  // Drag over target node
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!activeDraggedType) return;
+
+    if (isCanvasLocked) {
+      e.dataTransfer.dropEffect = 'none';
+      setIsDragValid(false);
+      setIsDragOver(true);
+      window.dispatchEvent(
+        new CustomEvent('slotly:drag-reason', {
+          detail: {
+            reason: 'Canvas is locked. Unlock canvas to add or modify nodes.',
+            clientX: e.clientX,
+            clientY: e.clientY,
+          },
+        }),
+      );
+      return;
+    }
+
+    const isAllowed = allowedChildTypes.includes(activeDraggedType);
+    if (isAllowed && isComplete) {
+      e.dataTransfer.dropEffect = 'copy';
+      setIsDragValid(true);
+      setIsDragOver(true);
+      window.dispatchEvent(new CustomEvent('slotly:drag-reason-clear'));
+    } else {
+      e.dataTransfer.dropEffect = 'none';
+      setIsDragValid(false);
+      setIsDragOver(true);
+      const reason = !isComplete
+        ? `Complete '${data.label || 'parent'}' first`
+        : `Cannot add ${activeDraggedType} under ${nodeType}. Needs a valid parent.`;
+      window.dispatchEvent(
+        new CustomEvent('slotly:drag-reason', {
+          detail: {
+            reason,
+            clientX: e.clientX,
+            clientY: e.clientY,
+          },
+        }),
+      );
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    window.dispatchEvent(new CustomEvent('slotly:drag-reason-clear'));
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    window.dispatchEvent(new CustomEvent('slotly:drag-reason-clear'));
+
+    const droppedType = (e.dataTransfer.getData('application/x-slotly-node') ||
+      e.dataTransfer.getData('application/slotly-node-type') ||
+      activeDraggedType) as BlueprintNodeType;
+
+    if (!droppedType) return;
+
+    if (isCanvasLocked) {
+      toast.info('Canvas locked', 'Canvas is locked. Unlock canvas to add or modify nodes.');
+      return;
+    }
+
+    const isAllowed = allowedChildTypes.includes(droppedType);
+    if (!isAllowed || !isComplete) {
+      const reason = !isComplete
+        ? `Complete '${data.label || 'parent'}' first`
+        : `Cannot add ${droppedType} under ${nodeType}.`;
+      toast.error('Cannot add child here', reason);
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('slotly:add-child', {
+        detail: { parentId: id, childType: droppedType },
+      }),
+    );
+  };
+
   const issuesSummary = isBlocked
     ? 'Node is blocked by parent'
-    : isIncomplete && missingCount > 0
-      ? `${missingCount} requirements missing: ${(data.missing || []).map((m) => m.field).join(', ')}`
+    : hasIssues
+      ? `${issueCount} issues: ${(data.missing || []).map((m) => m.field).join(', ')}`
       : 'Node is complete and valid';
+
+  const showHandles = isHovered || selected || isDragOver;
 
   return (
     <div
@@ -346,6 +481,7 @@ export const NodeCard = memo(function NodeCard({
       tabIndex={0}
       data-testid={`blueprint-node-${id}`}
       data-status={effectiveStatus}
+      aria-label={data.label || 'Node'}
       aria-describedby={`node-issues-summary-${id}`}
       onClick={onSelect}
       onKeyDown={(e) => {
@@ -359,9 +495,12 @@ export const NodeCard = memo(function NodeCard({
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
       onBlur={handleBlur}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       className={cn(
-        'relative group w-[200px] min-h-[72px] rounded-[12px] border p-[12px_14px] select-none cursor-pointer transition-[border-color,opacity] duration-120 outline-none focus-visible:ring-2 focus-visible:ring-white/40',
-        'bg-gradient-to-b from-[#141414] to-[#0D0D0D]',
+        'relative group w-[232px] min-h-[64px] rounded-[12px] border p-3 select-none cursor-pointer',
+        'bg-[#111111] transition-[border-color,box-shadow] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-white',
         cardBorder,
         data.hidden && 'opacity-40 border-dashed',
       )}
@@ -370,38 +509,50 @@ export const NodeCard = memo(function NodeCard({
       <span id={`node-issues-summary-${id}`} className="sr-only">
         {issuesSummary}
       </span>
-      {/* Top Handle (Target) */}
-      {nodeType !== 'institution' && <HandleRing />}
 
-      {/* Row 1: Icon + Title + Type Label + Status Indicator */}
-      <div className="flex items-center justify-between gap-1.5">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <Icon className="h-4 w-4 text-[#FAFAFA]/70 shrink-0" />
-          <h3 className="text-[14px] leading-5 font-medium text-[#FAFAFA] truncate">
-            {data.label || 'Untitled'}
-          </h3>
+      {/* Top Handle (Target) */}
+      {nodeType !== 'institution' && <HandleRing isVisible={showHandles} />}
+
+      {/* Main Row: Icon + Title/Subtitle + Status */}
+      <div className="flex items-start justify-between gap-2.5">
+        {/* Left: 20px Icon + Label + Subtitle */}
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+          <Icon className="h-5 w-5 text-[#8A8A8A] shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <h3
+              className="text-[14px] leading-snug font-medium text-[#FAFAFA] truncate"
+              title={data.label || 'Untitled'}
+            >
+              {data.label || 'Untitled'}
+            </h3>
+            <div
+              className="text-[12px] font-mono text-[#8A8A8A] leading-snug truncate mt-0.5"
+              title={metricText}
+            >
+              {metricText}
+            </div>
+          </div>
         </div>
 
-        {/* Right side: Type pill or status dot */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {isComplete && (
-            <span
-              title="Complete"
-              className="w-1.5 h-1.5 rounded-full bg-[#22C55E]"
-            />
-          )}
-
-          {isBlocked && (
-            <span className="font-mono text-[10px] text-[#8A8A8A]">
-              Blocked
+        {/* Right Status Area */}
+        <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+          {hasIssues ? (
+            <div
+              className="flex items-center gap-1 text-[#FACC15]"
+              title={`${issueCount} issues`}
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0 text-[#FACC15]" />
+              <span className="font-mono text-xs font-medium leading-none text-[#FACC15]">
+                {issueCount}
+              </span>
+            </div>
+          ) : isComplete ? (
+            <span title="Ready">
+              <Check className="h-4 w-4 text-[#8A8A8A] shrink-0" />
             </span>
-          )}
+          ) : null}
 
-          {isIncomplete && !isBlocked && (
-            <AlertTriangle className="h-3 w-3 text-[#FACC15]" />
-          )}
-
-          {/* Quick Corner Indicators */}
+          {/* Locked / Comments Icons */}
           {commentsCount > 0 && (
             <button
               type="button"
@@ -412,7 +563,7 @@ export const NodeCard = memo(function NodeCard({
               title={`${commentsCount} comments`}
               className="text-[#8A8A8A] hover:text-[#FAFAFA]"
             >
-              <MessageSquare className="h-3 w-3" />
+              <MessageSquare className="h-3.5 w-3.5" />
             </button>
           )}
 
@@ -421,70 +572,27 @@ export const NodeCard = memo(function NodeCard({
               title={`Editing by ${lockedBy.userName}`}
               className="flex items-center gap-0.5 text-[9px] font-mono text-[#8A8A8A]"
             >
-              <Lock className="h-2.5 w-2.5" />
-              <span>Editing</span>
+              <Lock className="h-3 w-3" />
             </span>
           ) : isLocked ? (
-            <Lock className="h-3 w-3 text-[#8A8A8A]" />
+            <Lock className="h-3.5 w-3.5 text-[#8A8A8A]" />
           ) : null}
         </div>
       </div>
 
-      {/* Row 2: Metric Line */}
-      <div className="mt-1 text-[12px] text-[#8A8A8A] font-mono leading-none truncate">
-        {metricText}
-      </div>
-
-      {/* Faculty Availability Mini-Grid (if faculty node) */}
-      {nodeType === 'faculty' && (
-        <div className="mt-2 pt-1 border-t border-[#1C1C1C]">
-          <div className="grid grid-cols-6 gap-0.5">
-            {[0, 1, 2, 3, 4, 5].map((d) => (
-              <div key={d} className="space-y-0.5">
-                {[0, 1, 2, 3].map((s) => (
-                  <div key={s} className="w-full h-1 rounded-[1px] bg-[#22C55E]/30" />
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Row 3: Progress Bar */}
-      <NodeProgress percent={progressPercent} isComplete={isComplete} />
-
-      {/* Static Compact Footer Status (No inline expansion or layout shift) */}
-      <div className="mt-1.5 pt-1 border-t border-[#1C1C1C] flex items-center justify-between font-mono text-[11px] leading-none">
-        {isIncomplete && !isBlocked && missingCount > 0 ? (
-          <span className="text-[#FACC15]">{missingCount} missing</span>
-        ) : isBlocked ? (
-          <span className="text-[#8A8A8A]">Blocked</span>
-        ) : isComplete ? (
-          <span className="text-[#22C55E]">Ready</span>
-        ) : (
-          <span className="text-[#8A8A8A]">Draft</span>
-        )}
-
-        {childCount > 0 && (
-          <span className="text-[#8A8A8A]">
-            {childCount} {childCount === 1 ? 'child' : 'children'}
-          </span>
-        )}
-      </div>
-
       {/* Bottom Handle / Add Child Control */}
-      {isComplete && allowedChildTypes.length > 0 && !isLocked ? (
+      {nodeType !== 'batch' && (
         <>
-          <HandlePill />
-          <AddChildButton
-            nodeId={id}
-            allowedChildTypes={allowedChildTypes}
-            isHovered={isHovered}
-            isSelected={selected}
-          />
+          <HandlePill isVisible={showHandles} />
+          {isComplete && allowedChildTypes.length > 0 && !isLocked && (
+            <AddChildButton
+              nodeId={id}
+              allowedChildTypes={allowedChildTypes}
+              isHovered={isHovered}
+              isSelected={selected}
+            />
+          )}
         </>
-      ) : (
-        <HandlePill />
       )}
     </div>
   );
