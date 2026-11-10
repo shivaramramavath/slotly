@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import {
   formatOpenedMeta,
+  formatOpenedDate,
   getProjectDescription,
   getStatusColorClass,
 } from '../project-card';
@@ -18,6 +19,19 @@ describe('formatOpenedMeta', () => {
   it('formats valid date into day and short month format', () => {
     const formatted = formatOpenedMeta(1, '2026-11-09T04:23:32.473Z');
     assert.match(formatted, /^Rev 1 · opened \d{1,2} Nov$/);
+  });
+});
+
+describe('formatOpenedDate', () => {
+  it('returns "Not opened yet" when lastOpenedAt is null or invalid', () => {
+    assert.strictEqual(formatOpenedDate(null), 'Not opened yet');
+    assert.strictEqual(formatOpenedDate(undefined), 'Not opened yet');
+    assert.strictEqual(formatOpenedDate('invalid'), 'Not opened yet');
+  });
+
+  it('formats valid date into "opened day month"', () => {
+    const formatted = formatOpenedDate('2026-11-09T04:23:32.473Z');
+    assert.match(formatted, /^opened \d{1,2} Nov$/);
   });
 });
 
