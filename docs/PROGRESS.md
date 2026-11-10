@@ -2288,4 +2288,75 @@ Merged via `feat/blueprint-v2-server`, tag `feat-blueprint-v2-server-merged`.
 
 Merged via `ux/04-blueprint-canvas-style`, tag `ux-04-blueprint-canvas-style-merged`.
 
+---
+
+## Task: Blueprint Floating Palette & Node Issues Hover Card (`ux/08-blueprint-palette`)
+
+### What Was Built
+
+1. **Floating Vertical Node Library Panel (`NodeLibraryPanel` & `NodeLibraryItem`):**
+   - Floating over the canvas on the left edge (`left-4 top-4`), max height `calc(100% - 32px)`, hidden scrollbar with edge fade.
+   - Container: radius 20px (`rounded-[20px]`), 1px border (`#232323`), 95% surface background with backdrop blur (`bg-[#111111]/95 backdrop-blur-md`), soft shadow, 8px padding (`p-2`).
+   - Two states toggled via top header chevron button and persisted in `localStorage`:
+     - **Collapsed (default < 1280px)**: 56px wide icon rail (`w-14`), 40px square icon buttons (radius 12px) stacked vertically with 4px gap. Hover or focus shows a styled right-side tooltip card with node name and one-line description.
+     - **Expanded (default >= 1280px)**: 264px wide list (`w-[264px]`). Each row is 56px high: 20px icon, 14px medium title, 12px muted description (1-line clamp), grouped under "Hierarchy structure" and "Resources" section labels.
+   - Mobile breakpoint (< 768px): Transforms into a 48px floating "Add node" button at the left edge opening a touch-optimized bottom sheet with 48px rows.
+   - Roving tabindex keyboard navigation: Tab enters panel once, Arrow Up/Down moves between items, Enter or Space adds, Home/End jumps to first/last, Escape returns focus to canvas. Global shortcut `/` expands and focuses the library panel.
+   - Disabled items remain visible at 50% opacity, focusable (`aria-disabled="true"`), displaying styled reason tooltips to the right without native browser tooltip overlap.
+   - Drag-and-drop: Supports dragging items directly from the library panel onto the canvas.
+   - Viewport & Layout Inset: Updated Dagre hierarchical/compact layout and React Flow `fitViewOptions` to enforce an 80px left offset, preventing any node from being obscured behind the left library rail on load, Fit, or Layout.
+
+2. **Removal of "+ Add" Popup from Floating Toolbar (`floating-toolbar.tsx`):**
+   - Removed the "+ Add" button and popup menu from the bottom centered floating toolbar.
+   - Centered toolbar retains Zoom controls, Fit view, Layout algorithms, Undo/Redo, Search, and More menu.
+
+3. **Stable Compact Node Footer (No Inline Dropdown) (`node-card.tsx`):**
+   - Removed the expandable chevron and inline missing fields container from `NodeCard`.
+   - Node footer now displays a compact, single-line status ("N missing", "Blocked", "Ready", or "Draft") alongside child count.
+   - Node dimensions are strictly identical whether hovered or not (200px width, zero layout shift, no re-measure).
+   - Added `aria-describedby` pointing to a visually hidden summary of issues for screen readers.
+
+4. **Node Issues Hover & Focus Card (`NodeIssuesCard` & `issue-label.ts`):**
+   - Appears after 150ms pointer hover on a node, on keyboard focus, or on touch tap. Closes 100ms after pointer leaves both the node and the card (hover bridge allows moving into the card).
+   - Rendered in a React portal in screen space (does not scale with canvas zoom). Anchored to the node's DOM rectangle, preferring right, left, then below, automatically flipping and shifting to stay within safe canvas boundaries.
+   - Content:
+     - Header: Node name and uppercase monospace type label, with total issue count ("N issues found").
+     - Grouped list: Errors (blocking) first with red alert glyphs, followed by Requirements / Warnings with amber glyphs.
+     - Helper `formatIssueLabel` maps known keys (`workingDays`, `periodConfig`, `durationYears`, `startDate`, `endDate`, `strength`, `code`, etc.) to plain-language sentences with raw keys in mono 12px muted.
+     - Internal scroll (`max-h-[280px]`) with "+N more" indicator if more than 6 issues are present.
+     - Action buttons: "Fix automatically" (applies safe defaults for missing fields) and "Open in config" (selects node and opens Config tab in the right sidebar).
+   - Dismisses on Escape (returning focus to the node) or clicking canvas; automatically hides during node dragging or canvas panning.
+
+5. **Safe Defaults Helper (`safe-defaults.ts`):**
+   - Provides canonical default configuration values for each node type to resolve missing requirements automatically.
+
+6. **Tests (`node-palette-and-issues.spec.ts`):**
+   - Added 9 unit tests covering `NodeLibraryPanel` and `PALETTE_ITEMS` ordering, disabled item attributes (`aria-disabled`), keyboard navigation key codes, issue labeling and grouping, safe defaults, and constant node card dimensions. All 101 client tests passing.
+
+### Decisions Made
+
+- **Screen-Space Portal for Hover Card:** Rendered `NodeIssuesCard` via React portal directly to `document.body` so text and action buttons remain pixel-crisp at standard size (13–14px) regardless of canvas zoom level.
+- **Roving Tabindex Toolbar:** Implemented standard WAI-ARIA roving tabindex in `NodeLibraryPanel` for swift single-tab navigation into the rail and Arrow Up/Down item selection.
+- **SSR-Safe Client Detection:** Used `useSyncExternalStore` for client-only portal rendering and localStorage reading without cascading effects or hydration mismatches.
+
+### Manual Test Checklist
+
+- [x] Open `/projects/:id/blueprint` — floating node library panel is visible on the left edge (`left-4 top-4`).
+- [x] Click collapse/expand chevron at top of library panel — width toggles smoothly between 56px icon rail and 264px expanded list with section headers ("Hierarchy structure", "Resources").
+- [x] Press `/` anywhere on canvas — library panel expands and focuses first item.
+- [x] Use Arrow Up/Down, Home/End, Enter, Space to navigate and add nodes via keyboard; press Escape to return focus to canvas.
+- [x] Hover or focus a disabled library item — shows styled right-side tooltip card with reason text (e.g., "Cannot add Academic Year under Institution. Needs a Program.").
+- [x] Bottom toolbar is cleanly centered with Zoom, Fit, Layout, Undo/Redo, Search, and More (Add button removed).
+- [x] Hover on an incomplete node ("New Institution") for 150ms or focus it via Tab — `NodeIssuesCard` appears anchored beside the node.
+- [x] Move pointer smoothly into `NodeIssuesCard` — card stays open across hover bridge.
+- [x] Review grouped issues in `NodeIssuesCard` — blocking errors first, requirements second, plain-language text plus raw keys.
+- [x] Click "Fix automatically" in `NodeIssuesCard` — safe defaults are applied, status updates to ready, toast confirms fix.
+- [x] Click "Open in config" in `NodeIssuesCard` — selects node and opens Config tab in the right sidebar.
+- [x] Press Escape or click canvas — `NodeIssuesCard` dismisses cleanly.
+- [x] Confirm node footer has no chevron or inline dropdown; node bounding box is identical whether card is hovered or not.
+- [x] Run Layout (Hierarchical, Compact, Department) and Fit View — nodes start at 80px+ and are never hidden behind the 56px library rail.
+- [x] Resize browser below 768px — library panel becomes a 48px floating circle button opening a bottom sheet.
+
+Merged via `ux/08-blueprint-palette`, tag `ux-08-blueprint-palette-merged`.
+
 
