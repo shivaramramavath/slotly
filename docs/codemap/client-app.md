@@ -195,10 +195,10 @@
 - **Component** `SubjectsLibraryPage()` - React component rendering subjects library catalog view.
 
 ### `client/src/app/page.tsx`
-*React component for page.*
+*Server component rendering the public marketing landing page and enforcing session redirect.*
 
 - **Route Page:** `/` -> renders `default`
-- **Component** `HomePage()` - React component rendering home page.
+- **Component** `HomePage()` - React server component rendering landing page or redirecting active authenticated sessions to dashboard.
 
 ### `client/src/app/projects/[projectId]/blueprint/export/page.tsx`
 *React component for page.*

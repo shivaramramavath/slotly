@@ -101,7 +101,8 @@ export class AuthController {
       path: '/auth',
       maxAge: 7 * 24 * 3600 * 1000, // 7 days
     });
-    res.cookie('slotly_session', '1', {
+    const sessionId = token.startsWith('s_') ? token.split('_')[1] : token;
+    res.cookie('slotly_session', sessionId, {
       httpOnly: false,
       secure: this.sessionConf?.cookie.secure ?? false,
       sameSite: 'lax',
@@ -308,6 +309,19 @@ export class AuthController {
       lastActiveAt: new Date(s.lastActiveAt).toISOString(),
       createdAt: new Date(s.createdAt).toISOString(),
     }));
+  }
+
+  /** Validates an existing session by ID and returns its validity status. */
+  @Public()
+  @Get('sessions/:sessionId')
+  async getSessionStatus(@Param('sessionId') sessionId: string) {
+    const session = await this.sessionsService.validateSession(sessionId);
+    return {
+      valid: true,
+      sessionId: session.sessionId,
+      userId: session.userId,
+      role: session.role,
+    };
   }
 
   @UseGuards(AuthGuard)

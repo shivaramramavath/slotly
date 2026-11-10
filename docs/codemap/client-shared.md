@@ -67,10 +67,23 @@
 }: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/page-header").PageHeaderProps)` - React component rendering standard page header with title, description, and action controls.
 - **Component** `PageHeaderSkeleton({ className = '' }: { className?: string | undefined; })` - Skeleton placeholder component for PageHeader during loading state.
 
-### `client/src/components/layouts/public-layout.tsx`
-*React component for public-layout.*
+### `client/src/components/layouts/public-header.tsx`
+*Header component for public pages featuring transparent scroll transition and wordmark lockup.*
 
-- **Component** `PublicLayout({ children }: { children: React.ReactNode; })` - React component rendering public layout.
+- **Interface** `PublicHeaderProps` - Props for PublicHeader component.
+- **Component** `PublicHeader({ className = '' }: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/public-header").PublicHeaderProps)` - React component rendering public header with wordmark lockup and unaccented action controls.
+
+### `client/src/components/layouts/public-layout.tsx`
+*Layout component wrapping public and visitor-facing marketing pages.*
+
+- **Interface** `PublicLayoutProps` - Props for PublicLayout component.
+- **Component** `PublicLayout({ children }: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/public-layout").PublicLayoutProps)` - React component rendering standard public layout with header, main content, and footer.
+
+### `client/src/components/layouts/site-footer.tsx`
+*Footer component for application and public pages constrained to page container width.*
+
+- **Interface** `SiteFooterProps` - Props for SiteFooter component.
+- **Component** `SiteFooter({ className = '' }: import("E:/Shiva Ram/Projects/slotly/client/src/components/layouts/site-footer").SiteFooterProps)` - React component rendering quiet minimal footer with copyright and release version.
 
 ### `client/src/components/layouts/user-menu.tsx`
 *User profile avatar dropdown menu component matching sys0 visual header standards.*

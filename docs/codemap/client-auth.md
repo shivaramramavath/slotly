@@ -73,6 +73,13 @@
 - **Function** `registerLogoutCleanup(id: string, callback: CleanupCallback)`: `() => void` - Registers a cleanup callback to be executed when the user logs out or session expires.
 - **Function** `executeLogoutCleanup()`: `Promise<void>` - Executes all registered cleanup callbacks (stores, cache, sockets, timers).
 
+### `client/src/features/auth/services/session-validator.ts`
+*Service utility validating authentication sessions against the server session endpoint.*
+
+- **Function** `extractSessionId(cookieValue: string | null | undefined)`: `string | null` - Extracts a normalized session identifier from a raw cookie value or refresh token.
+- **Function** `validateSessionServer(cookieValue: string | null | undefined, baseUrl: string | undefined)`: `Promise<boolean>` - Validates a session against the Redis-backed session endpoint on the backend server.
+- **Function** `getLandingAuthRedirect(cookieValue: string | null | undefined, validator: (cookie: string | null | undefined) => Promise<boolean>)`: `Promise<string | null>` - Resolves destination redirect URL for root landing page requests.
+
 ### `client/src/features/auth/services/token-refresher.ts`
 *Service managing proactive access token refresh scheduling, tab visibility listeners, and online reconnection checks.*
 
