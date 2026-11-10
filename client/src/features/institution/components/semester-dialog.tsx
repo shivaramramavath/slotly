@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogHeader,
@@ -14,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { institutionApi } from '../services/institution.api';
+import { institutionKeys } from '../hooks/use-institution';
 import { toast } from '@/components/ui/toast';
 import type { SemesterDto, AcademicYearDto } from '@slotly/contracts';
 
@@ -23,7 +25,8 @@ interface SemesterDialogProps {
   semester?: SemesterDto | null;
   academicYears: AcademicYearDto[];
   defaultAcademicYearId?: string | null;
-  onSuccess: () => void;
+  institutionId?: string | undefined;
+  onSuccess?: () => void;
 }
 
 /** React component rendering semester dialog. */
@@ -33,6 +36,7 @@ export function SemesterDialog({
   semester,
   academicYears,
   defaultAcademicYearId,
+  institutionId,
   onSuccess,
 }: SemesterDialogProps) {
   const [academicYearId, setAcademicYearId] = useState(
@@ -46,6 +50,7 @@ export function SemesterDialog({
   const [loading, setLoading] = useState(false);
   const [prevSemester, setPrevSemester] = useState(semester);
   const [prevOpen, setPrevOpen] = useState(open);
+  const queryClient = useQueryClient();
 
   if (semester !== prevSemester || open !== prevOpen) {
     setPrevSemester(semester);
@@ -81,22 +86,28 @@ export function SemesterDialog({
           endDate,
           active,
         });
+        await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
         toast.success('Semester Updated', `Updated '${name}'.`);
       } else {
-        await institutionApi.createSemester({
-          academicYearId,
-          name: name.trim(),
-          number,
-          startDate,
-          endDate,
-          active,
-        });
+        await institutionApi.createSemester(
+          {
+            academicYearId,
+            name: name.trim(),
+            number,
+            startDate,
+            endDate,
+            active,
+            institutionId,
+          },
+          institutionId,
+        );
+        await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
         toast.success('Semester Created', `Created '${name}'.`);
       }
-      onSuccess();
+      onSuccess?.();
       onOpenChange(false);
     } catch {
-      // error handled by apiClient
+      // Keep dialog open on failure; error feedback handled by apiClient/toast
     } finally {
       setLoading(false);
     }

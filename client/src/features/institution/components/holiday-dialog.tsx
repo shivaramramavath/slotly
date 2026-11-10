@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogHeader,
@@ -13,18 +14,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { institutionApi } from '../services/institution.api';
+import { institutionKeys } from '../hooks/use-institution';
 import { toast } from '@/components/ui/toast';
 
 interface HolidayDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  institutionId?: string | undefined;
+  onSuccess?: () => void;
 }
 
 /** React component rendering holiday dialog. */
 export function HolidayDialog({
   open,
   onOpenChange,
+  institutionId,
   onSuccess,
 }: HolidayDialogProps) {
   const [name, setName] = useState('');
@@ -32,6 +36,15 @@ export function HolidayDialog({
   const [endDate, setEndDate] = useState('2026-11-28');
   const [type, setType] = useState<'holiday' | 'exam' | 'event' | 'break'>('holiday');
   const [loading, setLoading] = useState(false);
+  const [prevOpen, setPrevOpen] = useState(open);
+  const queryClient = useQueryClient();
+
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (!open) {
+      setName('');
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,18 +52,23 @@ export function HolidayDialog({
 
     setLoading(true);
     try {
-      await institutionApi.createHoliday({
-        name: name.trim(),
-        startDate,
-        endDate,
-        type,
-      });
+      await institutionApi.createHoliday(
+        {
+          name: name.trim(),
+          startDate,
+          endDate,
+          type,
+          institutionId,
+        },
+        institutionId,
+      );
+      await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
       toast.success('Calendar Event Added', `Added '${name}'.`);
       setName('');
-      onSuccess();
+      onSuccess?.();
       onOpenChange(false);
     } catch {
-      // error handled by apiClient
+      // Keep dialog open on failure; error feedback handled by apiClient/toast
     } finally {
       setLoading(false);
     }

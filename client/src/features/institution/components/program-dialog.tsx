@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogHeader,
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { institutionApi } from '../services/institution.api';
+import { institutionKeys } from '../hooks/use-institution';
 import { toast } from '@/components/ui/toast';
 import type { ProgramDto, DepartmentDto } from '@slotly/contracts';
 
@@ -22,7 +24,8 @@ interface ProgramDialogProps {
   program?: ProgramDto | null;
   departments: DepartmentDto[];
   defaultDepartmentId?: string | null;
-  onSuccess: () => void;
+  institutionId?: string | undefined;
+  onSuccess?: () => void;
 }
 
 /** React component rendering program dialog. */
@@ -32,6 +35,7 @@ export function ProgramDialog({
   program,
   departments,
   defaultDepartmentId,
+  institutionId,
   onSuccess,
 }: ProgramDialogProps) {
   const [departmentId, setDepartmentId] = useState(
@@ -42,9 +46,12 @@ export function ProgramDialog({
   const [durationYears, setDurationYears] = useState(program ? program.durationYears : 4);
   const [loading, setLoading] = useState(false);
   const [prevProg, setPrevProg] = useState(program);
+  const [prevOpen, setPrevOpen] = useState(open);
+  const queryClient = useQueryClient();
 
-  if (program !== prevProg) {
+  if (program !== prevProg || open !== prevOpen) {
     setPrevProg(program);
+    setPrevOpen(open);
     setDepartmentId(program ? program.departmentId : defaultDepartmentId || departments[0]?.id || '');
     setName(program ? program.name : '');
     setCode(program ? program.code : '');
@@ -63,20 +70,26 @@ export function ProgramDialog({
           code: code.toUpperCase().trim(),
           durationYears,
         });
+        await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
         toast.success('Program Updated', `Program '${code}' has been updated.`);
       } else {
-        await institutionApi.createProgram({
-          departmentId,
-          name: name.trim(),
-          code: code.toUpperCase().trim(),
-          durationYears,
-        });
+        await institutionApi.createProgram(
+          {
+            departmentId,
+            name: name.trim(),
+            code: code.toUpperCase().trim(),
+            durationYears,
+            institutionId,
+          },
+          institutionId,
+        );
+        await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
         toast.success('Program Created', `Program '${code}' has been created.`);
       }
-      onSuccess();
+      onSuccess?.();
       onOpenChange(false);
     } catch {
-      // error handled by apiClient
+      // Keep dialog open on failure; error feedback handled by apiClient/toast
     } finally {
       setLoading(false);
     }
