@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 /** Props for PageHeader component. */
 export interface PageHeaderProps {
-  title: string;
+  title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
   className?: string;
@@ -48,13 +48,10 @@ export function PageHeaderSkeleton({ className = '' }: { className?: string }) {
     <div className={`mb-10 space-y-3 ${className}`} aria-busy="true">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="space-y-3 w-full max-w-[660px]">
-          <Skeleton className="h-10 w-64 bg-[#181818] rounded-md motion-reduce:animate-none" />
-          <Skeleton className="h-5 w-full max-w-[480px] bg-[#181818] rounded-md motion-reduce:animate-none" />
+          <Skeleton className="h-10 w-64 rounded-md bg-[#232323]" />
+          <Skeleton className="h-4 w-96 rounded-md bg-[#232323]" />
         </div>
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-9 w-28 bg-[#181818] rounded-md motion-reduce:animate-none" />
-          <Skeleton className="h-9 w-28 bg-[#181818] rounded-md motion-reduce:animate-none" />
-        </div>
+        <Skeleton className="h-10 w-32 rounded-[12px] bg-[#232323]" />
       </div>
     </div>
   );

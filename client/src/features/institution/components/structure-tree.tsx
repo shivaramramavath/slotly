@@ -1,21 +1,12 @@
-// React component for structure-tree.
+// Hierarchical tree view for academic institution structure with clean vertical padding, indent connectors, and monochrome styling.
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import type {
-  DepartmentNode,
-  ProgramNode,
-  AcademicYearNode,
-  SemesterNode,
-  SectionNode,
-} from '@slotly/contracts';
 import {
   ChevronRight,
   ChevronDown,
-  Building,
+  Building2,
   GraduationCap,
   CalendarDays,
   Clock,
@@ -23,8 +14,17 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
+import { InstitutionEmptyState } from './institution-empty-state';
+import type {
+  DepartmentNode,
+  ProgramNode,
+  AcademicYearNode,
+  SemesterNode,
+  SectionNode,
+} from '@slotly/contracts';
 
-interface StructureTreeProps {
+/** Props for StructureTree component. */
+export interface StructureTreeProps {
   departments: DepartmentNode[];
   onAddDepartment: () => void;
   onAddProgram: (departmentId: string) => void;
@@ -38,7 +38,7 @@ interface StructureTreeProps {
   onDeleteSection: (id: string, name: string) => void;
 }
 
-/** React component rendering structure tree. */
+/** React component rendering polished academic hierarchy tree with collapse toggles and connectors. */
 export function StructureTree({
   departments,
   onAddDepartment,
@@ -52,64 +52,45 @@ export function StructureTree({
   onDeleteSemester,
   onDeleteSection,
 }: StructureTreeProps) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>({});
 
   const toggle = (id: string) => {
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-semibold text-[#FAFAFA]">Hierarchy Tree</h2>
-          <p className="text-xs font-mono text-[#8A8A8A]">
-            Department → Program → Academic Year → Semester → Section &amp; Batches
-          </p>
-        </div>
-        <Button variant="primary" size="sm" onClick={onAddDepartment}>
-          <Plus className="h-3.5 w-3.5 mr-1" />
-          Add Department
-        </Button>
-      </div>
+  if (departments.length === 0) {
+    return (
+      <InstitutionEmptyState
+        icon={Building2}
+        title="No departments yet"
+        description="Start building your institution hierarchy by creating the first academic department."
+        actionLabel="Create first department"
+        onAction={onAddDepartment}
+      />
+    );
+  }
 
-      {departments.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center space-y-3">
-            <Building className="h-10 w-10 text-[#8A8A8A] mx-auto" />
-            <h3 className="text-sm font-semibold text-[#FAFAFA]">No Departments Configured</h3>
-            <p className="text-xs font-mono text-[#8A8A8A] max-w-sm mx-auto">
-              Start building your institution hierarchy by creating the first academic department.
-            </p>
-            <Button variant="primary" size="sm" onClick={onAddDepartment}>
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              Create First Department
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {departments.map((dept) => (
-            <DepartmentItem
-              key={dept.id}
-              dept={dept}
-              isCollapsed={collapsed[dept.id] ?? false}
-              onToggle={() => toggle(dept.id)}
-              collapsedMap={collapsed}
-              onToggleChild={toggle}
-              onAddProgram={onAddProgram}
-              onAddYear={onAddYear}
-              onAddSemester={onAddSemester}
-              onAddSection={onAddSection}
-              onDeleteDepartment={onDeleteDepartment}
-              onDeleteProgram={onDeleteProgram}
-              onDeleteYear={onDeleteYear}
-              onDeleteSemester={onDeleteSemester}
-              onDeleteSection={onDeleteSection}
-            />
-          ))}
-        </div>
-      )}
+  return (
+    <div className="space-y-3">
+      {departments.map((dept) => (
+        <DepartmentItem
+          key={dept.id}
+          dept={dept}
+          isCollapsed={collapsed[dept.id] ?? false}
+          onToggle={() => toggle(dept.id)}
+          collapsedMap={collapsed}
+          onToggleChild={toggle}
+          onAddProgram={onAddProgram}
+          onAddYear={onAddYear}
+          onAddSemester={onAddSemester}
+          onAddSection={onAddSection}
+          onDeleteDepartment={onDeleteDepartment}
+          onDeleteProgram={onDeleteProgram}
+          onDeleteYear={onDeleteYear}
+          onDeleteSemester={onDeleteSemester}
+          onDeleteSection={onDeleteSection}
+        />
+      ))}
     </div>
   );
 }
@@ -149,29 +130,32 @@ function DepartmentItem({
   onDeleteSection: (id: string, name: string) => void;
 }) {
   return (
-    <div className="rounded-lg border border-[#232323] bg-[#111111] overflow-hidden">
-      <div className="p-3.5 flex items-center justify-between bg-[#161616]">
-        <div className="flex items-center gap-2.5">
+    <div className="rounded-[16px] border border-[#232323] bg-[#111111] overflow-hidden transition-colors">
+      <div className="py-3 px-4 flex items-center justify-between bg-[#141414] border-b border-[#232323]/50">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onToggle}
             className="p-1 rounded text-[#8A8A8A] hover:text-[#FAFAFA] cursor-pointer"
+            aria-label={isCollapsed ? `Expand ${dept.name}` : `Collapse ${dept.name}`}
           >
             {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
-          <Building className="h-4 w-4 text-[#FACC15]" />
+          <Building2 className="h-4 w-4 text-[#FAFAFA]" />
           <span className="text-sm font-semibold text-[#FAFAFA]">{dept.name}</span>
-          <Badge variant="yellow">{dept.code}</Badge>
+          <span className="text-xs font-mono px-2 py-0.5 rounded border border-[#232323] bg-[#181818] text-[#FAFAFA]">
+            {dept.code}
+          </span>
           <span className="text-xs font-mono text-[#8A8A8A]">
-            ({dept.programs.length} program{dept.programs.length === 1 ? '' : 's'})
+            {dept.programs.length} program{dept.programs.length === 1 ? '' : 's'}
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => onAddProgram(dept.id)}
-            className="text-xs py-1 h-7"
+            className="text-xs h-7 px-2.5 rounded-[8px] border-[#232323] hover:bg-[#1C1C1C]"
           >
             <Plus className="h-3 w-3 mr-1" />
             Program
@@ -180,7 +164,8 @@ function DepartmentItem({
             variant="ghost"
             size="sm"
             onClick={() => onDeleteDepartment(dept.id, dept.name)}
-            className="text-[#EF4444] hover:bg-[#EF4444]/10 h-7 w-7 p-0"
+            className="text-[#8A8A8A] hover:text-[#EF4444] hover:bg-[#EF4444]/10 h-7 w-7 p-0"
+            aria-label={`Delete ${dept.name}`}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
@@ -188,10 +173,10 @@ function DepartmentItem({
       </div>
 
       {!isCollapsed && (
-        <div className="p-3 pl-8 space-y-2 border-t border-[#232323]">
+        <div className="py-3 px-4 pl-8 space-y-2.5 border-l border-[#232323] ml-4 my-2">
           {dept.programs.length === 0 ? (
             <p className="text-xs font-mono text-[#8A8A8A] italic py-1">
-              No programs yet. Click &quot;+ Program&quot; above to create one.
+              No degree programs yet.
             </p>
           ) : (
             dept.programs.map((prog) => (
@@ -249,21 +234,24 @@ function ProgramItem({
   onDeleteSection: (id: string, name: string) => void;
 }) {
   return (
-    <div className="rounded border border-[#232323] bg-[#0E0E0E]">
-      <div className="p-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="rounded-[12px] border border-[#232323] bg-[#0E0E0E] overflow-hidden">
+      <div className="py-2.5 px-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={onToggle}
             className="p-0.5 rounded text-[#8A8A8A] hover:text-[#FAFAFA] cursor-pointer"
+            aria-label={isCollapsed ? `Expand ${prog.name}` : `Collapse ${prog.name}`}
           >
             {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
-          <GraduationCap className="h-3.5 w-3.5 text-[#3B82F6]" />
+          <GraduationCap className="h-3.5 w-3.5 text-[#FAFAFA]" />
           <span className="text-xs font-medium text-[#FAFAFA]">{prog.name}</span>
-          <Badge variant="neutral">{prog.code}</Badge>
+          <span className="text-[11px] font-mono px-1.5 py-0.5 rounded border border-[#232323] bg-[#141414] text-[#8A8A8A]">
+            {prog.code}
+          </span>
           <span className="text-[11px] font-mono text-[#8A8A8A]">
-            {prog.durationYears} yrs • ({prog.academicYears.length} year{prog.academicYears.length === 1 ? '' : 's'})
+            {prog.durationYears} yrs • {prog.academicYears.length} cohort(s)
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -271,7 +259,7 @@ function ProgramItem({
             variant="outline"
             size="sm"
             onClick={() => onAddYear(prog.id)}
-            className="text-[11px] py-0.5 h-6 px-2"
+            className="text-[11px] py-0.5 h-6 px-2 rounded-[6px] border-[#232323]"
           >
             <Plus className="h-2.5 w-2.5 mr-0.5" />
             Year
@@ -280,7 +268,8 @@ function ProgramItem({
             variant="ghost"
             size="sm"
             onClick={() => onDeleteProgram(prog.id, prog.name)}
-            className="text-[#EF4444] hover:bg-[#EF4444]/10 h-6 w-6 p-0"
+            className="text-[#8A8A8A] hover:text-[#EF4444] hover:bg-[#EF4444]/10 h-6 w-6 p-0"
+            aria-label={`Delete ${prog.name}`}
           >
             <Trash2 className="h-3 w-3" />
           </Button>
@@ -288,7 +277,7 @@ function ProgramItem({
       </div>
 
       {!isCollapsed && (
-        <div className="p-2.5 pl-6 space-y-2 border-t border-[#232323]">
+        <div className="py-2 px-3 pl-6 space-y-2 border-l border-[#232323] ml-3 my-1.5">
           {prog.academicYears.length === 0 ? (
             <p className="text-[11px] font-mono text-[#8A8A8A] italic">
               No academic years configured.
@@ -343,13 +332,14 @@ function AcademicYearItem({
   onDeleteSection: (id: string, name: string) => void;
 }) {
   return (
-    <div className="rounded border border-[#1E1E1E] bg-[#0A0A0A]">
-      <div className="p-2 flex items-center justify-between">
+    <div className="rounded-[8px] border border-[#1E1E1E] bg-[#0A0A0A] overflow-hidden">
+      <div className="py-2 px-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onToggle}
             className="p-0.5 rounded text-[#8A8A8A] hover:text-[#FAFAFA] cursor-pointer"
+            aria-label={isCollapsed ? `Expand ${ay.label}` : `Collapse ${ay.label}`}
           >
             {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
@@ -364,7 +354,7 @@ function AcademicYearItem({
             variant="outline"
             size="sm"
             onClick={() => onAddSemester(ay.id)}
-            className="text-[10px] py-0.5 h-5 px-1.5"
+            className="text-[10px] py-0.5 h-5 px-1.5 rounded border-[#232323]"
           >
             <Plus className="h-2.5 w-2.5 mr-0.5" />
             Semester
@@ -373,7 +363,8 @@ function AcademicYearItem({
             variant="ghost"
             size="sm"
             onClick={() => onDeleteYear(ay.id, ay.label)}
-            className="text-[#EF4444] hover:bg-[#EF4444]/10 h-5 w-5 p-0"
+            className="text-[#8A8A8A] hover:text-[#EF4444] hover:bg-[#EF4444]/10 h-5 w-5 p-0"
+            aria-label={`Delete ${ay.label}`}
           >
             <Trash2 className="h-2.5 w-2.5" />
           </Button>
@@ -381,7 +372,7 @@ function AcademicYearItem({
       </div>
 
       {!isCollapsed && (
-        <div className="p-2 pl-5 space-y-1.5 border-t border-[#1E1E1E]">
+        <div className="py-1.5 px-2.5 pl-5 space-y-1.5 border-l border-[#1E1E1E] ml-2.5 my-1">
           {ay.semesters.length === 0 ? (
             <p className="text-[11px] font-mono text-[#8A8A8A] italic">
               No semesters configured.
@@ -424,33 +415,38 @@ function SemesterItem({
   onDeleteSection: (id: string, name: string) => void;
 }) {
   return (
-    <div className="rounded border border-[#232323] bg-[#111111]">
-      <div className="p-2 flex items-center justify-between">
+    <div className="rounded-[8px] border border-[#232323] bg-[#111111] overflow-hidden">
+      <div className="py-2 px-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onToggle}
             className="p-0.5 rounded text-[#8A8A8A] hover:text-[#FAFAFA] cursor-pointer"
+            aria-label={isCollapsed ? `Expand ${sem.name}` : `Collapse ${sem.name}`}
           >
             {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
-          <Clock className="h-3.5 w-3.5 text-[#22C55E]" />
+          <Clock className="h-3.5 w-3.5 text-[#8A8A8A]" />
           <span className="text-xs font-medium text-[#FAFAFA]">{sem.name}</span>
           <span className="text-[11px] font-mono text-[#8A8A8A]">
             #{sem.number} • {sem.startDate} to {sem.endDate}
           </span>
-          {sem.active ? (
-            <Badge variant="green">Active</Badge>
-          ) : (
-            <Badge variant="neutral">Inactive</Badge>
-          )}
+          <span
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+              sem.active
+                ? 'border-[#22C55E]/40 bg-[#22C55E]/10 text-[#22C55E]'
+                : 'border-[#232323] bg-[#161616] text-[#8A8A8A]'
+            }`}
+          >
+            {sem.active ? 'Active' : 'Inactive'}
+          </span>
         </div>
         <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
             size="sm"
             onClick={() => onAddSection(sem.id)}
-            className="text-[10px] py-0.5 h-5 px-1.5"
+            className="text-[10px] py-0.5 h-5 px-1.5 rounded border-[#232323]"
           >
             <Plus className="h-2.5 w-2.5 mr-0.5" />
             Section
@@ -459,7 +455,8 @@ function SemesterItem({
             variant="ghost"
             size="sm"
             onClick={() => onDeleteSemester(sem.id, sem.name)}
-            className="text-[#EF4444] hover:bg-[#EF4444]/10 h-5 w-5 p-0"
+            className="text-[#8A8A8A] hover:text-[#EF4444] hover:bg-[#EF4444]/10 h-5 w-5 p-0"
+            aria-label={`Delete ${sem.name}`}
           >
             <Trash2 className="h-2.5 w-2.5" />
           </Button>
@@ -467,7 +464,7 @@ function SemesterItem({
       </div>
 
       {!isCollapsed && (
-        <div className="p-2 pl-6 space-y-1.5 border-t border-[#232323]">
+        <div className="py-2 px-2.5 pl-6 space-y-1.5 border-l border-[#232323] ml-2.5 my-1">
           {sem.sections.length === 0 ? (
             <p className="text-[11px] font-mono text-[#8A8A8A] italic">
               No sections created.
@@ -500,12 +497,14 @@ function SectionItem({
   onDeleteSection: (id: string, name: string) => void;
 }) {
   return (
-    <div className="p-2 rounded border border-[#232323] bg-[#0A0A0A] flex items-center justify-between">
+    <div className="p-2 rounded-[8px] border border-[#232323] bg-[#0A0A0A] flex items-center justify-between">
       <div>
         <div className="flex items-center gap-2">
-          <Users className="h-3.5 w-3.5 text-[#FACC15]" />
+          <Users className="h-3.5 w-3.5 text-[#8A8A8A]" />
           <span className="text-xs font-semibold text-[#FAFAFA]">{sec.name}</span>
-          <Badge variant="neutral">{sec.strength} students</Badge>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-[#232323] bg-[#161616] text-[#FAFAFA]">
+            {sec.strength} students
+          </span>
         </div>
         {sec.batches.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">
@@ -524,7 +523,8 @@ function SectionItem({
         variant="ghost"
         size="sm"
         onClick={() => onDeleteSection(sec.id, sec.name)}
-        className="text-[#EF4444] hover:bg-[#EF4444]/10 h-6 w-6 p-0"
+        className="text-[#8A8A8A] hover:text-[#EF4444] hover:bg-[#EF4444]/10 h-6 w-6 p-0"
+        aria-label={`Delete ${sec.name}`}
       >
         <Trash2 className="h-3 w-3" />
       </Button>

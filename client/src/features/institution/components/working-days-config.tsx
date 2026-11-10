@@ -1,9 +1,8 @@
-// React component for working-days-config.
+// Working days and timing matrix configuration form with monochrome pill selection and sys0 styling.
 'use client';
 
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { institutionApi } from '../services/institution.api';
@@ -11,7 +10,8 @@ import { institutionKeys } from '../hooks/use-institution';
 import { toast } from '@/components/ui/toast';
 import type { InstitutionDto, PeriodConfig } from '@slotly/contracts';
 
-interface WorkingDaysConfigProps {
+/** Props for WorkingDaysConfig component. */
+export interface WorkingDaysConfigProps {
   institution: InstitutionDto;
   onSuccess: () => void;
 }
@@ -26,7 +26,7 @@ const DAYS_OF_WEEK = [
   { index: 0, label: 'Sun', full: 'Sunday' },
 ];
 
-/** React component rendering working days config. */
+/** React component rendering working days and period timing configuration form. */
 export function WorkingDaysConfig({ institution, onSuccess }: WorkingDaysConfigProps) {
   const [workingDays, setWorkingDays] = useState<number[]>(institution.workingDays || [1, 2, 3, 4, 5]);
   const [startTime, setStartTime] = useState(institution.defaultPeriodConfig?.startTime || '09:00');
@@ -103,146 +103,143 @@ export function WorkingDaysConfig({ institution, onSuccess }: WorkingDaysConfigP
   return (
     <form onSubmit={handleSave} className="space-y-6 max-w-3xl">
       {/* Working Days Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Institutional Working Days</CardTitle>
-          <CardDescription>
+      <div className="rounded-[16px] border border-[#232323] bg-[#111111] p-6 space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-[#FAFAFA]">Institutional Working Days</h3>
+          <p className="text-xs font-mono text-[#8A8A8A] mt-1">
             Select days of the week when classes, labs, and faculty teaching sessions take place.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {DAYS_OF_WEEK.map((day) => {
-              const active = workingDays.includes(day.index);
-              return (
-                <button
-                  type="button"
-                  key={day.index}
-                  onClick={() => toggleDay(day.index)}
-                  className={`px-4 py-2.5 rounded border text-xs font-mono transition-colors cursor-pointer ${
-                    active
-                      ? 'border-[#FACC15] bg-[#FACC15] text-black font-bold'
-                      : 'border-[#232323] bg-[#111111] text-[#8A8A8A] hover:text-[#FAFAFA]'
-                  }`}
-                >
-                  {day.full}
-                </button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 pt-2">
+          {DAYS_OF_WEEK.map((day) => {
+            const active = workingDays.includes(day.index);
+            return (
+              <button
+                type="button"
+                key={day.index}
+                onClick={() => toggleDay(day.index)}
+                className={`px-4 py-2 rounded-[10px] border text-xs font-mono transition-colors cursor-pointer ${
+                  active
+                    ? 'border-[#FAFAFA] bg-[#1C1C1C] text-[#FAFAFA] font-medium'
+                    : 'border-[#232323] bg-[#111111] text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#161616]'
+                }`}
+              >
+                {day.full}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Period Schedule Configuration Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Default Period Matrix</CardTitle>
-          <CardDescription>
+      <div className="rounded-[16px] border border-[#232323] bg-[#111111] p-6 space-y-5">
+        <div>
+          <h3 className="text-base font-semibold text-[#FAFAFA]">Default Period Matrix</h3>
+          <p className="text-xs font-mono text-[#8A8A8A] mt-1">
             Define instructional session lengths, start times, and daily break offsets.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-mono uppercase text-[#8A8A8A]">
+              Start Time (HH:MM)
+            </label>
+            <Input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-mono uppercase text-[#8A8A8A]">
+              Period Length (mins)
+            </label>
+            <Input
+              type="number"
+              min={30}
+              max={120}
+              value={periodDuration}
+              onChange={(e) => setPeriodDuration(parseInt(e.target.value, 10) || 50)}
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-mono uppercase text-[#8A8A8A]">
+              Periods Per Day
+            </label>
+            <Input
+              type="number"
+              min={1}
+              max={12}
+              value={periodsPerDay}
+              onChange={(e) => setPeriodsPerDay(parseInt(e.target.value, 10) || 7)}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-[#232323]">
+          <span className="text-xs font-mono uppercase text-[#FAFAFA] font-medium block mb-3">
+            Standard Daily Break
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-mono uppercase text-[#8A8A8A]">
-                Start Time (HH:MM)
+                Break Label
               </label>
               <Input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                value={breakName}
+                onChange={(e) => setBreakName(e.target.value)}
+                placeholder="Lunch Break"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-mono uppercase text-[#8A8A8A]">
-                Period Length (mins)
-              </label>
-              <Input
-                type="number"
-                min={30}
-                max={120}
-                value={periodDuration}
-                onChange={(e) => setPeriodDuration(parseInt(e.target.value, 10) || 50)}
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-mono uppercase text-[#8A8A8A]">
-                Periods Per Day
+                Occurs After Period #
               </label>
               <Input
                 type="number"
                 min={1}
-                max={12}
-                value={periodsPerDay}
-                onChange={(e) => setPeriodsPerDay(parseInt(e.target.value, 10) || 7)}
+                max={periodsPerDay - 1}
+                value={afterPeriod}
+                onChange={(e) => setAfterPeriod(parseInt(e.target.value, 10) || 4)}
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-mono uppercase text-[#8A8A8A]">
+                Duration (mins)
+              </label>
+              <Input
+                type="number"
+                min={15}
+                max={120}
+                value={breakDuration}
+                onChange={(e) => setBreakDuration(parseInt(e.target.value, 10) || 45)}
                 required
               />
             </div>
           </div>
+        </div>
 
-          <div className="pt-4 border-t border-[#232323]">
-            <span className="text-xs font-mono uppercase text-[#FAFAFA] font-medium block mb-3">
-              Standard Daily Break
-            </span>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono uppercase text-[#8A8A8A]">
-                  Break Label
-                </label>
-                <Input
-                  value={breakName}
-                  onChange={(e) => setBreakName(e.target.value)}
-                  placeholder="Lunch Break"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono uppercase text-[#8A8A8A]">
-                  Occurs After Period #
-                </label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={periodsPerDay - 1}
-                  value={afterPeriod}
-                  onChange={(e) => setAfterPeriod(parseInt(e.target.value, 10) || 4)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono uppercase text-[#8A8A8A]">
-                  Duration (mins)
-                </label>
-                <Input
-                  type="number"
-                  min={15}
-                  max={120}
-                  value={breakDuration}
-                  onChange={(e) => setBreakDuration(parseInt(e.target.value, 10) || 45)}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-4 flex justify-end">
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={loading}
-              className="font-mono uppercase tracking-wider"
-            >
-              {loading ? 'Saving...' : 'Save Configuration'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="pt-4 flex justify-end">
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={loading}
+            className="h-10 px-5 rounded-[12px] font-medium"
+          >
+            {loading ? 'Saving...' : 'Save Configuration'}
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }
