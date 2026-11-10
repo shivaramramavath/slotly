@@ -183,7 +183,7 @@
 | Module Map | Area | Line count |
 | :--- | :--- | :--- |
 | [contracts.md](docs/codemap/contracts.md) | Shared Contracts | 545 lines |
-| [server-common.md](docs/codemap/server-common.md) | Server Common & Infrastructure | 439 lines |
+| [server-common.md](docs/codemap/server-common.md) | Server Common & Infrastructure | 449 lines |
 | [server-auth.md](docs/codemap/server-auth.md) | Server Auth Module | 218 lines |
 | [server-blueprint.md](docs/codemap/server-blueprint.md) | Server Blueprint Module | 252 lines |
 | [server-builds.md](docs/codemap/server-builds.md) | Server Builds Module | 62 lines |
@@ -196,6 +196,6 @@
 | [client-builds.md](docs/codemap/client-builds.md) | Client Builds Feature | 84 lines |
 | [client-institution.md](docs/codemap/client-institution.md) | Client Institution Feature | 175 lines |
 | [client-library.md](docs/codemap/client-library.md) | Client Library Feature | 176 lines |
-| [client-projects.md](docs/codemap/client-projects.md) | Client Projects Feature | 34 lines |
+| [client-projects.md](docs/codemap/client-projects.md) | Client Projects Feature | 146 lines |
 | [client-shared.md](docs/codemap/client-shared.md) | Client Shared Components & Lib | 318 lines |
 <!-- GENERATED:END -->

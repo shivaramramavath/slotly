@@ -2359,4 +2359,71 @@ Merged via `ux/04-blueprint-canvas-style`, tag `ux-04-blueprint-canvas-style-mer
 
 Merged via `ux/08-blueprint-palette`, tag `ux-08-blueprint-palette-merged`.
 
+---
+
+## Phase UX-09: Projects Sections, Layouts & Per-User Pinning
+
+### What Was Built
+
+1. **Card Bug Fixes (`project-card.tsx`):**
+   - **Height Equality & Vertical Alignment:** Eliminated content jumping across grid cards. Container is `h-full flex flex-col justify-between items-stretch` with `@container`. Fixed-height footer (`h-9 min-h-[36px] mt-auto pt-3 border-t border-[#181818]`). Status indicator label is single-line with `whitespace-nowrap truncate` and a full `title` tooltip. The top row has a fixed 32px height, and the middle content has a consistent top margin so titles, subtitles, and descriptions align at identical Y coordinates across cards in a row.
+   - **Footer Label vs Meta Collision:** Preserved `Rev X` on narrow card viewports and truncated/hid the date part (`hidden @[260px]:inline truncate max-w-[110px]`) via container query and flex truncation.
+   - **Archived Card Styling:** Archived projects render at 70% opacity with AA contrast maintained (`text-[#FAFAFA]`). The card menu presents "Restore" with an undo icon instead of "Archive".
+   - **Compact Density Variant:** Added `density="compact"` for Compact view: 16px radius, 16px padding, min height 140px, 32px glyph, 2-line title clamp with `title` tooltip displaying revision and opened date, hidden subtitle and description, and compact status indicator footer.
+
+2. **Per-User Pinning Backend & Contracts:**
+   - **Contracts (`@slotly/contracts`):** Extended `ProjectDtoSchema` with `pinned?: boolean` and `pinnedAt?: string | null`. Documented `PUT /projects/:projectId/pin`, `DELETE /projects/:projectId/pin`, `POST /projects/:projectId/archive`, and `POST /projects/:projectId/restore` in `docs/ROUTES.md`.
+   - **Database (`ProjectPin`):** Created `project-pin.schema.ts` collection `project_pins` with `userId` and `projectId` ObjectIds, `pinnedAt` date, compound unique index on `{ userId: 1, projectId: 1 }`, and index on `{ userId: 1, pinnedAt: -1 }`.
+   - **Repository & Caching:** Added `pinProject`, `unpinProject`, `getUserPins`, and `countUserPins` to `MongoProjectRepository` and `CachedProjectRepository` with cache tag invalidation `user:${userId}:pins`.
+   - **Service & Controller:** Updated `ProjectsService.findProjects` and `findById` to join/map pinned status for the requesting user. Implemented `pinProject` (enforcing max 12 pins limit with `BadRequestException`) and `unpinProject`. Added controller endpoints `PUT /projects/:projectId/pin` and `DELETE /projects/:projectId/pin`, plus `POST /projects/:projectId/restore`.
+
+3. **Section Slot Architecture (`project-sections.registry.ts` & `project-selectors.ts`):**
+   - Implemented extensible `ProjectSectionConfig` slot registry:
+     - **Pinned:** Non-archived pinned projects, sorted by `pinnedAt` desc, max 12, collapsible, hidden when empty.
+     - **Recent:** Projects opened in last 14 days, non-archived, not pinned, sorted by `lastOpenedAt` desc, max 6, non-collapsible, hidden when empty.
+     - **All projects:** All active non-archived projects, non-collapsible, always displayed.
+     - **Archived:** Archived projects only, collapsible (default collapsed), displays count in header, hidden when empty.
+   - **Flat Results Selector:** Pure function `selectFlatResults` that activates when search or status filter is non-empty, rendering a single unified "Results" section in the chosen layout.
+
+4. **Layout Modes & View Menu (`project-collection.tsx`, `project-row.tsx`, `view-menu.tsx`):**
+   - **Grid:** 3 columns at $\ge 1024$px, 2 at 640–1023px, 1 below. Gap 16px. Cards rendered at normal density with equal heights.
+   - **List:** Full-width 72px rows (`ProjectRow`), 16px radius, border `#232323`, 32px glyph, title + subtitle, status indicator, revision/opened date (hidden $<768$px), pin button, and dropdown menu. Whole row is accessible with stretched link overlay.
+   - **Compact:** 4 columns at $\ge 1280$px, 3 at 1024px, 2 at 640px, 1 below. Gap 12px, 16px radius, 16px padding, min height 140px.
+   - **View Menu:** 40px outline button in toolbar row with `LayoutGrid` icon and label "View". Popover includes layout radio group (Grid, List, Compact), section visibility checkboxes (Pinned, Recent, Archived with helpful hints), and a "Reset to default" button.
+   - **Persistence & URL Sync:** Layout mode syncs with URL query parameter `?view=grid|list|compact` (URL wins, localStorage fallback, default 'grid'). Section visibility and collapse states persist in `localStorage` under `slotly:projects:view-settings`.
+
+5. **Page Integration & Optimistic Updates (`/projects/page.tsx`):**
+   - Integrated `ViewMenu`, `ProjectsSections`, and `ProjectCollectionSkeleton`.
+   - Optimistic pinning: toggles pin instantly in React Query cache, enforces 12-pin limit with a warning toast, and rolls back on server error.
+   - Archived project restoration via `restoreProject` mutation with confirmation toast.
+
+6. **Automated Tests:**
+   - Server: Unit tests in `projects.service.spec.ts` verifying pin retrieval, 12-pin limit enforcement, pin/unpin operations, and Zod contract validation.
+   - Client: Unit tests in `project-sections.spec.ts` verifying registry definitions, pinned limit, recent 14-day calculation, exclusions, flat results filtering, and status filtering. Unit tests in `project-card.spec.ts` for date formatting and card utilities.
+   - Monorepo: All 114 client tests and 425 server tests passing.
+
+### Decisions Made
+
+- **Container Query for Metadata Cutoff:** Used `@container` on card root to gracefully truncate and hide the opened date on narrow cards without layout shifting or text collisions.
+- **Lazy State Hydration:** Initialized view settings from `localStorage` and URL parameters using lazy state initializers (`useState(() => ...)`) to eliminate synchronous `setState` in effects and ensure instant hydration without cascading re-renders.
+- **Config-Driven Section Slots:** Modeled all project sections as self-contained slots conforming to `ProjectSectionConfig`. Adding new section rules requires only adding an entry to `PROJECT_SECTIONS`.
+
+### Manual Test Checklist
+
+- [x] Open `/projects` — projects load into organized sections: Pinned (if any), Recent (if opened within 14 days), All projects, and Archived (if any).
+- [x] Observe card heights — cards in the same row have identical heights, footers are aligned at bottom, and status label never wraps to two lines.
+- [x] Click the pin icon on an unpinned project — pin immediately fills with white at 70%, project appears in "Pinned" section optimistically, toast appears if 12 pin limit reached.
+- [x] Click the pin icon on a pinned project — project is unpinned optimistically.
+- [x] Click "View" button in toolbar — popover opens showing Layout (Grid, List, Compact) and Sections toggles.
+- [x] Select "List" layout — URL updates to `/projects?view=list`, projects render as 72px rows.
+- [x] Select "Compact" layout — URL updates to `/projects?view=compact`, projects render as 4-column compact cards with 2-line clamped titles and tooltip meta.
+- [x] Select "Grid" layout — returns to standard grid view.
+- [x] Toggle off "Recent" in View menu — Recent section disappears; preference is stored in localStorage.
+- [x] Click "Reset to default" in View menu — resets layout to Grid, enables all sections.
+- [x] Type in search box or select a status filter — sections collapse into a single flat "Results (N)" list. Clear search — returns to organized sections.
+- [x] Open menu on an archived card — displays "Restore" option; clicking it restores the project to draft and moves it out of Archived.
+
+Merged via `ux/09-projects-sections`, tag `ux-09-projects-sections-merged`.
+
+
 
