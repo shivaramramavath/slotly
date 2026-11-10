@@ -106,4 +106,66 @@ describe('ProjectsService - blueprintProgress calculation', () => {
     const parsed = ProjectDtoSchema.parse(result.items[0]);
     expect(parsed.blueprintProgress).toBeNull();
   });
+
+  it('populates pinned status and pinnedAt when user has pinned the project', async () => {
+    (mockCache.get as jest.Mock).mockResolvedValue(null);
+    mockProjectRepo.getUserPins = jest
+      .fn()
+      .mockResolvedValue([
+        { projectId: 'proj_123', pinnedAt: new Date('2026-11-10T10:00:00Z') },
+      ]);
+
+    const result = await service.findProjects(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      1,
+      20,
+      'user_1',
+    );
+    expect(result.items[0]?.pinned).toBe(true);
+    expect(result.items[0]?.pinnedAt).toBe('2026-11-10T10:00:00.000Z');
+
+    const parsed = ProjectDtoSchema.parse(result.items[0]);
+    expect(parsed.pinned).toBe(true);
+    expect(parsed.pinnedAt).toBe('2026-11-10T10:00:00.000Z');
+  });
+
+  it('enforces 12 pin limit per user in pinProject', async () => {
+    mockProjectRepo.findById = jest.fn().mockResolvedValue(sampleProject);
+    const twelvePins = Array.from({ length: 12 }, (_, i) => ({
+      projectId: `proj_${i}`,
+      pinnedAt: new Date(),
+    }));
+    mockProjectRepo.getUserPins = jest.fn().mockResolvedValue(twelvePins);
+
+    await expect(service.pinProject('proj_new', 'user_1')).rejects.toThrow(
+      'Maximum limit of 12 pinned projects reached',
+    );
+  });
+
+  it('pins project successfully when under limit', async () => {
+    mockProjectRepo.findById = jest.fn().mockResolvedValue(sampleProject);
+    mockProjectRepo.getUserPins = jest.fn().mockResolvedValue([]);
+    mockProjectRepo.pinProject = jest.fn().mockResolvedValue(undefined);
+
+    const result = await service.pinProject('proj_123', 'user_1');
+    expect(result).toEqual({ success: true, pinned: true });
+    expect(mockProjectRepo.pinProject).toHaveBeenCalledWith(
+      'user_1',
+      'proj_123',
+    );
+  });
+
+  it('unpins project successfully', async () => {
+    mockProjectRepo.unpinProject = jest.fn().mockResolvedValue(undefined);
+
+    const result = await service.unpinProject('proj_123', 'user_1');
+    expect(result).toEqual({ success: true, pinned: false });
+    expect(mockProjectRepo.unpinProject).toHaveBeenCalledWith(
+      'user_1',
+      'proj_123',
+    );
+  });
 });
