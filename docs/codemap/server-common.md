@@ -244,6 +244,12 @@
 - **Type** `AuthConfig` - Inferred TypeScript type for auth namespace configuration.
 - **Const** `authConfig`: `(() => { nodeEnv: "development" | "production" ...` - Authentication namespace configuration factory.
 
+### `server/src/config/blueprint.config.ts`
+*Configuration factory for Blueprint v2 feature flags and behavior.*
+
+- **Type** `BlueprintConfig` - Inferred TypeScript type for blueprint namespace configuration.
+- **Const** `blueprintConfig`: `(() => { v2Enabled: boolean; }) & import("E:/Sh...` - Blueprint namespace configuration factory.
+
 ### `server/src/config/cache.config.ts`
 *Configuration factory for cache TTLs and eviction policies.*
 

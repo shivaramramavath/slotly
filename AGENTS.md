@@ -60,8 +60,8 @@ DESIGN RULES
   muted text color.
 - Monospace for labels and numbers, clean sans-serif for body text. Thin 1px
   borders, no heavy shadows, no gradients (except a faint grid on the landing page).
-- Graph layout defaults to VERTICAL (dagre rankdir "TB", handles top/bottom) and
-  can be switched to LR, BT, RL by the user.
+- Graph layout is strictly VERTICAL (dagre rankdir "TB", handles top/bottom).
+  The layout menu provides 3 algorithms: hierarchical, compact, and department-based.
 
 SOLID (mandatory)
 - S: one reason to change per class. Controllers/gateways do I/O only, services

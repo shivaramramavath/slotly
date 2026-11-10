@@ -7,11 +7,13 @@ import {
   redisConfig,
   jwtConfig,
   emailConfig,
+  blueprintConfig,
   AppConfig,
   DatabaseConfig,
   RedisConfig,
   JwtConfig,
   EmailConfig,
+  BlueprintConfig,
   validateEnv,
 } from '../index';
 
@@ -26,6 +28,7 @@ describe('Config Bootstrap Integration', () => {
     const redisCfg = moduleRef.get<RedisConfig>(redisConfig.KEY);
     const jwtCfg = moduleRef.get<JwtConfig>(jwtConfig.KEY);
     const emailCfg = moduleRef.get<EmailConfig>(emailConfig.KEY);
+    const bpCfg = moduleRef.get<BlueprintConfig>(blueprintConfig.KEY);
 
     expect(appCfg).toBeDefined();
     expect(typeof appCfg.port).toBe('number');
@@ -37,6 +40,8 @@ describe('Config Bootstrap Integration', () => {
     expect(jwtCfg.access.expiresIn).toBeDefined();
     expect(emailCfg).toBeDefined();
     expect(['brevo', 'log']).toContain(emailCfg.driver);
+    expect(bpCfg).toBeDefined();
+    expect(typeof bpCfg.v2Enabled).toBe('boolean');
   });
 
   it('fails fast on boot when legacy environment variables are passed', () => {

@@ -263,50 +263,48 @@ The Blueprint is a visual workspace for configuring the academic structure, reso
 
 ### 6.1 Node types (P0)
 
-- Institution, Department, Program, Academic Year, Semester, Section, Batch.
-- Subject assignment (theory, laboratory, tutorial, elective) under a Section.
-- Elective group under a Semester.
-- Faculty and Room resource nodes (independent, referenced from the Library).
+- Blueprint v2 standardizes on exactly 7 hierarchy node types: Institution, Department, Program, Academic Year, Semester, Section, Batch.
+- Faculty, subjects, and rooms are managed as per-node Resource Pools referencing Library items, not standalone canvas nodes.
+- Subject assignments (theory, laboratory, tutorial, elective) live directly in Section and Batch configurations (`data.assignments`).
 - Student strength configuration on Section and Batch.
 - Multiple departments in one graph; multiple sections under one semester.
-- Academic hierarchy visualization with node status indicators.
+- Academic hierarchy visualization with node status indicators (incomplete, complete, blocked).
 
 ### 6.2 Completion gating (P0)
 
 Full rules are in `BLUEPRINT_RULES.md`. Summary:
 
-- Every node has a computed status: empty, incomplete, complete, or blocked.
-- A child can be created only under a complete parent (palette drop, add-child button, context menu, paste, duplicate, template apply, import, AI operations). Exceptions: the Institution root and independent resource nodes.
+- Every node has a computed status: incomplete, complete, or blocked.
+- A child can be created only under a complete parent (palette drop, add-child button, context menu, paste, duplicate, template apply, import, AI operations). Exception: the Institution root.
 - A connection is allowed only when the type pair is allowed and both ends are complete.
 - If a parent becomes incomplete, its descendants become blocked (greyed, excluded from builds), not deleted.
 - Deleting a node shows an impact preview and is one undoable action.
 - Build is available only when every in-scope node is complete and there are no errors.
 - Bulk operations apply in topological order; failures skip their dependents and report reasons.
 - Server enforces everything with stable reason codes and a fix hint; the client disables palette items, add-child handles and connections with the reason.
-- Constraints set on higher levels are inherited by descendants and can be overridden lower down.
+- Constraints and resource pools set on higher levels are inherited by descendants and can be overridden lower down.
 - Guided mode: a "Next step" button jumps to the first incomplete node and the first missing field.
 
-### 6.3 Resource nodes (P1)
+### 6.3 Resource Pools and Section Assignments (Blueprint v2)
 
-**Faculty node**
+**Resource Pools**
 
-- Profile summary, availability shown as a compact weekly grid inside the node, workload display, maximum and minimum hours, preferred and unavailable periods.
-- Faculty-subject and faculty-department relationships; multiple subject assignments.
-- Qualification validation, conflict highlighting, assignment recommendations.
+- Per-node resource pools (`data.pool`) hold references to Library items (faculty, subjects, rooms).
+- Inherited down the hierarchy: `effectivePool(node) = effectivePool(parent) + own additions - own exclusions`.
+- Items marked `required: true` by an ancestor cannot be excluded by descendants (`POOL_ITEM_REQUIRED`).
+- Items marked `pinned: true` survive on descendants even if an ancestor removes them.
+- Read-only Library view inside inspector cards with direct "Open in Library" navigation.
 
-**Subject assignment**
+**Section Assignments**
 
-- Subject, type, weekly lecture and lab hours, consecutive periods, faculty, room type requirement, enrollment, preferred days, dependency, group configuration.
-
-**Room node**
-
-- Classroom, laboratory, seminar hall; capacity, availability, type, equipment requirements, department ownership.
-- Room-subject compatibility, utilization indicator, conflict detection, shared-room scheduling.
+- Section and Batch nodes configure subject assignments directly in their inspector drawer (`data.assignments`).
+- Each assignment defines subject, faculty, room, periods per week, and lab configuration.
+- Auto-fill modes (`off`, `same_department`, `allow_other_departments`) enable the solver to assign faculty/rooms at build time.
 
 ### 6.4 Canvas (P0 unless marked)
 
 - Infinite canvas, zoom in and out, zoom to fit, pan, mini map, grid background, snap to grid, fullscreen.
-- Vertical layout by default; switchable direction.
+- Strictly vertical layout (no LR, BT, RL direction toggling).
 - Multi-select, box selection, select all, delete, undo and redo.
 - Copy, paste and duplicate; pasting a subtree needs a complete target parent. [P1]
 - Canvas lock and unlock, lock individual nodes, hide and show nodes, focus mode for the selected node's neighbourhood. [P1]
@@ -347,8 +345,7 @@ Examples: Faculty to Subject is valid; Section to Subject is valid; Room to Facu
 
 ### 6.8 Auto arrange and layout (P1)
 
-- Hierarchical (Dagre), compact, department-based and academic-hierarchy layouts; grouping of faculty, subjects and rooms.
-- Direction: top to bottom (default), left to right, bottom to top, right to left.
+- Vertical layout only: hierarchical (Dagre TB), compact, and department-based. No direction switching (no LR, BT, RL).
 - Align and distribute nodes, arrange selection or whole graph, preserve manual positions, minimize edge crossings, avoid overlap, automatic spacing and edge routing, layout preview and reset.
 - ELK can replace Dagre later if routing needs outgrow it.
 

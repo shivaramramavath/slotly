@@ -93,6 +93,11 @@ GET /projects/:projectId/blueprint/export?format=json|svg|png
 POST /projects/:projectId/blueprint/import
 GET /projects/:projectId/blueprint/nodes/:nodeId/comments
 POST /projects/:projectId/blueprint/nodes/:nodeId/comments
+GET /projects/:projectId/blueprint/nodes/:nodeId/pool effective resource pool with origins, required, pinned, exclusions (cached with project tags)
+GET /projects/:projectId/blueprint/where-used?refType=&refId= nodes whose effective pool contains the specified library item
+GET /library/:type/:id/usage usage count and referencing projects/nodes for a library item
+POST /projects/:projectId/blueprint/autofill/preview preview auto-fill resource allocation proposals per node
+POST /projects/:projectId/blueprint/autofill/accept write accepted auto-fill proposals as blueprint pool entries
 GET /blueprint-templates
 POST /blueprint-templates save subtree as template
 GET /blueprint-templates/:templateId
@@ -146,9 +151,11 @@ GET    /versions/:versionId/ratings                      list quality ratings fo
 SOCKET NAMESPACES & EVENTS
 /blueprint:
 client -> server: project:join, project:leave, cursor:update, node:lock, node:unlock,
-node:add, node:update, node:move, node:delete, edge:add, edge:delete (constants in packages/contracts)
-server -> client: node:status-changed, ops:applied, presence:changed,
-node:locked, node:unlocked, revision:conflict
+node:add, node:update, node:move, node:delete, edge:add, edge:delete,
+pool:add, pool:exclude, pool:restore, pool:remove, pool:require, pool:pin,
+assignment:upsert, assignment:remove, sync:request (constants in packages/contracts)
+server -> client: ops:applied, node:status-changed, graph:sync, revision:conflict,
+presence:changed, node:locked, node:unlocked
 
 /builds:
 client -> server: join:project, leave:project   (verify: the integration audit found the code using build:join / build:leave)

@@ -42,6 +42,7 @@
 - **Type** `GateFailure` - TypeScript type inferred from gate failure Zod schema.
 - **Type** `NodeStatus` - TypeScript type inferred from node status Zod schema.
 - **Type** `BlueprintNodeType` - TypeScript type inferred from blueprint node type Zod schema.
+- **Type** `BlueprintNodeTypeV2` - TypeScript type inferred from Blueprint v2 node type Zod schema.
 - **Type** `NodeType` - TypeScript type inferred from node type Zod schema.
 - **Type** `MissingField` - TypeScript type inferred from missing field Zod schema.
 - **Type** `NodeComputedStatus` - TypeScript type inferred from node computed status Zod schema.
@@ -106,6 +107,18 @@
 - **Type** `UpdateProjectDto` - TypeScript type inferred from update project dto Zod schema.
 - **Type** `DuplicateProjectDto` - TypeScript type inferred from duplicate project dto Zod schema.
 - **Type** `NodePosition` - TypeScript type inferred from node position Zod schema.
+- **Type** `PoolItemType` - TypeScript type inferred from pool item type Zod schema.
+- **Type** `PoolEntry` - TypeScript type inferred from pool entry Zod schema.
+- **Type** `NodePool` - TypeScript type inferred from node pool Zod schema.
+- **Type** `AutoFillMode` - TypeScript type inferred from auto-fill mode Zod schema.
+- **Type** `Assignment` - TypeScript type inferred from assignment Zod schema.
+- **Type** `ResolvedPoolItem` - TypeScript type inferred from resolved pool item Zod schema.
+- **Type** `ResolvedPool` - TypeScript type inferred from resolved pool Zod schema.
+- **Type** `PoolOpType` - TypeScript type inferred from pool op type Zod schema.
+- **Type** `PoolOpPayload` - TypeScript type inferred from pool op payload Zod schema.
+- **Type** `AssignmentOpType` - TypeScript type inferred from assignment op type Zod schema.
+- **Type** `AssignmentOpPayload` - TypeScript type inferred from assignment op payload Zod schema.
+- **Type** `NodePatchPayload` - TypeScript type inferred from node patch payload Zod schema.
 - **Type** `BlueprintNodeDto` - TypeScript type inferred from blueprint node dto Zod schema.
 - **Type** `BlueprintEdgeDto` - TypeScript type inferred from blueprint edge dto Zod schema.
 - **Type** `BlueprintGraphDto` - TypeScript type inferred from blueprint graph dto Zod schema.
@@ -257,7 +270,7 @@
 - **Type** `QueueHealthItem` - TypeScript type inferred from queue health item DTO.
 - **Type** `QueuesHealthResponseDto` - TypeScript type inferred from queues health response DTO.
 - **Type** `ClientWebVitalsDto` - TypeScript type inferred from client web vitals metric DTO.
-- **Function** `normalizeReasonCode(code: string)`: `"REVISION_CONFLICT" | "PARENT_MISSING" | "PARENT_INCOMPLETE" | "PARENT_TYPE_NOT_ALLOWED" | "DUPLICATE_NAME" | "CAPACITY_EXCEEDED" | "CYCLE" | "ENDPOINT_INCOMPLETE" | "NOT_QUALIFIED" | "PROJECT_LOCKED" | "PERMISSION_DENIED" | "SINGLE_PARENT_VIOLATION" | "INVALID_OPERATION" | "INSUFFICIENT_LAB_CAPACITY" | "MISSING_ALLOCATION" | "FACULTY_OVERLOAD" | "INVALID_GRAPH"` - Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation.
+- **Function** `normalizeReasonCode(code: string)`: `"REVISION_CONFLICT" | "PARENT_MISSING" | "PARENT_INCOMPLETE" | "PARENT_TYPE_NOT_ALLOWED" | "DUPLICATE_NAME" | "CAPACITY_EXCEEDED" | "CYCLE" | "ENDPOINT_INCOMPLETE" | "NOT_QUALIFIED" | "PROJECT_LOCKED" | "PERMISSION_DENIED" | "SINGLE_PARENT_VIOLATION" | "INVALID_OPERATION" | "INSUFFICIENT_LAB_CAPACITY" | "MISSING_ALLOCATION" | "FACULTY_OVERLOAD" | "INVALID_GRAPH" | "POOL_ITEM_NOT_FOUND" | "POOL_ITEM_ARCHIVED" | "POOL_ITEM_REQUIRED" | "POOL_ITEM_IN_USE" | "POOL_DEPARTMENT_FORBIDDEN" | "POOL_DUPLICATE" | "ASSIGNMENT_NOT_IN_POOL"` - Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation.
 - **Function** `normalizeAvailabilityMatrix(matrix: boolean[][] | null | undefined, daysCount: number, periodsCount: number)`: `boolean[][]` - Function normalizing availability matrix dimensions according to days and periods per day.
 - **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse` - Zod schema validating api error response.
 - **Zod Schema** `PaginationQuerySchema` -> `PaginationQuery` - Zod schema validating pagination query.
@@ -295,11 +308,14 @@
 - **Zod Schema** `GateFailureSchema` -> `GateFailure` - Zod schema validating gate failure.
 - **Zod Schema** `NodeStatusSchema` -> `NodeStatus` - Zod schema validating node status.
 - **Zod Schema** `BlueprintNodeTypeSchema` -> `BlueprintNodeType` - Zod schema validating blueprint node type.
+- **Zod Schema** `BlueprintNodeTypeV2Schema` -> `BlueprintNodeTypeV2` - Zod schema validating Blueprint v2 hierarchy node type (7 types only).
+- **Const** `BLUEPRINT_V2_NODE_TYPES`: `readonly ["institution", "department", "program...` - Array of Blueprint v2 allowed 7 hierarchy node types.
 - **Zod Schema** `NodeTypeSchema` -> `NodeType` - Zod schema validating node type.
 - **Zod Schema** `MissingFieldSchema` -> `MissingField` - Zod schema validating missing field.
 - **Zod Schema** `NodeComputedStatusSchema` -> `NodeComputedStatus` - Zod schema validating node computed status.
 - **Zod Schema** `ProjectLifecycleStatusSchema` -> `ProjectLifecycleStatus` - Zod schema validating project lifecycle status.
 - **Const** `SocketEvents`: `{ readonly NODE_STATUS_CHANGED: "node:status-ch...` - Constant representing socket events.
+- **Const** `BlueprintSocketEvents`: `{ readonly NODE_STATUS_CHANGED: "node:status-ch...` - Blueprint socket events constant matching SocketEvents.
 - **Zod Schema** `HealthResponseSchema` -> `HealthResponse` - Zod schema validating health response.
 - **Zod Schema** `PeriodBreakSchema` -> `PeriodBreak` - Zod schema validating period break.
 - **Zod Schema** `PeriodConfigSchema` -> `PeriodConfig` - Zod schema validating period config.
@@ -360,6 +376,18 @@
 - **Zod Schema** `UpdateProjectDtoSchema` -> `UpdateProjectDto` - Zod schema validating update project dto.
 - **Zod Schema** `DuplicateProjectDtoSchema` -> `DuplicateProjectDto` - Zod schema validating duplicate project dto.
 - **Zod Schema** `NodePositionSchema` -> `NodePosition` - Zod schema validating node position.
+- **Zod Schema** `PoolItemTypeSchema` -> `PoolItemType` - Zod schema validating resource pool item kind.
+- **Zod Schema** `PoolEntrySchema` -> `PoolEntry` - Zod schema validating single resource pool entry in node additions.
+- **Zod Schema** `NodePoolSchema` -> `NodePool` - Zod schema validating node resource pool.
+- **Zod Schema** `AutoFillModeSchema` -> `AutoFillMode` - Zod schema validating section auto-fill mode.
+- **Zod Schema** `AssignmentSchema` -> `Assignment` - Zod schema validating section subject assignment.
+- **Zod Schema** `ResolvedPoolItemSchema` -> `ResolvedPoolItem` - Zod schema validating resolved pool item with inheritance metadata.
+- **Zod Schema** `ResolvedPoolSchema` -> `ResolvedPool` - Zod schema validating resolved effective pool for a node across all kinds.
+- **Zod Schema** `PoolOpTypeSchema` -> `PoolOpType` - Zod schema validating pool mutation operations.
+- **Zod Schema** `PoolOpPayloadSchema` -> `PoolOpPayload` - Zod schema validating pool mutation operation payload.
+- **Zod Schema** `AssignmentOpTypeSchema` -> `AssignmentOpType` - Zod schema validating assignment mutation operations.
+- **Zod Schema** `AssignmentOpPayloadSchema` -> `AssignmentOpPayload` - Zod schema validating assignment mutation operation payload.
+- **Zod Schema** `NodePatchPayloadSchema` -> `NodePatchPayload` - Zod schema validating node patch payload.
 - **Zod Schema** `BlueprintNodeDtoSchema` -> `BlueprintNodeDto` - Zod schema validating blueprint node dto.
 - **Zod Schema** `BlueprintEdgeDtoSchema` -> `BlueprintEdgeDto` - Zod schema validating blueprint edge dto.
 - **Zod Schema** `BlueprintGraphDtoSchema` -> `BlueprintGraphDto` - Zod schema validating blueprint graph dto.

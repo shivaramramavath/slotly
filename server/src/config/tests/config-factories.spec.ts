@@ -10,6 +10,7 @@ import { emailConfig } from '../email.config';
 import { cacheConfig } from '../cache.config';
 import { queueConfig } from '../queue.config';
 import { groqConfig } from '../groq.config';
+import { blueprintConfig } from '../blueprint.config';
 
 describe('Config Factories', () => {
   const originalEnv = process.env;
@@ -114,5 +115,16 @@ describe('Config Factories', () => {
     const cfg = groqConfig();
     expect(cfg.model).toBe('llama-3.1-8b-instant');
     expect(cfg.requestLimits.temperature).toBe(0.5);
+  });
+
+  it('blueprintConfig defaults to false and reads BLUEPRINT_V2 env variable', () => {
+    delete process.env['BLUEPRINT_V2'];
+    expect(blueprintConfig().v2Enabled).toBe(false);
+
+    process.env['BLUEPRINT_V2'] = 'true';
+    expect(blueprintConfig().v2Enabled).toBe(true);
+
+    process.env['BLUEPRINT_V2'] = 'false';
+    expect(blueprintConfig().v2Enabled).toBe(false);
   });
 });

@@ -13,6 +13,7 @@ import { emailConfig } from './email.config';
 import { cacheConfig } from './cache.config';
 import { queueConfig } from './queue.config';
 import { groqConfig } from './groq.config';
+import { blueprintConfig } from './blueprint.config';
 
 const nodeEnv = process.env['NODE_ENV'] || 'development';
 const isTest = nodeEnv === 'test';
@@ -35,6 +36,7 @@ const isTest = nodeEnv === 'test';
         cacheConfig,
         queueConfig,
         groqConfig,
+        blueprintConfig,
       ],
       validate: (rawConfig: Record<string, unknown>) => validateEnv(rawConfig),
       validationSchema: envValidationSchema,

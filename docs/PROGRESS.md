@@ -2082,4 +2082,65 @@ Restyle and architectural restructuring of the Institution feature (`/institutio
 
 Merged via `ux/07-institution-layout`, tag `ux-07-institution-layout-merged`.
 
+---
+
+## Blueprint v2 - Pass A: Specification, Contracts, and Feature Flag
+
+Complete architectural specification, schema additions, gate rules, and server configuration for Blueprint v2.
+
+### What Was Built
+
+1. **Feature Checklist Audit & Plan (`docs/BLUEPRINT_V2.md`):**
+   - Full matrix mapping Blueprint v2 requirements against existing Phase 5-8 implementations.
+   - Identified all references to deprecated node types (`subjectAssignment`, `electiveGroup`, `faculty`, `room`) across contracts, server, client, and engine.
+   - Designed 5-pass implementation roadmap (Pass A to Pass E) with strict backward-compatibility gating via `BLUEPRINT_V2` feature flag.
+
+2. **Documentation & Architecture Alignment:**
+   - `AGENTS.md`: Updated graph layout rules to strictly vertical (Dagre rankdir TB); removed legacy LR/BT/RL directions; layout menu provides 3 algorithms (hierarchical, compact, department-based).
+   - `docs/ROUTES.md`: Added new Blueprint v2 endpoints (`GET/POST /projects/:id/nodes/:nodeId/pool`, `GET /projects/:id/pool/where-used`, `GET /projects/:id/pool/usage`, `POST /projects/:id/autofill/preview`, `POST /projects/:id/autofill/accept`) and socket event constants (`node:patch`, `pool:mutate`, `assignment:mutate`, etc.).
+   - `docs/BLUEPRINT_RULES.md`:
+     - Standardized on exactly 7 hierarchy node types: Institution, Department, Program, Academic Year, Semester, Section, Batch.
+     - Documented Resource Pool inheritance: `effectivePool(node) = effectivePool(parent) + own additions - own exclusions`.
+     - Documented required items (`POOL_ITEM_REQUIRED` - ancestors cannot be excluded) and pinned items (survive ancestor removal).
+     - Documented Section completion rule: strength > 0, valid assignments, and for each resource type (faculty, subjects, rooms) either effective pool is non-empty or auto-fill is enabled.
+     - Documented new pool and assignment gates: `PoolItemExistsGate`, `PoolItemActiveGate`, `PoolDepartmentGate`, `PoolRequiredGate`, `PoolImpactGate`, `PoolDuplicateGate`, `AssignmentInPoolGate`.
+     - Documented canonical reason codes and fix hints.
+   - `docs/FEATURES.md`: Updated Section 6 for Blueprint v2 node types, resource pools, section assignments, auto-fill modes, vertical-only layout, and socket autosave.
+   - `docs/ARCHITECTURE.md`: Documented Blueprint v2 domain model changes, `BLUEPRINT_V2` feature flag, and WebSocket sync.
+   - `docs/CLIENT_UX.md`: Documented minimal visual language (220px cards, status dots, count chips, floating pill toolbar), 360px right drawer (Details, Resources, Assignments, Rules, Check, History), autosave indicators (`Saved`, `Saving`, `Offline (N pending)`, `Conflict`, `Error`), and read-only library item inspection cards.
+
+3. **Additive Contracts (`packages/contracts`):**
+   - Added `BlueprintNodeTypeV2Schema`, `BlueprintNodeTypeV2`, `BLUEPRINT_V2_NODE_TYPES`.
+   - Added `PoolItemTypeSchema`, `PoolEntrySchema`, `NodePoolSchema`, `AutoFillModeSchema`, `AssignmentSchema`.
+   - Added `ResolvedPoolItemSchema`, `ResolvedPoolSchema`.
+   - Added pool and assignment mutation schemas: `PoolOpTypeSchema`, `PoolOpPayloadSchema`, `AssignmentOpTypeSchema`, `AssignmentOpPayloadSchema`, `NodePatchPayloadSchema`.
+   - Updated `BlueprintNodeDtoSchema` with optional `version`, `pool`, `assignments`, `autoFill`.
+   - Added new reason codes to `ReasonCodeSchema`, `REASON_CODE_ALIASES`, and `REASON_CODE_MESSAGES`:
+     - `POOL_ITEM_NOT_FOUND`, `POOL_ITEM_ARCHIVED`, `POOL_ITEM_REQUIRED`, `POOL_ITEM_IN_USE`, `POOL_DEPARTMENT_FORBIDDEN`, `POOL_DUPLICATE`, `ASSIGNMENT_NOT_IN_POOL`.
+   - Added socket events to `SocketEvents` and exported `BlueprintSocketEvents`.
+   - Built to ESM, CJS, and DTS.
+
+4. **Server Configuration Flag (`server/src/config/`):**
+   - Created `blueprint.config.ts` defining `blueprintConfig` with `v2Enabled` (reading `BLUEPRINT_V2` env variable).
+   - Added `DEFAULT_CONFIG.blueprint.v2Enabled: false` to `defaults.ts`.
+   - Added `BLUEPRINT_V2: Joi.boolean().default(false)` to `env.validation.ts`.
+   - Registered `blueprintConfig` in `AppConfigModule` and barrel export in `index.ts`.
+   - Added unit and integration tests in `config-factories.spec.ts` and `config-boot.integration.spec.ts` (all 29 tests passing).
+
+### Decisions Made
+
+- **Strictly Additive Contracts in Pass A:** Retained the legacy 11-member `BlueprintNodeTypeSchema` while introducing `BlueprintNodeTypeV2Schema` and optional `version`, `pool`, `assignments`, and `autoFill` fields on `BlueprintNodeDtoSchema` so existing code continues to compile and run without breaking. Full enum contraction is deferred to Pass E.
+- **Default Feature Flag Off:** `BLUEPRINT_V2` defaults to `false` in all environments, ensuring existing test suites and behavior remain green throughout Passes A-D until cutover in Pass E.
+- **Read-Only Library References:** Pool items in Blueprint are strictly references to Library items, not deep copies or mutable instances. They cannot be edited in the Blueprint canvas.
+- **Top-Down Live Pool Resolution:** A node's effective pool is dynamically calculated by walking up the ancestor hierarchy, respecting ancestor `required` constraints and child `exclusions`.
+
+### What Was Skipped (Scheduled for Later Passes)
+
+- Pass B: Server Mongoose schema migration, `PoolResolverService`, write-behind socket autosave gateway handlers, and pool/assignment mutation endpoints.
+- Pass C: Engine solver auto-fill adaptation, Section assignment build mapping, and pre-build validation.
+- Pass D: Client minimal design cards, 360px drawer, resource pool inspector, floating toolbar pill, and real-time socket autosave hooks.
+- Pass E: Feature flag flip to true, data migration, removal of deprecated node types, and final verification.
+
+Merged via `docs/blueprint-v2-spec`, tag `docs-blueprint-v2-spec-merged`.
+
 
