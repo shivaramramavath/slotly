@@ -148,14 +148,6 @@ export function BlueprintHeader({
           </button>
         )}
 
-        {/* Text link "Studio" */}
-        <Link
-          href={`/projects/${projectId}/editor`}
-          className="text-xs text-[#8A8A8A] hover:text-[#FAFAFA] px-2 py-1 font-mono transition-colors"
-        >
-          Studio
-        </Link>
-
         {/* Primary Yellow "Build" Button */}
         <Button
           variant="primary"

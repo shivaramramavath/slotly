@@ -37,6 +37,7 @@ export interface ToolbarMenuProps {
 export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const isMinimapOpen = useBlueprintStore((s) => s.isMinimapOpen);
   const toggleMinimap = useBlueprintStore((s) => s.toggleMinimap);
@@ -71,6 +72,20 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  // Escape key returns focus to the button
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!isOpen) return;
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setIsOpen(false);
+        buttonRef.current?.focus();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   const handleToggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement
@@ -97,12 +112,14 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
   return (
     <div className="relative" ref={menuRef}>
       <button
+        ref={buttonRef}
         type="button"
         aria-label="More options"
         aria-expanded={isOpen}
+        aria-haspopup="menu"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'h-7 px-2 rounded-[8px] text-xs font-mono text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+          'h-8 px-2.5 rounded-[10px] text-xs font-mono text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
           isOpen && 'text-[#FAFAFA] bg-[#1A1A1A]',
         )}
       >
@@ -114,11 +131,16 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
         <div
           role="menu"
           aria-label="More actions"
-          className="absolute bottom-11 right-0 w-60 max-h-[460px] overflow-y-auto bg-[#111111] border border-[#232323] rounded-[12px] shadow-2xl py-1 z-50 text-left text-xs divide-y divide-[#1C1C1C]"
+          data-testid="toolbar-more-menu"
+          className={cn(
+            'absolute bottom-[calc(100%+8px)] right-0 w-[248px] max-h-[min(480px,calc(100vh-80px))] overflow-y-auto',
+            'bg-[#111111] border border-[#232323] rounded-[12px] shadow-2xl py-1 z-50 text-left text-xs',
+            'divide-y divide-[#1C1C1C] [scrollbar-width:thin] focus:outline-none',
+          )}
         >
           {/* Group 1: View */}
           <div className="p-1">
-            <div className="px-2.5 py-1 text-[10px] font-mono text-[#8A8A8A] uppercase tracking-wider">
+            <div className="px-2 py-1 text-[12px] font-mono text-[#8A8A8A] uppercase tracking-wider">
               View
             </div>
             <button
@@ -128,13 +150,13 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 toggleMinimap();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center justify-between px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Map className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                <Map className="h-4 w-4 text-[#8A8A8A]" />
                 <span>Minimap</span>
               </div>
-              <span className="font-mono text-[10px] text-[#8A8A8A]">
+              <span className="font-mono text-[12px] text-[#8A8A8A]">
                 {isMinimapOpen ? 'On' : 'Off'}
               </span>
             </button>
@@ -146,13 +168,13 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 setHideUnrelated(!hideUnrelated);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center justify-between px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
               <div className="flex items-center gap-2">
-                <EyeOff className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                <EyeOff className="h-4 w-4 text-[#8A8A8A]" />
                 <span>Dim Inactive</span>
               </div>
-              <span className="font-mono text-[10px] text-[#8A8A8A]">
+              <span className="font-mono text-[12px] text-[#8A8A8A]">
                 {hideUnrelated ? 'On' : 'Off'}
               </span>
             </button>
@@ -161,13 +183,13 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
               type="button"
               role="menuitem"
               onClick={handleToggleFullscreen}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center justify-between px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Maximize2 className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                <Maximize2 className="h-4 w-4 text-[#8A8A8A]" />
                 <span>Fullscreen</span>
               </div>
-              <span className="font-mono text-[10px] text-[#8A8A8A]">
+              <span className="font-mono text-[12px] text-[#8A8A8A]">
                 {isFullscreen ? 'Exit' : 'Enter'}
               </span>
             </button>
@@ -179,13 +201,13 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 setIsCanvasLocked(!isCanvasLocked);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center justify-between px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
               <div className="flex items-center gap-2">
                 {isCanvasLocked ? (
-                  <Unlock className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                  <Unlock className="h-4 w-4 text-[#8A8A8A]" />
                 ) : (
-                  <Lock className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                  <Lock className="h-4 w-4 text-[#8A8A8A]" />
                 )}
                 <span>{isCanvasLocked ? 'Unlock Canvas' : 'Lock Canvas'}</span>
               </div>
@@ -194,7 +216,7 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
 
           {/* Group 2: Edit */}
           <div className="p-1">
-            <div className="px-2.5 py-1 text-[10px] font-mono text-[#8A8A8A] uppercase tracking-wider">
+            <div className="px-2 py-1 text-[12px] font-mono text-[#8A8A8A] uppercase tracking-wider">
               Edit
             </div>
             <button
@@ -204,9 +226,9 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 setIsBulkAddOpen(true);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center gap-2 px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
-              <PlusSquare className="h-3.5 w-3.5 text-[#8A8A8A]" />
+              <PlusSquare className="h-4 w-4 text-[#8A8A8A]" />
               <span>Bulk Add Children...</span>
             </button>
 
@@ -217,13 +239,13 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 onCopy?.();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center justify-between px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Copy className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                <Copy className="h-4 w-4 text-[#8A8A8A]" />
                 <span>Copy Subtree</span>
               </div>
-              <span className="font-mono text-[10px] text-[#8A8A8A]">⌘C</span>
+              <span className="font-mono text-[12px] text-[#8A8A8A]">⌘C</span>
             </button>
 
             <button
@@ -233,13 +255,13 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 onPaste?.();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center justify-between px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
               <div className="flex items-center gap-2">
-                <ClipboardPaste className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                <ClipboardPaste className="h-4 w-4 text-[#8A8A8A]" />
                 <span>Paste</span>
               </div>
-              <span className="font-mono text-[10px] text-[#8A8A8A]">⌘V</span>
+              <span className="font-mono text-[12px] text-[#8A8A8A]">⌘V</span>
             </button>
 
             <button
@@ -249,19 +271,19 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 onDuplicate?.();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center justify-between px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
               <div className="flex items-center gap-2">
-                <CopyCheck className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                <CopyCheck className="h-4 w-4 text-[#8A8A8A]" />
                 <span>Duplicate</span>
               </div>
-              <span className="font-mono text-[10px] text-[#8A8A8A]">⌘D</span>
+              <span className="font-mono text-[12px] text-[#8A8A8A]">⌘D</span>
             </button>
           </div>
 
           {/* Group 3: History */}
           <div className="p-1">
-            <div className="px-2.5 py-1 text-[10px] font-mono text-[#8A8A8A] uppercase tracking-wider">
+            <div className="px-2 py-1 text-[12px] font-mono text-[#8A8A8A] uppercase tracking-wider">
               History
             </div>
             <button
@@ -271,9 +293,9 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 setIsHistoryOpen(true);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center gap-2 px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
-              <History className="h-3.5 w-3.5 text-[#8A8A8A]" />
+              <History className="h-4 w-4 text-[#8A8A8A]" />
               <span>Revision History</span>
             </button>
 
@@ -284,16 +306,16 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 setIsSnapshotsOpen(true);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center gap-2 px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
-              <Camera className="h-3.5 w-3.5 text-[#8A8A8A]" />
+              <Camera className="h-4 w-4 text-[#8A8A8A]" />
               <span>Snapshots</span>
             </button>
           </div>
 
-          {/* Group 4: Data */}
+          {/* Group 4: Data & Templates */}
           <div className="p-1">
-            <div className="px-2.5 py-1 text-[10px] font-mono text-[#8A8A8A] uppercase tracking-wider">
+            <div className="px-2 py-1 text-[12px] font-mono text-[#8A8A8A] uppercase tracking-wider">
               Data & Templates
             </div>
             <button
@@ -303,9 +325,9 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 setIsExportOpen(true);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center gap-2 px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
-              <Download className="h-3.5 w-3.5 text-[#8A8A8A]" />
+              <Download className="h-4 w-4 text-[#8A8A8A]" />
               <span>Export (JSON, SVG, PNG)</span>
             </button>
 
@@ -316,9 +338,9 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 setIsImportOpen(true);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center gap-2 px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
-              <Upload className="h-3.5 w-3.5 text-[#8A8A8A]" />
+              <Upload className="h-4 w-4 text-[#8A8A8A]" />
               <span>Import Graph...</span>
             </button>
 
@@ -329,9 +351,9 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 setIsSaveTemplateOpen(true);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center gap-2 px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
-              <BookmarkPlus className="h-3.5 w-3.5 text-[#8A8A8A]" />
+              <BookmarkPlus className="h-4 w-4 text-[#8A8A8A]" />
               <span>Save as Template...</span>
             </button>
 
@@ -342,16 +364,16 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 setIsTemplatesOpen(true);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center gap-2 px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
-              <Layout className="h-3.5 w-3.5 text-[#8A8A8A]" />
+              <Layout className="h-4 w-4 text-[#8A8A8A]" />
               <span>Starter Kits & Templates</span>
             </button>
           </div>
 
           {/* Group 5: Collaboration */}
           <div className="p-1">
-            <div className="px-2.5 py-1 text-[10px] font-mono text-[#8A8A8A] uppercase tracking-wider">
+            <div className="px-2 py-1 text-[12px] font-mono text-[#8A8A8A] uppercase tracking-wider">
               Collaboration
             </div>
             <button
@@ -365,9 +387,9 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 }
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center gap-2 px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
-              <MessageSquare className="h-3.5 w-3.5 text-[#8A8A8A]" />
+              <MessageSquare className="h-4 w-4 text-[#8A8A8A]" />
               <span>Node Comments</span>
             </button>
 
@@ -375,16 +397,16 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
               type="button"
               role="menuitem"
               onClick={handleRequestApproval}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center gap-2 px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
-              <SendHorizontal className="h-3.5 w-3.5 text-[#8A8A8A]" />
+              <SendHorizontal className="h-4 w-4 text-[#8A8A8A]" />
               <span>Submit for Approval</span>
             </button>
           </div>
 
           {/* Group 6: Help */}
           <div className="p-1">
-            <div className="px-2.5 py-1 text-[10px] font-mono text-[#8A8A8A] uppercase tracking-wider">
+            <div className="px-2 py-1 text-[12px] font-mono text-[#8A8A8A] uppercase tracking-wider">
               Help
             </div>
             <button
@@ -394,13 +416,13 @@ export function ToolbarMenu({ onCopy, onPaste, onDuplicate }: ToolbarMenuProps) 
                 setIsShortcutsOpen(true);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
+              className="w-full h-8 flex items-center justify-between px-2.5 rounded-[8px] text-[13px] text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Keyboard className="h-3.5 w-3.5 text-[#8A8A8A]" />
+                <Keyboard className="h-4 w-4 text-[#8A8A8A]" />
                 <span>Shortcuts</span>
               </div>
-              <span className="font-mono text-[10px] text-[#8A8A8A]">?</span>
+              <span className="font-mono text-[12px] text-[#8A8A8A]">?</span>
             </button>
           </div>
         </div>

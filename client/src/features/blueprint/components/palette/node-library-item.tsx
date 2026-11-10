@@ -1,7 +1,7 @@
 // React component for node-library-item.
 'use client';
 
-import { useState, type KeyboardEvent, type MouseEvent, type DragEvent } from 'react';
+import { useState, useEffect, type KeyboardEvent, type MouseEvent, type DragEvent } from 'react';
 import { HelpCircle } from 'lucide-react';
 import type { PaletteItem } from './blueprint-palette';
 import { cn } from '@/lib/utils';
@@ -30,10 +30,26 @@ export function NodeLibraryItem({
 }: NodeLibraryItemProps) {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const Icon = item.icon;
   const descriptionId = `node-desc-${item.type}`;
   const reasonId = `node-reason-${item.type}`;
+
+  // Escape cancels drag
+  useEffect(() => {
+    if (!isDragging) return;
+
+    function handleKeyDown(e: globalThis.KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setIsDragging(false);
+        window.dispatchEvent(new CustomEvent('slotly:drag-node-end'));
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDragging]);
 
   const handleClick = (e: MouseEvent) => {
     e.preventDefault();
@@ -51,8 +67,55 @@ export function NodeLibraryItem({
       e.preventDefault();
       return;
     }
+
+    setIsDragging(true);
+    e.dataTransfer.setData('application/x-slotly-node', item.type);
     e.dataTransfer.setData('application/slotly-node-type', item.type);
     e.dataTransfer.effectAllowed = 'copy';
+
+    // Ghost drag preview: 32px high, radius 12px, surface background, 1px border-strong, 80% opacity
+    if (typeof document !== 'undefined') {
+      const ghost = document.createElement('div');
+      ghost.id = 'slotly-drag-ghost';
+      ghost.style.position = 'fixed';
+      ghost.style.top = '-9999px';
+      ghost.style.left = '-9999px';
+      ghost.style.height = '32px';
+      ghost.style.borderRadius = '12px';
+      ghost.style.backgroundColor = '#111111';
+      ghost.style.border = '1px solid #383838';
+      ghost.style.padding = '0 12px';
+      ghost.style.display = 'flex';
+      ghost.style.alignItems = 'center';
+      ghost.style.gap = '8px';
+      ghost.style.color = '#FAFAFA';
+      ghost.style.fontSize = '12px';
+      ghost.style.fontWeight = '500';
+      ghost.style.opacity = '0.8';
+      ghost.style.pointerEvents = 'none';
+      ghost.style.zIndex = '99999';
+      ghost.innerText = item.label;
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, 16, 16);
+      setTimeout(() => {
+        if (document.body.contains(ghost)) {
+          document.body.removeChild(ghost);
+        }
+      }, 0);
+    }
+
+    // Broadcast drag start for live canvas feedback
+    window.dispatchEvent(
+      new CustomEvent('slotly:drag-node-start', {
+        detail: { type: item.type, label: item.label },
+      }),
+    );
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    window.dispatchEvent(new CustomEvent('slotly:drag-node-end'));
+    window.dispatchEvent(new CustomEvent('slotly:drag-reason-clear'));
   };
 
   return (
@@ -71,6 +134,7 @@ export function NodeLibraryItem({
         aria-describedby={!isAllowed && reason ? reasonId : descriptionId}
         draggable={isAllowed}
         onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
         onClick={handleClick}
         onKeyDown={onKeyDown}
         onFocus={() => setIsTooltipVisible(true)}
@@ -78,6 +142,7 @@ export function NodeLibraryItem({
         className={cn(
           'transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-white',
           isShaking && 'translate-x-0.5 -translate-x-0.5 motion-reduce:transform-none',
+          isDragging && 'opacity-50',
           isExpanded
             ? 'w-full h-14 px-3 rounded-[12px] flex items-center gap-3 text-left border'
             : 'w-10 h-10 rounded-[12px] flex items-center justify-center border',
@@ -119,7 +184,7 @@ export function NodeLibraryItem({
       )}
 
       {/* Styled Right-Side Floating Tooltip Card */}
-      {isTooltipVisible && (
+      {isTooltipVisible && !isDragging && (
         <div
           role="tooltip"
           className="absolute left-full ml-3 z-50 pointer-events-none whitespace-normal min-w-[200px] max-w-[260px] rounded-[12px] border border-[#232323] bg-[#111111] p-2.5 shadow-2xl animate-in fade-in-0 duration-100"

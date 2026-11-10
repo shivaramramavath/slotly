@@ -14,6 +14,7 @@ import {
   NodeChange,
   EdgeChange,
   OnSelectionChangeParams,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -76,11 +77,53 @@ export function BlueprintCanvas({
   const setIsShortcutsOpen = useBlueprintStore((s) => s.setIsShortcutsOpen);
   const isMinimapOpen = useBlueprintStore((s) => s.isMinimapOpen);
   const selectedNodeId = useBlueprintStore((s) => s.selectedNodeId);
+  const setActiveTab = useBlueprintStore((s) => s.setActiveTab);
+
+  const { screenToFlowPosition } = useReactFlow();
 
   const { isValidConnection, canAddNodeType, getNodeById } = useGateValidation(nodes, edges);
   const { undo, redo, canUndo, canRedo } = useBlueprintCommands();
   const { goToNextStep } = useGuidedMode();
   const incompleteCount = nodes.filter((n) => n.data.effectiveStatus === 'incomplete').length;
+
+  // Drag and drop state from library
+  const [activeDragType, setActiveDragType] = useState<BlueprintNodeType | null>(null);
+  const [isCanvasDragOver, setIsCanvasDragOver] = useState(false);
+  const [dragReason, setDragReason] = useState<{ text: string; x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const handleDragStart = (e: Event) => {
+      const { type } = (e as CustomEvent<{ type: BlueprintNodeType }>).detail;
+      setActiveDragType(type);
+    };
+
+    const handleDragEnd = () => {
+      setActiveDragType(null);
+      setIsCanvasDragOver(false);
+      setDragReason(null);
+    };
+
+    const handleDragReason = (e: Event) => {
+      const { reason, clientX, clientY } = (e as CustomEvent<{ reason: string; clientX: number; clientY: number }>).detail;
+      setDragReason({ text: reason, x: clientX, y: clientY });
+    };
+
+    const handleDragReasonClear = () => {
+      setDragReason(null);
+    };
+
+    window.addEventListener('slotly:drag-node-start', handleDragStart);
+    window.addEventListener('slotly:drag-node-end', handleDragEnd);
+    window.addEventListener('slotly:drag-reason', handleDragReason);
+    window.addEventListener('slotly:drag-reason-clear', handleDragReasonClear);
+
+    return () => {
+      window.removeEventListener('slotly:drag-node-start', handleDragStart);
+      window.removeEventListener('slotly:drag-node-end', handleDragEnd);
+      window.removeEventListener('slotly:drag-reason', handleDragReason);
+      window.removeEventListener('slotly:drag-reason-clear', handleDragReasonClear);
+    };
+  }, []);
 
   // Node Issues Card Hover & Focus state
   const [activeIssueNodeId, setActiveIssueNodeId] = useState<string | null>(null);
@@ -161,9 +204,9 @@ export function BlueprintCanvas({
     setActiveIssueNodeId(null);
   }, []);
 
-  // Listen for custom "slotly:add-child" event dispatched from Node "+" button
+  // Listen for custom "slotly:add-child" event dispatched from Node "+" button or DnD
   useEffect(() => {
-    const handleAddChild = (e: Event) => {
+    const handleAddChild = async (e: Event) => {
       const customEvent = e as CustomEvent<{ parentId: string; childType: BlueprintNodeType }>;
       const { parentId, childType } = customEvent.detail;
       const parentNode = nodes.find((n) => n.id === parentId);
@@ -171,12 +214,15 @@ export function BlueprintCanvas({
         ? { x: parentNode.position.x + 20, y: parentNode.position.y + 160 }
         : { x: 200, y: 200 };
 
-      void onAddNode(childType, parentId, position);
+      const res = await onAddNode(childType, parentId, position);
+      if (res.success) {
+        setActiveTab('config');
+      }
     };
 
     window.addEventListener('slotly:add-child', handleAddChild);
     return () => window.removeEventListener('slotly:add-child', handleAddChild);
-  }, [nodes, onAddNode]);
+  }, [nodes, onAddNode, setActiveTab]);
 
   // Handle drag stop (non-critical write-behind update)
   const handleNodeDragStop = useCallback(
@@ -383,30 +429,75 @@ export function BlueprintCanvas({
   );
 
   // Drag over handler for canvas drop
-  const handleDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
-
-  // Drop node from palette
-  const handleDrop = useCallback(
+  const handleDragOver = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
-      const nodeType = event.dataTransfer.getData('application/slotly-node-type') as BlueprintNodeType;
+      if (!activeDragType) return;
+
+      if (isCanvasLocked) {
+        event.dataTransfer.dropEffect = 'none';
+        setDragReason({
+          text: 'Canvas is locked. Unlock canvas to add or modify nodes.',
+          x: event.clientX,
+          y: event.clientY,
+        });
+        return;
+      }
+
+      const check = canAddNodeType(activeDragType, undefined);
+      if (check.allowed) {
+        event.dataTransfer.dropEffect = 'copy';
+        setIsCanvasDragOver(true);
+        setDragReason(null);
+      } else {
+        event.dataTransfer.dropEffect = 'none';
+        setIsCanvasDragOver(false);
+        const reasonText = check.reason || 'Requires selecting a parent node.';
+        setDragReason({
+          text: `Drop onto a valid parent node. ${reasonText}`,
+          x: event.clientX,
+          y: event.clientY,
+        });
+      }
+    },
+    [activeDragType, isCanvasLocked, canAddNodeType],
+  );
+
+  // Drop node from palette onto empty canvas
+  const handleDrop = useCallback(
+    async (event: React.DragEvent) => {
+      event.preventDefault();
+      setIsCanvasDragOver(false);
+      setDragReason(null);
+
+      const nodeType = (event.dataTransfer.getData('application/x-slotly-node') ||
+        event.dataTransfer.getData('application/slotly-node-type') ||
+        activeDragType) as BlueprintNodeType;
+
       if (!nodeType) return;
 
-      const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
-      if (!reactFlowBounds) return;
+      if (isCanvasLocked) {
+        toast.info('Canvas locked', 'Canvas is locked. Unlock canvas to add or modify nodes.');
+        return;
+      }
 
-      const position = {
-        x: event.clientX - reactFlowBounds.left - 100,
-        y: event.clientY - reactFlowBounds.top - 40,
-      };
+      const check = canAddNodeType(nodeType, undefined);
+      if (!check.allowed) {
+        toast.error('Cannot add node here', `Drop onto a valid parent node. ${check.reason || ''}`);
+        return;
+      }
 
-      const selected = nodes.find((n) => n.selected);
-      void onAddNode(nodeType, selected?.id, position);
+      const position = screenToFlowPosition({
+        x: event.clientX - 116,
+        y: event.clientY - 32,
+      });
+
+      const res = await onAddNode(nodeType, undefined, position);
+      if (res.success) {
+        setActiveTab('config');
+      }
     },
-    [nodes, onAddNode],
+    [activeDragType, isCanvasLocked, canAddNodeType, screenToFlowPosition, onAddNode, setActiveTab],
   );
 
   // Mouse move for multiplayer cursor sharing
@@ -459,7 +550,7 @@ export function BlueprintCanvas({
         snapToGrid
         snapGrid={[gridSize, gridSize]}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
+        fitViewOptions={{ maxZoom: 1, minZoom: 0.2, padding: 0.2 }}
         deleteKeyCode={null}
       >
         <Background
@@ -480,6 +571,26 @@ export function BlueprintCanvas({
 
       {/* Subtle corner vignette */}
       <div className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_120px_rgba(0,0,0,0.85)]" />
+
+      {/* 1px dashed outline when root drop is valid on empty canvas */}
+      {isCanvasDragOver && (
+        <div
+          data-testid="canvas-drop-active"
+          className="pointer-events-none absolute inset-2 z-20 rounded-[16px] border border-dashed border-[#FAFAFA]/40"
+        />
+      )}
+
+      {/* Floating Drag Reason Chip near cursor */}
+      {dragReason && (
+        <div
+          data-testid="canvas-drag-reason"
+          className="pointer-events-none fixed z-50 px-2.5 py-1.5 rounded-[8px] bg-[#111111]/95 border border-[#383838] text-[12px] font-mono text-[#FAFAFA] shadow-2xl flex items-center gap-1.5 animate-in fade-in-0 duration-75"
+          style={{ left: `${dragReason.x + 16}px`, top: `${dragReason.y + 16}px` }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
+          <span>{dragReason.text}</span>
+        </div>
+      )}
 
       {/* Floating Vertical Node Library on Left */}
       <NodeLibraryPanel onAddNode={onAddNode} />

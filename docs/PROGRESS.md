@@ -2425,5 +2425,76 @@ Merged via `ux/08-blueprint-palette`, tag `ux-08-blueprint-palette-merged`.
 
 Merged via `ux/09-projects-sections`, tag `ux-09-projects-sections-merged`.
 
+---
+
+## Phase / Task: ux/10-blueprint-dnd-compact: Blueprint Drag-and-Drop, Compact Node & Issues Card, Bottom Toolbar & Menu Fixes, Top Bar Clean Up
+
+### What Was Built
+
+1. **Drag and Drop from Node Library onto Canvas (`NodeLibraryPanel`, `NodeLibraryItem`, `BlueprintCanvas`, `NodeCard`):**
+   - Enabled items in `NodeLibraryPanel` are draggable (`draggable="true"`), carrying MIME types `application/x-slotly-node` and `application/slotly-node-type` with the node type. Disabled items are not draggable (`draggable="false"`) and retain styled reason tooltips.
+   - Drag preview: small ghost chip (32px high, radius 12px, surface background `#111111`, 1px border `#383838`, 80% opacity, icon + label) following pointer; library item dims to 50% opacity during dragging.
+   - Dropping on a node: validates `canAddNodeType(draggedType, targetNode)`. Target nodes display a 2px light ring (`border-strong` token); invalid targets display `cursor-not-allowed` and a toast-like reason chip near cursor ("Drop onto a valid parent node. Needs a Program."). Dropping creates the child node connected to parent, creates exactly one undo/redo history entry, and automatically selects the new node with the Config tab opened.
+   - Dropping on empty canvas: allowed only for root types (`institution` when none exists, `faculty`, `room`), displaying 1px dashed canvas outline. Rejects child types with cursor reason chip. Converts drop pointer via `screenToFlowPosition({ x, y })`.
+   - Canvas lock check: drops rejected with message when canvas is locked.
+   - Escape cancels dragging. Click-to-add and keyboard add (Enter/Space) remain fully operational.
+
+2. **Compact, Calmer Node Card (`NodeCard` — 232px width, 64px min height, 12px radius):**
+   - Width 232px, min-height 64px, padding 12px, radius 12px, background surface (`#111111`), 1px border token (`#232323`).
+   - 20px node type icon (`#8A8A8A`), 14px medium white title (single line, truncate with tooltip), 12px mono muted subtitle (metric line, e.g. "Campus root", `Strength 60`).
+   - Top-right status indicator: 16px yellow warning icon (`AlertTriangle`, `#FACC15`) with mono 12px count badge ("3") shown only when issues exist. Ready nodes display small muted check icon (`Check`, `#8A8A8A`).
+   - Removed progress bar, percent value, divider line above footer, large "3 missing" row, and chevron. Dimensions are strictly identical whether hovered, selected, or unselected (zero layout shift).
+   - Hover moves border to `border-strong` (`#383838`). Selection applies `border-[#FAFAFA]` with 1px outer focus ring (`ring-1 ring-[#FAFAFA] ring-offset-2 ring-offset-[#0A0A0A]`). No thick double ring, no glow, no shadow.
+   - 8px connection handles visible only on hover, selection, or connecting. Top target dot, bottom source dot.
+   - Updated layout engine node constants to `NODE_WIDTH = 232; NODE_HEIGHT = 64;` in `use-blueprint-layout.ts`.
+
+3. **Compact Hover Card (`NodeIssuesCard` — 256px width):**
+   - Width 256px (max 90vw), padding 12px, radius 12px, surface background (`#111111`), 1px border (`#232323`), small shadow, 6px caret.
+   - Header: node title (13px medium, truncate) and total count ("3 issues", mono 12px muted) on one line. No close button (closes on Escape or pointer leave).
+   - Group labels: 12px muted group labels ("Errors (N)", "Requirements (N)") shown only when both errors and warnings exist; omitted when only one group is present.
+   - Rows: compact 8px vertical padding, 12px text, mono 12px raw key, 2px red left indicator for errors, 2px yellow for warnings, no background fill.
+   - Max 4 items visible, internal scroll max height ~200px with "+N more".
+   - Two 28px outline action buttons ("Fix automatically", "Open in config").
+
+4. **Viewport Zoom Bounds (`fitView` maxZoom 1):**
+   - React Flow configured with `fitViewOptions={{ maxZoom: 1, minZoom: 0.2, padding: 0.2 }}`.
+   - Initial load, Fit button, and Layout actions enforce `maxZoom: 1` so lone nodes never zoom past 100%. Left inset (72px) preserved.
+
+5. **Bottom Floating Toolbar & More Menu (`FloatingToolbar`, `ToolbarMenu`):**
+   - Toolbar: 44px pill centered at bottom-4 (16px from bottom), radius 16px, 1px border, surface 95% blur, padding 6px. 32px icon buttons (radius 10px), 4px gap, 1px dividers. Tabular 56px zoom percent. Tooltips with shortcuts, accessible names, visible focus rings.
+   - More menu: anchored above More button (`side="top" align="end" sideOffset={8}`), 248px width, max height bounded to viewport available space (`max-h-[calc(100vh-80px)]`) so it is never clipped at 1440, 1024, or 768px viewports. No scroll arrows; thin native scrollbar with edge visibility. 32px rows, 13px label, 16px icon, mono 12px muted shortcuts right-aligned, switch/on-off state. All 18 actions and 6 groups preserved. Escape returns focus to More button.
+
+6. **Top Bar Clean Up (`BlueprintHeader`):**
+   - Removed "Studio" text link from header, keeping all remaining items (back button, project name skeleton, status chip, autosave status, readiness chip, issues chip, Build button) aligned in a single row without uneven gaps.
+   - Studio route remains active at `/projects/:id/editor`.
+
+7. **Automated Tests:**
+   - Client: Unit tests in `node-palette-and-issues.spec.ts` verifying DnD item dragability, parent and root drop rules, locked canvas rejections, compact node dimensions (232x64px), issue alert and count badge rendering, compact hover card specs (256px width, group label rules, max items), toolbar dimensions and zoom bounds (`maxZoom: 1`), and Studio button removal from header.
+   - Monorepo: All 118 client tests and 425 server tests passing.
+
+### Decisions Made
+
+- **MIME & Event Drag Coordination:** Used custom MIME `application/x-slotly-node` with cross-window event coordination (`slotly:drag-node-start`, `slotly:drag-node-end`, `slotly:drag-reason`) to bypass browser security restrictions on `dataTransfer.getData()` during dragover, ensuring instant, non-blocking target validation and cursor feedback chips.
+- **Top Bar Studio Link:** Removed only the top bar link per spec; left `/projects/:id/editor` intact so users can reach Studio via direct URL or project navigation.
+
+### Manual Test Checklist
+
+- [x] Open Blueprint canvas (`/projects/:id/blueprint`) — canvas renders with faint square grid lines and left floating library panel.
+- [x] Drag an item from left library (e.g. Department) onto canvas — dragging shows 32px ghost chip; library item dims to 50%.
+- [x] Hover dragged item over Institution node — node gains 2px light ring; drop effect is copy. Drop item — Department is added as child under Institution; Config tab opens.
+- [x] Drag an item requiring parent (e.g. Program) onto empty canvas — cursor shows not-allowed and toast-like reason chip appears near pointer ("Drop onto a valid parent node. Needs a Department."). Drop is rejected.
+- [x] Press Escape while dragging — drag is cancelled immediately.
+- [x] Lock canvas via More menu — drag over canvas or node displays "Canvas is locked" chip and drop is rejected.
+- [x] Inspect node styling — node width is 232px, min-height 64px, 12px radius, calm border, no progress bar, no percent value. Top-right shows yellow alert icon with issue count if issues exist, or check icon if ready.
+- [x] Hover over node with issues — hover card opens with 256px width, node name and issue count on one line, compact rows with 2px indicator lines, and two 28px buttons.
+- [x] Press Escape while hover card is open — hover card closes and focus returns to node.
+- [x] Inspect bottom floating toolbar — 44px pill centered 16px from bottom, 32px icon buttons, 56px tabular zoom percent.
+- [x] Click More button — More menu opens anchored above the button at 248px width, completely unclipped, with 32px rows, mono shortcuts, and clean dividers.
+- [x] Press Escape while More menu is open — menu closes and focus returns to More button.
+- [x] Inspect top bar — Studio link is gone; back button, project name, status chip, autosave status, readiness chip, issues chip, and Build button remain neatly aligned.
+
+Merged via `ux/10-blueprint-dnd-compact`, tag `ux-10-blueprint-dnd-compact-merged`.
+
+
 
 

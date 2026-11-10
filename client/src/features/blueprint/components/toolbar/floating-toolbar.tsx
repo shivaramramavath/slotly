@@ -108,7 +108,7 @@ export function FloatingToolbar({
     setNodes(layouted.nodes);
     setEdges(layouted.edges);
     setIsLayoutOpen(false);
-    setTimeout(() => fitView({ duration: 300 }), 50);
+    setTimeout(() => fitView({ duration: 300, maxZoom: 1, padding: 0.2 }), 50);
   };
 
   // Search filtering
@@ -148,12 +148,12 @@ export function FloatingToolbar({
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 select-none">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 select-none">
       {/* 1. Expandable Search Field above the pill */}
       {isSearchOpen && (
         <div
           ref={searchCardRef}
-          className="absolute bottom-12 left-1/2 -translate-x-1/2 w-80 sm:w-96 bg-[#111111]/95 backdrop-blur-md border border-[#232323] rounded-[12px] p-2.5 shadow-2xl mb-1 flex flex-col gap-2"
+          className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-80 sm:w-96 bg-[#111111]/95 backdrop-blur-md border border-[#232323] rounded-[12px] p-2.5 shadow-2xl mb-1 flex flex-col gap-2"
         >
           <div className="flex items-center bg-[#161616] border border-[#232323] rounded-[8px] px-2.5 py-1">
             <Search className="h-3.5 w-3.5 text-[#8A8A8A] shrink-0 mr-2" />
@@ -233,33 +233,39 @@ export function FloatingToolbar({
         </div>
       )}
 
-      {/* 2. Floating Pill Toolbar */}
+      {/* 2. Floating Pill Toolbar (44px height, radius 16px, centered 16px from bottom) */}
       <div
         role="toolbar"
         aria-label="Blueprint Canvas Controls"
-        className="h-10 px-2 py-1 rounded-[12px] bg-[#111111]/85 backdrop-blur-md border border-[#232323] flex items-center gap-1.5 shadow-2xl"
+        data-testid="blueprint-floating-toolbar"
+        className="h-[44px] px-2 py-1.5 rounded-[16px] bg-[#111111]/95 backdrop-blur-md border border-[#232323] flex items-center gap-1 shadow-2xl"
       >
         {/* Zoom Controls */}
         <button
           type="button"
           aria-label="Zoom out"
+          title="Zoom out (-)"
           onClick={() => zoomOut({ duration: 200 })}
-          className="h-7 w-7 rounded-[8px] text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="h-8 w-8 rounded-[10px] text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
-          <Minus className="h-3.5 w-3.5" />
+          <Minus className="h-4 w-4" />
         </button>
 
-        <span className="font-mono text-[11px] text-[#8A8A8A] px-1 min-w-[36px] text-center">
+        <span
+          className="font-mono text-[11px] tabular-nums text-[#8A8A8A] w-14 text-center select-none"
+          title="Current zoom"
+        >
           {Math.round(zoom * 100)}%
         </span>
 
         <button
           type="button"
           aria-label="Zoom in"
+          title="Zoom in (+)"
           onClick={() => zoomIn({ duration: 200 })}
-          className="h-7 w-7 rounded-[8px] text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="h-8 w-8 rounded-[10px] text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="h-4 w-4" />
         </button>
 
         {/* Divider */}
@@ -269,8 +275,9 @@ export function FloatingToolbar({
         <button
           type="button"
           aria-label="Fit canvas to view"
-          onClick={() => fitView({ duration: 300 })}
-          className="h-7 px-2 rounded-[8px] text-xs font-mono text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          title="Fit view (⇧1)"
+          onClick={() => fitView({ duration: 300, maxZoom: 1, padding: 0.2 })}
+          className="h-8 px-2.5 rounded-[10px] text-xs font-mono text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <Maximize className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Fit</span>
@@ -282,9 +289,10 @@ export function FloatingToolbar({
             type="button"
             aria-label="Auto layout algorithms"
             aria-expanded={isLayoutOpen}
+            aria-haspopup="menu"
             onClick={() => setIsLayoutOpen(!isLayoutOpen)}
             className={cn(
-              'h-7 px-2 rounded-[8px] text-xs font-mono text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+              'h-8 px-2.5 rounded-[10px] text-xs font-mono text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
               isLayoutOpen && 'text-[#FAFAFA] bg-[#1A1A1A]',
             )}
           >
@@ -296,7 +304,7 @@ export function FloatingToolbar({
             <div
               role="menu"
               aria-label="Layout algorithms"
-              className="absolute bottom-11 left-0 w-48 bg-[#111111] border border-[#232323] rounded-[12px] shadow-2xl py-1 z-50 text-left text-xs"
+              className="absolute bottom-[calc(100%+8px)] left-0 w-48 bg-[#111111] border border-[#232323] rounded-[12px] shadow-2xl py-1 z-50 text-left text-xs"
             >
               <div className="px-3 py-1 text-[10px] font-mono text-[#8A8A8A] uppercase tracking-wider border-b border-[#1C1C1C]">
                 Vertical Algorithms
@@ -370,11 +378,13 @@ export function FloatingToolbar({
           onClick={() => undo()}
           title="Undo (⌘Z)"
           className={cn(
-            'h-7 w-7 rounded-[8px] transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
-            canUndo ? 'text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A]' : 'text-[#444444] cursor-not-allowed',
+            'h-8 w-8 rounded-[10px] transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+            canUndo
+              ? 'text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A]'
+              : 'opacity-40 text-[#8A8A8A] cursor-not-allowed',
           )}
         >
-          <RotateCcw className="h-3.5 w-3.5" />
+          <RotateCcw className="h-4 w-4" />
         </button>
 
         <button
@@ -384,11 +394,13 @@ export function FloatingToolbar({
           onClick={() => redo()}
           title="Redo (⌘⇧Z)"
           className={cn(
-            'h-7 w-7 rounded-[8px] transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
-            canRedo ? 'text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A]' : 'text-[#444444] cursor-not-allowed',
+            'h-8 w-8 rounded-[10px] transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+            canRedo
+              ? 'text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A]'
+              : 'opacity-40 text-[#8A8A8A] cursor-not-allowed',
           )}
         >
-          <RotateCw className="h-3.5 w-3.5" />
+          <RotateCw className="h-4 w-4" />
         </button>
 
         {/* Divider */}
@@ -398,14 +410,15 @@ export function FloatingToolbar({
         <button
           type="button"
           aria-label="Search canvas"
+          title="Search canvas (⌘F)"
           aria-expanded={isSearchOpen}
           onClick={() => setIsSearchOpen(!isSearchOpen)}
           className={cn(
-            'h-7 w-7 rounded-[8px] text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+            'h-8 w-8 rounded-[10px] text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
             isSearchOpen && 'text-[#FAFAFA] bg-[#1A1A1A]',
           )}
         >
-          <Search className="h-3.5 w-3.5" />
+          <Search className="h-4 w-4" />
         </button>
 
         {/* More Menu */}
