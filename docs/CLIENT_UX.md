@@ -299,16 +299,16 @@ Footer: summary line ("Odd term 2026–27, 6 days, 7 periods"). Primary **Create
 ├ Canvas (Full Bleed, Vertical Graph, 24px Faint Grid Lines) ────────┬ 360px Sidebar (Right) ───┤
 │ [Floating Node Library Rail: 56px / 264px]                         │ Underlined Tabs:         │
 │   [Collapse/Expand ‹/›]                                            │ Config | Rules | AI      │
-│   [Institution] ── tooltip reason                                  │                          │
-│   [Department]                                                     │ Summary: Type & Title    │
-│   [Program]       [NodeIssuesCard (Portal): 320px]                 │ Inline 36px inputs       │
+│   [Institution] ── drag to canvas / click                          │                          │
+│   [Department]  ── drag onto valid parent                          │ Summary: Type & Title    │
+│   [Program]       [NodeIssuesCard (Portal): 256px]                 │ Inline 36px inputs       │
 │   [Semester]        ┌────────────────────────────┐                 │                          │
-│   [Section]         │ CSE-A • section [2 issues] │                 │ Resource Pools:          │
-│   [Batch]           │ Errors: code missing       │                 │ Faculty, Subjects, Rooms │
-│   ...               │ Reqs: strength not set     │                 │ "Open in Library" cards  │
-│                     │ [Fix auto] [Open config]   │                 │                          │
+│   [Section]         │ CSE-A • 2 issues           │                 │ Resource Pools:          │
+│   [Batch]           │ ▎Code missing              │                 │ Faculty, Subjects, Rooms │
+│   ...               │ ▎Strength not configured   │                 │ "Open in Library" cards  │
+│                     │ [Fix auto] [Open in config]│                 │                          │
 │                     └────────────────────────────┘                 │ Sticky Footer:           │
-│             Hierarchy Nodes (200px cards, 12px radius)             │ [Reset]  [Apply Changes] │
+│             Compact Nodes (232px cards, 64px min-h, 12px radius)   │ [Reset]  [Apply Changes] │
 │         [Ghost Next Step]                [MiniMap]                 │                          │
 │   [Floating Toolbar Pill: Zoom | Fit | Layout ▾ | ↶ ↷ | ⌕ | ⋯]                                │
 └────────────────────────────────────────────────────────────────────┴──────────────────────────┘
@@ -320,44 +320,63 @@ Footer: summary line ("Odd term 2026–27, 6 days, 7 periods"). Primary **Create
 - Two states with local UI persistence (`localStorage`):
   - **Collapsed (default < 1280px)**: 56px wide icon rail, 40px square icon buttons (radius 12px) stacked vertically with 4px gap. Hover or focus shows a right-side tooltip with node name and description.
   - **Expanded (default >= 1280px)**: 264px wide list. Each row is 56px high: 20px icon, 14px medium title, 12px muted description (1-line clamp), grouped under monospace section labels ("Hierarchy structure" and "Resources").
+- **Drag and Drop onto Canvas**:
+  - Every enabled item is draggable (`draggable="true"`), carrying MIME type `application/x-slotly-node` and `application/slotly-node-type`. Disabled items are not draggable (`draggable="false"`) and retain styled reason tooltips.
+  - Drag preview: small ghost chip (icon + node name, 32px high, radius 12px, surface background, 1px border-strong `#383838`, 80% opacity) following pointer; library item dims to 50% opacity.
+  - Drop on a node: adds the new node as child if valid using `onAddNode(type, targetNode.id)`. Valid target nodes display a 2px light ring (`border-strong` token); invalid targets display a not-allowed cursor and toast-like reason chip ("Drop onto a valid parent node. Needs a Program.").
+  - Drop on empty canvas: allowed only for root types (`institution` when none exists, `faculty`, `room`), positioned at pointer drop location converted via `screenToFlowPosition`. For non-root types requiring a parent, rejected with cursor chip.
+  - Drops respect canvas lock (rejected when locked) and Escape cancels dragging. Drops create exactly one undo/redo history entry and automatically select the new node with the Config tab opened.
 - Mobile (< 768px): Transforms into a 48px floating "Add node" icon button at the left edge that opens a bottom sheet with the full node list and large 48px touch targets; sheet closes on item addition.
 - Keyboard navigation: Accessible `role="toolbar"` with roving tabindex (Tab enters once, Arrow Up/Down moves between items, Enter/Space adds, Home/End jumps to first/last, Escape returns focus to canvas). Global shortcut `/` expands and focuses the library panel.
 - Disabled items: Stay visible at 50% opacity, focusable (`aria-disabled="true"`), displaying styled reason tooltip cards to the right (e.g. "Cannot add Academic Year under Institution. Needs a Program.").
-- Viewport & Layout Inset: Layout algorithms and `fitViewOptions` account for a 72px left inset (56px collapsed rail + 16px margin) so nodes are never hidden behind the library panel on load, Fit, or Layout.
+- Viewport & Layout Inset: Layout algorithms and `fitViewOptions` account for a 72px left inset (56px collapsed rail + 16px margin) so nodes are never hidden behind the library panel on load, Fit, or Layout. `fitView` enforces `maxZoom: 1` so lone nodes never exceed 100% zoom.
 
-**Minimal Node Card (`NodeCard` — 200px width, 12px radius, vertical flow):**
-- Clean, restrained aesthetic matching the black-and-white visual spec. 1px border (`#232323`), subtle surface gradient (`from-[#141414] to-[#0D0D0D]`), rounded 12px (`var(--blueprint-node-radius)`).
-- Row 1: 16px node-type icon, title (14px font-medium), uppercase monospace type label (11px, e.g. `SECTION`), and status indicator dot (solid green complete, amber incomplete, grey blocked).
-- Row 2: Metric line or pool chips (student strength e.g. `Strength 60`, `4 years`, `Size 30`, or pool summary `F 12 • S 8 • R 4`).
-- Row 3: Progress track (`NodeProgress`): 4px high track, white at 85% opacity, mono percentage label (`11px`).
-- Footer status (no dropdown): Compact static status line ("2 missing", "Blocked", "Ready", or "Draft") with child count. No inline expansion and zero layout shift—dimensions remain strictly identical whether hovered or not.
-- Handles: Top target ring (`HandleRing`), bottom source pill (`HandlePill`), hover/selected `AddChildButton` (+) with allowed child-type dropdown.
+**Compact Node Card (`NodeCard` — 232px width, 64px min height, 12px radius):**
+- Restrained, calm aesthetic matching black-and-white visual tokens. Width 232px, min-height 64px, padding 12px, radius 12px, background surface (`#111111`), 1px border token (`#232323`).
+- Row 1: 20px node-type icon (`#8A8A8A`), title (14px font-medium white, truncate with tooltip), subtitle (12px mono muted, e.g. "Campus root" or `Strength 60`).
+- Top-Right Status: 16px yellow warning icon (`AlertTriangle`, `#FACC15`) with mono 12px count badge ("3") shown only when issues exist. Ready nodes display a small muted check icon (`Check`, `#8A8A8A`).
+- Removed: Progress bar, percentage value, divider line above footer, large "3 missing" row, and chevron. Node dimensions remain strictly identical whether hovered, selected, or unselected (zero layout shift).
+- Hover & Selection: Hover moves border to `border-strong` (`#383838`). Selection applies `border-[#FAFAFA]` with 1px outer ring in focus-ring token (`ring-1 ring-[#FAFAFA] ring-offset-2 ring-offset-[#0A0A0A]`). No thick double ring, no glow, no shadow.
+- Connection Handles: 8px dots (`#383838` border, `#111111` fill) visible only on hover, selection, or active connection drag. Top target dot, bottom source dot.
 - Screen Reader: `aria-describedby` links to a visually hidden summary of issues for full non-visual accessibility.
 
-**Node Issues Hover & Focus Card (`NodeIssuesCard`):**
+**Compact Node Issues Hover & Focus Card (`NodeIssuesCard` — 256px width):**
 - Appears after 150ms pointer hover on a node, on keyboard focus, or on touch tap. Closes 100ms after pointer leaves both the node and the card (shared hover bridge allows moving pointer into the card to interact with action buttons).
 - Dismisses on Escape (returning focus to the node) or on clicking the empty canvas; automatically hides during node dragging or canvas panning.
-- Rendered in a React portal in screen space (does not scale with canvas zoom). Anchored to the node's DOM rectangle, preferring right of node, then left, then below, automatically flipping and shifting to remain within the safe canvas bounds (clearing the 360px right sidebar and 72px left library panel).
+- Rendered in a React portal in screen space. Anchored to the node's DOM rectangle (256px width, max 90vw), preferring right of node, then left, then below, automatically flipping and shifting within safe canvas bounds.
 - Content:
-  - Header: Node title and monospace uppercase type, with total issue count ("2 issues found").
-  - Grouped list: Errors (blocking) first with red alert glyphs, followed by Requirements / Warnings with amber glyphs. Each item displays a plain-language sentence translated by `formatIssueLabel` alongside its raw configuration key in mono 12px muted.
-  - Internal scroll (`max-h-[280px]`) with "+N more" indicator if more than 6 issues are present.
+  - Header: Node title (13px medium, truncate) and total count ("3 issues", mono 12px muted) on one line. No close button.
+  - Group labels: 12px muted group labels ("Errors (N)", "Requirements (N)") shown only when both errors and warnings are present; omitted when only one group exists.
+  - Rows: Compact 8px vertical padding, 12px message, raw key in mono 12px muted, 2px red left indicator for errors, 2px yellow for warnings, no red or yellow background fill.
+  - Internal scroll (`max-h-[200px]`) with "+N more" indicator if more than 4 issues are present.
   - Actions row:
-    - "Fix automatically": 32px outline button (radius 12px) applying safe defaults for missing fields (`getSafeDefaultsForNodeType`).
-    - "Open in config": 32px outline button (radius 12px) selecting the node and switching to the Config tab in the right sidebar.
+    - "Fix automatically": 28px outline button applying safe defaults for missing fields (`getSafeDefaultsForNodeType`).
+    - "Open in config": 28px outline button selecting the node and switching to the Config tab in the right sidebar.
 
 **Floating Toolbar Pill (`FloatingToolbar` — centered at bottom):**
-- 40px height, 12px radius, 1px border (`#232323`), surface background (`#111111`) with backdrop blur.
-- Contains: Zoom controls (`-`, %, `+`), Fit view, Layout Algorithm dropdown (Hierarchical TB, Compact, Department-based, plus Reset — strictly vertical layout), History controls (Undo `⌘Z`, Redo `⇧⌘Z`), Search toggle with inline type-ahead drawer, and "More" menu (`ToolbarMenu`). Add button and popup removed in favor of the floating left library panel.
+- 44px height, 16px radius, 16px from canvas bottom, 1px border (`#232323`), 95% surface background with backdrop blur.
+- Contains:
+  - Zoom group: 32px zoom-out icon button, 56px tabular zoom percent (`w-14 text-center font-mono text-[11px]`), 32px zoom-in icon button.
+  - Fit & Layout group: Fit view button (`fitView` with `maxZoom: 1`), Layout Algorithm dropdown (Hierarchical TB, Compact, Department-based, plus Reset — strictly vertical layout).
+  - History group: 32px Undo (`⌘Z`) and Redo (`⇧⌘Z`) icon buttons (disabled at 40% opacity).
+  - Search toggle with inline type-ahead drawer.
+  - More menu (`ToolbarMenu`).
+- Accessible tooltips with keyboard shortcuts and visible focus rings on all controls.
+
+**More Menu (`ToolbarMenu` — 248px width, anchored above More button):**
+- Anchored to More button (`side="top" align="end" sideOffset={8}`), 248px width, max height bounded to viewport available space (`max-h-[calc(100vh-80px)]`) so it is never clipped on 1440, 1024, or 768px viewports.
+- No scroll arrows; thin native scrollbar with first and last items fully visible when scrolled to ends.
+- Rows: 32px high, 13px label, 16px icon, right-aligned mono 12px muted shortcuts, on-off switch state aligned in the right column.
+- Sections with 12px muted labels and 1px dividers: View (Minimap, Dim Inactive, Fullscreen, Lock Canvas), Edit (Bulk Add, Copy Subtree, Paste, Duplicate), History (Revision History, Snapshots), Data & Templates (Export, Import, Save as Template, Starter Kits), Collaboration (Comments, Submit for Approval), Help (Shortcuts). Escape returns focus to More button.
 
 **Single 48px Header (`BlueprintHeader`):**
 - Left: Back arrow (`/projects`), project name queried asynchronously from API (displays skeleton during fetch, never exposes DB id), Draft status pill.
 - Right:
-  - Autosave status: `● Saved · rev X` (muted check), `● Saving…` (amber pulsing dot), `● Offline` (amber).
-  - Single readiness chip: circular progress ring with `% ready` (green when 100%, yellow when in progress).
-  - Issues chip: displayed only when open issues > 0 (amber dot with issue count).
-  - Studio navigation: text link `Studio` (`/projects/:id/editor`).
+  - Autosave status: `Saved • rev X` (muted check), `Saving…`, `Offline`.
+  - Single readiness chip: circular progress ring with `% ready` (green when 100%, white when in progress).
+  - Issues chip: displayed only when open issues > 0 (red dot with issue count).
   - Primary action: yellow `Build` button (`/projects/:id/build`).
+  - Studio top-bar button removed to eliminate visual clutter and ensure clean single-row alignment at >= 1024px. Studio route remains active at `/projects/:id/editor`.
 
 **360px Right Sidebar (`BlueprintSidebar` & `SidePanelTabs`):**
 - 360px fixed width panel with clean underlined tab navigation (`Config`, `Constraints`, `Slotly AI`).

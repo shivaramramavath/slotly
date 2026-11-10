@@ -45,18 +45,18 @@
 - **Function** `groupAndSortIssues(node: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/types/canvas.types").BlueprintCanvasNode)`: `{ errors: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/issue-label").NodeIssueItem[]; warnings: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/issue-label").NodeIssueItem[]; all: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/issue-label").NodeIssueItem[]; totalCount: number; }` - Groups and sorts issues for a node: blocking errors first, then warnings/missing fields.
 
 ### `client/src/features/blueprint/components/canvas/node-card.tsx`
-*Presentation component rendering NodeCard and its subcomponents.*
+*Presentation component rendering compact NodeCard and its subcomponents.*
 
 - **Interface** `NodeCardProps`
 - **Function** `calculateNodeProgress(node: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/types/canvas.types").BlueprintCanvasNode)`: `number` - Compute completion percentage based on filled vs missing required fields
-- **Function** `getNodeMetricLine(node: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/types/canvas.types").BlueprintCanvasNode)`: `string` - Get single metric line text for Row 2
+- **Function** `getNodeMetricLine(node: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/types/canvas.types").BlueprintCanvasNode)`: `string` - Get single metric line text for subtitle
 - **Const** `TYPE_ICONS`: `Record<"institution" | "department" | "program"...`
 - **Const** `TYPE_LABELS`: `Record<"institution" | "department" | "program"...`
-- **Component** `NodeProgress()` - Subcomponent: Progress Bar in Row 3
+- **Component** `NodeProgress()` - Subcomponent: Progress Bar kept for feature parity
 - **Component** `HandleRing()` - Subcomponent: Target Ring Handle at Top Edge
 - **Component** `HandlePill()` - Subcomponent: Source Pill Handle at Bottom Edge
 - **Component** `AddChildButton()` - Subcomponent: Add Child Control Button
-- **Component** `NodeCard()` - Base NodeCard component matching reference visual spec
+- **Component** `NodeCard()` - Base NodeCard component matching compact 232px specification
 
 ### `client/src/features/blueprint/components/canvas/node-factory.tsx`
 *React component for node-factory.*
@@ -66,7 +66,7 @@
 - **Const** `nodeTypes`: `{ blueprint: React.MemoExoticComponent<({ id, d...` - Constant representing node types for React Flow.
 
 ### `client/src/features/blueprint/components/canvas/node-issues-card.tsx`
-*React component for node-issues-card.*
+*React component for compact node-issues-card.*
 
 - **Interface** `NodeIssuesCardProps`
 - **Component** `NodeIssuesCard({
@@ -76,7 +76,7 @@
   onClose,
   onMouseEnter,
   onMouseLeave,
-}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/node-issues-card").NodeIssuesCardProps)` - React component rendering hover & focus card for node errors and requirements
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/node-issues-card").NodeIssuesCardProps)` - React component rendering compact hover & focus card for node errors and requirements
 
 ### `client/src/features/blueprint/components/canvas/safe-defaults.ts`
 *Helper utility providing safe default configurations for blueprint auto-fix.*
