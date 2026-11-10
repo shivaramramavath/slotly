@@ -22,7 +22,7 @@ import { useGateValidation } from '../../hooks/use-gate-validation';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-interface PaletteItem {
+export interface PaletteItem {
   type: BlueprintNodeType;
   label: string;
   icon: React.ElementType;
@@ -30,7 +30,7 @@ interface PaletteItem {
   category: 'structure' | 'resource';
 }
 
-const PALETTE_ITEMS: PaletteItem[] = [
+export const PALETTE_ITEMS: PaletteItem[] = [
   // Structure
   {
     type: 'institution',

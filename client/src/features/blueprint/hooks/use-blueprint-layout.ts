@@ -5,8 +5,8 @@ import type { BlueprintCanvasNode, BlueprintCanvasEdge, LayoutDirection, LayoutA
 import { useBlueprintStore } from '../store/blueprint.store';
 import { toast } from '@/components/ui/toast';
 
-const NODE_WIDTH = 240;
-const NODE_HEIGHT = 130;
+const NODE_WIDTH = 200;
+const NODE_HEIGHT = 90;
 
 /**
  * Overlap avoidance algorithm: simple bounding box separation.

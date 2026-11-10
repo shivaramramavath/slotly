@@ -21,6 +21,13 @@
   --header-height: 72px;
   --page-max-width: 1016px;
 
+  /* Blueprint canvas tokens */
+  --blueprint-node-width: 200px;
+  --blueprint-node-radius: 12px;
+  --blueprint-control-radius: 10px;
+  --blueprint-grid-color: rgba(255, 255, 255, 0.03);
+  --blueprint-edge-stroke: rgba(250, 250, 250, 0.55);
+
   /* shadcn semantic tokens mapped to strict B&W rules */
   --primary: #facc15;
   --primary-foreground: #000000;
@@ -48,4 +55,23 @@ body {
 
 code, kbd, samp, pre {
   font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+@keyframes edge-flow {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.edge-flow {
+  animation: edge-flow 1.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge-flow {
+    animation: none;
+  }
 }

@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import {
   Sliders,
   Sparkles,
-  ShieldCheck,
   Check,
   MessageSquare,
   Wand2,
@@ -14,12 +13,14 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { blueprintApi } from '@/features/projects/services/blueprint.api';
 import { useBlueprintStore } from '../../store/blueprint.store';
 import type { BlueprintCanvasNode } from '../../types/canvas.types';
 import type { BlueprintRecommendationDto } from '@slotly/contracts';
 import { BlueprintConstraintsTab } from './tabs/blueprint-constraints-tab';
+import { SidePanelTabs } from './side-panel-tabs';
+import { TYPE_ICONS } from '../canvas/node-card';
+import { cn } from '@/lib/utils';
 
 interface BlueprintSidebarProps {
   projectId: string;
@@ -187,8 +188,9 @@ function NodeConfigForm({ node, onUpdateConfig, recommendations }: NodeConfigFor
 
       {/* Common Field: Name / Label */}
       <div>
-        <label className="block text-xs font-medium text-[#FAFAFA] mb-1">
-          Name / Label <span className="text-[#EF4444]">*</span>
+        <label className="block font-mono text-[11px] text-[#8A8A8A] mb-1.5 flex items-center gap-1">
+          <span>Name / Label</span>
+          <span className="w-1 h-1 rounded-full bg-[#8A8A8A]" />
         </label>
         <Input
           value={String(formData['name'] ?? formData['label'] ?? '')}
@@ -197,11 +199,11 @@ function NodeConfigForm({ node, onUpdateConfig, recommendations }: NodeConfigFor
             handleFieldChange('label', e.target.value);
           }}
           placeholder="e.g. Computer Science & Eng."
-          className={
-            fixHint?.field === 'name' || fixHint?.field === 'label'
-              ? 'border-[#FACC15] ring-1 ring-[#FACC15]'
-              : ''
-          }
+          className={cn(
+            'rounded-[10px] bg-[#111111] border-[#232323] text-xs font-mono h-9',
+            (fixHint?.field === 'name' || fixHint?.field === 'label') &&
+              'border-[#FACC15] ring-1 ring-[#FACC15]',
+          )}
         />
       </div>
 
@@ -451,14 +453,14 @@ function NodeConfigForm({ node, onUpdateConfig, recommendations }: NodeConfigFor
         </>
       )}
 
-      {/* Save / Reset Actions */}
-      <div className="pt-4 border-t border-[#232323] flex items-center justify-between">
+      {/* Sticky Save / Reset Actions */}
+      <div className="sticky bottom-0 bg-[#0A0A0A]/95 backdrop-blur-sm pt-4 pb-2 border-t border-[#232323] flex items-center justify-between mt-6">
         <Button
           variant="ghost"
           size="sm"
           onClick={handleReset}
           disabled={!isDirty}
-          className="text-xs text-[#8A8A8A]"
+          className="text-xs font-mono text-[#8A8A8A] hover:text-[#FAFAFA]"
         >
           Reset
         </Button>
@@ -467,7 +469,7 @@ function NodeConfigForm({ node, onUpdateConfig, recommendations }: NodeConfigFor
           size="sm"
           onClick={handleSave}
           disabled={!isDirty}
-          className="text-xs gap-1.5"
+          className="h-8 px-4 text-xs font-medium bg-[#FACC15] hover:bg-[#FACC15]/90 text-[#000]"
         >
           <Check className="h-3.5 w-3.5" />
           <span>Apply Changes</span>
@@ -516,84 +518,68 @@ export function BlueprintSidebar({ projectId, onUpdateConfig }: BlueprintSidebar
 
   if (!selectedNode) {
     return (
-      <aside className="w-80 h-full border-l border-[#232323] bg-[#0A0A0A] p-4 flex flex-col items-center justify-center text-center text-[#8A8A8A]">
+      <aside className="w-[360px] h-full border-l border-[#232323] bg-[#0A0A0A] p-6 flex flex-col items-center justify-center text-center text-[#8A8A8A] shrink-0">
         <Sliders className="h-8 w-8 text-[#333333] mb-2" />
-        <p className="text-xs font-semibold text-[#FAFAFA]">No Node Selected</p>
-        <p className="text-[11px] font-mono mt-1">Select a node from the canvas to edit its properties.</p>
+        <p className="text-xs font-medium text-[#FAFAFA]">No Node Selected</p>
+        <p className="text-[11px] font-mono mt-1 text-[#666666]">
+          Select a node from the canvas to edit its properties.
+        </p>
       </aside>
     );
   }
 
+  const NodeIcon = TYPE_ICONS[selectedNode.data.nodeType] || Sliders;
+
   return (
-    <aside className="w-80 h-full border-l border-[#232323] bg-[#0A0A0A] flex flex-col z-20">
+    <aside className="w-[360px] h-full border-l border-[#232323] bg-[#0A0A0A] flex flex-col z-20 shrink-0">
       {/* Sidebar Tabs */}
-      <div className="h-10 border-b border-[#232323] px-2 flex items-center gap-1 bg-[#111111]">
-        <Button
-          variant={activeTab === 'config' ? 'primary' : 'ghost'}
-          size="sm"
-          className="h-7 text-xs gap-1.5 flex-1"
-          onClick={() => setActiveTab('config')}
-        >
-          <Sliders className="h-3.5 w-3.5" />
-          <span>Config</span>
-        </Button>
-        <Button
-          variant={activeTab === 'constraints' ? 'primary' : 'ghost'}
-          size="sm"
-          className="h-7 text-xs gap-1.5 flex-1 text-[#8A8A8A]"
-          onClick={() => setActiveTab('constraints')}
-        >
-          <ShieldCheck className="h-3.5 w-3.5" />
-          <span>Constraints</span>
-        </Button>
-        <Button
-          variant={activeTab === 'ai' ? 'primary' : 'ghost'}
-          size="sm"
-          className="h-7 text-xs gap-1.5 flex-1 text-[#8A8A8A]"
-          onClick={() => setActiveTab('ai')}
-        >
-          <Sparkles className="h-3.5 w-3.5 text-[#FACC15]" />
-          <span>Slotly AI</span>
-        </Button>
-      </div>
+      <SidePanelTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Sidebar Content */}
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === 'config' && (
           <div>
-            {/* Selected Node Status Summary */}
-            <div className="p-2.5 rounded bg-[#111111] border border-[#232323] mb-4">
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-mono text-[10px] uppercase text-[#8A8A8A]">
-                  {selectedNode.data.nodeType}
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <Badge
-                    variant={
-                      selectedNode.data.effectiveStatus === 'complete'
-                        ? 'green'
-                        : selectedNode.data.effectiveStatus === 'blocked'
-                        ? 'neutral'
-                        : 'yellow'
-                    }
-                    className="font-mono text-[9px] uppercase"
-                  >
-                    {selectedNode.data.effectiveStatus}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setActiveCommentsNodeId(selectedNode.id)}
-                    title="View node comments"
-                    className="h-5 w-5 text-[#8A8A8A] hover:text-[#FAFAFA]"
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                  </Button>
+            {/* Selected Node Status Summary Row */}
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#232323]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <NodeIcon className="h-4 w-4 text-[#8A8A8A] shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="font-medium text-xs text-[#FAFAFA] truncate">
+                    {selectedNode.data.label || 'Untitled Node'}
+                  </h3>
+                  <div className="font-mono text-[10px] text-[#8A8A8A] uppercase">
+                    {selectedNode.data.nodeType}
+                  </div>
                 </div>
               </div>
-              <h3 className="font-semibold text-xs text-[#FAFAFA] truncate">
-                {selectedNode.data.label}
-              </h3>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span
+                  className={cn(
+                    'font-mono text-[11px]',
+                    selectedNode.data.effectiveStatus === 'complete'
+                      ? 'text-[#22C55E]'
+                      : selectedNode.data.effectiveStatus === 'blocked'
+                      ? 'text-[#8A8A8A]'
+                      : 'text-[#FACC15]',
+                  )}
+                >
+                  {selectedNode.data.effectiveStatus === 'complete'
+                    ? 'Complete'
+                    : selectedNode.data.effectiveStatus === 'blocked'
+                    ? 'Blocked'
+                    : 'Incomplete'}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveCommentsNodeId(selectedNode.id)}
+                  title="View node comments"
+                  className="p-1 rounded text-[#8A8A8A] hover:text-[#FAFAFA] transition-colors"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
 
             {/* Dynamic Node Config Form with Key for State Reset */}

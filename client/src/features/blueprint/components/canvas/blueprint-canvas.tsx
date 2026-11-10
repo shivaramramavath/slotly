@@ -5,7 +5,7 @@ import React, { useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
-  Controls,
+  BackgroundVariant,
   MiniMap,
   Connection,
   Node,
@@ -18,14 +18,23 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { nodeTypes } from './node-factory';
+import { DottedEdge } from './dotted-edge';
 import { BlueprintContextMenu } from './blueprint-context-menu';
 import { BlueprintFloatingAlignBar } from './blueprint-floating-align-bar';
+import { FloatingToolbar } from '../toolbar/floating-toolbar';
+import { FirstRunHint } from '../hint/first-run-hint';
 import { useBlueprintStore } from '../../store/blueprint.store';
 import { useGateValidation } from '../../hooks/use-gate-validation';
 import { useBlueprintCommands } from '../../hooks/use-blueprint-commands';
+import { useGuidedMode } from '../../hooks/use-guided-mode';
 import { toast } from '@/components/ui/toast';
 import type { BlueprintCanvasNode, BlueprintCanvasEdge } from '../../types/canvas.types';
 import type { BlueprintNodeType } from '@slotly/contracts';
+
+const edgeTypes = {
+  default: DottedEdge,
+  dotted: DottedEdge,
+};
 
 interface BlueprintCanvasProps {
   onMoveNode: (nodeId: string, position: { x: number; y: number }) => void;
@@ -63,9 +72,13 @@ export function BlueprintCanvas({
   const toggleNodeLock = useBlueprintStore((s) => s.toggleNodeLock);
   const toggleNodeHidden = useBlueprintStore((s) => s.toggleNodeHidden);
   const setIsShortcutsOpen = useBlueprintStore((s) => s.setIsShortcutsOpen);
+  const isMinimapOpen = useBlueprintStore((s) => s.isMinimapOpen);
+  const selectedNodeId = useBlueprintStore((s) => s.selectedNodeId);
 
   const { isValidConnection, canAddNodeType, getNodeById } = useGateValidation(nodes, edges);
   const { undo, redo, canUndo, canRedo } = useBlueprintCommands();
+  const { goToNextStep } = useGuidedMode();
+  const incompleteCount = nodes.filter((n) => n.data.effectiveStatus === 'incomplete').length;
 
   // Listen for custom "slotly:add-child" event dispatched from Node "+" button
   useEffect(() => {
@@ -343,6 +356,7 @@ export function BlueprintCanvas({
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
@@ -363,19 +377,55 @@ export function BlueprintCanvas({
         fitView
         deleteKeyCode={null}
       >
-        <Background color="#232323" gap={gridSize} size={1} />
-        <Controls className="!bg-[#111111] !border !border-[#232323] !rounded-md overflow-hidden fill-[#FAFAFA]" />
-        <MiniMap
-          nodeColor={(node) => {
-            const status = (node.data as BlueprintCanvasNode['data'])?.effectiveStatus;
-            if (status === 'complete') return '#22C55E';
-            if (status === 'blocked') return '#3A3A3A';
-            return '#FACC15';
-          }}
-          maskColor="rgba(10, 10, 10, 0.7)"
-          className="!bg-[#111111] !border !border-[#232323] !rounded-md overflow-hidden"
+        <Background
+          variant={BackgroundVariant.Lines}
+          color="rgba(255, 255, 255, 0.03)"
+          gap={24}
+          size={1}
         />
+        {isMinimapOpen && (
+          <MiniMap
+            nodeColor="#2A2A2A"
+            maskColor="rgba(255, 255, 255, 0.06)"
+            className="!bg-[#111111] !border !border-[#232323] !rounded-[10px] overflow-hidden !bottom-4 !right-4 shadow-xl"
+            style={{ width: 160, height: 100 }}
+          />
+        )}
       </ReactFlow>
+
+      {/* Subtle corner vignette */}
+      <div className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_120px_rgba(0,0,0,0.85)]" />
+
+      {/* Guided Mode ("Next step") Ghost Button at Top Left */}
+      {incompleteCount > 0 && (
+        <button
+          type="button"
+          onClick={goToNextStep}
+          aria-label="Next incomplete node"
+          className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#111111]/85 backdrop-blur-sm border border-[#232323] hover:border-[#383838] text-xs font-mono text-[#FAFAFA] transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#FACC15] animate-pulse" />
+          <span>Next step</span>
+          <span className="text-[#8A8A8A] text-[10px]">({incompleteCount} incomplete)</span>
+        </button>
+      )}
+
+      {/* First-Run Onboarding Hint for Empty Canvas */}
+      <FirstRunHint />
+
+      {/* Floating Bottom Center Pill Toolbar */}
+      <FloatingToolbar
+        onAddNode={onAddNode}
+        onCopy={() => {
+          const selected = nodes.find((n) => n.id === selectedNodeId);
+          if (selected) handleCopy(selected);
+        }}
+        onPaste={handlePaste}
+        onDuplicate={() => {
+          const selected = nodes.find((n) => n.id === selectedNodeId);
+          if (selected) handleDuplicate(selected);
+        }}
+      />
 
       {/* Floating Align & Distribute Toolbar */}
       <BlueprintFloatingAlignBar />

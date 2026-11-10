@@ -292,65 +292,75 @@ Three steps with a stepper; Back/Next; progress is kept if the modal is dismisse
 
 Footer: summary line ("Odd term 2026–27, 6 days, 7 periods"). Primary **Create project** goes straight to the Blueprint.
 
-### 5.5 Blueprint `/projects/[projectId]/blueprint` (Blueprint v2: Minimal Design & Resource Pools)
+### 5.5 Blueprint `/projects/[projectId]/blueprint` (Minimal Canvas & Restyled Workspace)
 
 ```
-┌ Canvas (Vertical Graph) ─────────────────────────────┬ 360px Drawer (Right) ──────────┐
-│ [Floating Toolbar Pill: ↶ ↷ | Fit | Layout ▾ | Search | Next Step | Saved ●]          │
-│                                                      │ Tabs: Details | Resources     │
-│             Hierarchy Nodes (220px cards)            │       Rules   | Check         │
-│               [Institution: Slotly Univ]             │       History | Assignments   │
-│                           │                          │                               │
-│              [Department: Computer Science]          │ [Selected node form / pool]   │
-│                           │                          │ Pool: + Add from Library      │
-│                 [Program: B.Tech CSE]                │ Faculty (12) Subjects (8)     │
-│                           │                          │ Required items, Pinned items  │
-│                 [Semester: Semester 5]               │                               │
-│                           │                          │ Assignments (Section only):   │
-│                 [Section: CSE-A]                     │ OS (Prof. Smith, Room 301)    │
-│               minimap                  Ready 85%     │ Auto-fill: Same Department    │
-└──────────────────────────────────────────────────────┴───────────────────────────────┘
+┌ 48px Header: ← Project Name [Draft] ──────── Autosave [85% Ready] [3 Issues] [Studio] [Build] ┐
+├ Canvas (Full Bleed, Vertical Graph, 24px Faint Grid Lines) ────────┬ 360px Sidebar (Right) ───┤
+│                                                                    │ Underlined Tabs:         │
+│             Hierarchy Nodes (200px cards, 12px radius)             │ Config | Rules | AI      │
+│               [Institution: Slotly Univ]                           │                          │
+│                    │ (dotted bezier curve)                         │ Summary: Type & Title    │
+│              [Department: Computer Science]                        │ Inline 36px inputs       │
+│                    │                                               │                          │
+│                 [Program: B.Tech CSE]                              │ Resource Pools:          │
+│                    │                                               │ Faculty, Subjects, Rooms │
+│                 [Semester: Semester 5]                             │ "Open in Library" cards  │
+│                    │                                               │                          │
+│                 [Section: CSE-A]                                   │ Sticky Footer:           │
+│         [Ghost Next Step]                [MiniMap]                 │ [Reset]  [Apply Changes] │
+│   [Floating Toolbar Pill: + Add | Zoom | Fit | Layout ▾ | ↶ ↷ | ⌕ | ⋯]                       │
+└────────────────────────────────────────────────────────────────────┴──────────────────────────┘
 ```
 
-**Minimal Node Card (220px width, vertical flow):**
-- Clean, restrained aesthetic matching the black-and-white visual spec. 1px border (`#232323`), surface bg (`#111111`), rounded 16px.
-- Header: mono type indicator (e.g. `SECTION`), title (e.g. `CSE-A`), and status dot:
+**Minimal Node Card (`NodeCard` — 200px width, 12px radius, vertical flow):**
+- Clean, restrained aesthetic matching the black-and-white visual spec. 1px border (`#232323`), subtle surface gradient (`from-[#141414] to-[#0D0D0D]`), rounded 12px (`var(--blueprint-node-radius)`).
+- Row 1: 16px node-type icon, title (14px font-medium), uppercase monospace type label (11px, e.g. `SECTION`), and status indicator:
   - Complete: solid green dot (`#22C55E`)
   - Incomplete: dashed yellow border / amber dot (`#FACC15`) with "N missing"
   - Blocked: muted grey dot (`#8A8A8A`) with "Parent incomplete"
-- Body chips: key counts and metrics (student strength, pool count chips: `12 faculty`, `8 subjects`, `3 rooms`).
-- Add-child "+" handle: anchored at the bottom edge, active only when node is complete; opens child creation menu.
+  - Indicators for user locks, presence avatars, and comment count.
+- Row 2: Metric line or pool chips (student strength e.g. `Strength 60`, `4 years`, `Size 30`, or pool summary `F 12 • S 8 • R 4`).
+- Row 3: Progress track (`NodeProgress`): 4px high track, white at 85% opacity, mono percentage label (`11px`).
+- Handles:
+  - Top target ring (`HandleRing`): 10px circular target handle for incoming vertical edges.
+  - Bottom source pill (`HandlePill`): 14×6px horizontal pill handle for outgoing vertical edges.
+  - Hover add-child button (`AddChildButton`): 22px circle "+" button anchored below the card, active on hover or when selected, opens allowed child-type dropdown with completion gate tooltips.
 - Selection: high-contrast white ring or subtle yellow border with no layout shift.
 
-**Floating Toolbar Pill (top center of canvas):**
-- Floating pill: Undo (`⌘Z`), Redo (`⇧⌘Z`), Fit view, Layout Algorithm (Hierarchical TB, Compact, Department-based — strictly vertical layout, no direction toggles), Search (`⌘F`), **Next step** (guided mode), and real-time Autosave status indicator.
+**Dotted Edges (`DottedEdge` & `EdgeLabelPill`):**
+- Vertical smooth bezier curves with `strokeDasharray: "1 6"` and round caps.
+- Dynamic animated dash flow (`.edge-flow` class) when connected to a selected node.
+- Midpoint `EdgeLabelPill`: displays child counts below target, automatically hidden when canvas zoom is below 0.6.
 
-**Autosave Status Indicator:**
-- `Saved`: muted mono text with subtle green dot (`● Saved`).
-- `Saving`: pulsing amber dot (`● Saving…`).
-- `Offline (N pending)`: amber badge showing pending write-behind operations (`● Offline (3 pending)`).
-- `Conflict`: red indicator with prompt to resolve stale revisions (`● Conflict [Review]`).
-- `Error`: red indicator with retry action (`● Error [Retry]`).
+**Floating Toolbar Pill (`FloatingToolbar` — centered at bottom):**
+- 40px height, 12px radius, 1px border (`#232323`), surface background (`#111111`) with backdrop blur.
+- Elements:
+  - "+ Add" button (opens node creation popover; keyboard shortcut `/`).
+  - Zoom controls: `-`, current zoom percentage (mono), `+`.
+  - Fit view button.
+  - Layout Algorithm dropdown: strictly vertical algorithms (Hierarchical TB, Compact, Department-based, plus Reset) — no direction toggles.
+  - History controls: Undo (`⌘Z`), Redo (`⇧⌘Z`).
+  - Search toggle: opens inline type-ahead drawer above the pill with node-type chips (`All`, `Section`, `Subject`, `Faculty`, `Room`) and smooth camera centering.
+  - "More" menu (`ToolbarMenu`): grouped actions for View (MiniMap toggle, Snap to grid), Edit (Duplicate, Delete, Align, Auto-layout), History (Version history), Data (Import, Export), Collaboration (Share, Live cursors), and Help (Shortcuts, Guided mode).
 
-**360px Right Drawer (slide-over panel with granular tabs):**
-| Tab | Content & Functionality |
-|---|---|
-| Details | Node core attributes (name, code, strength, duration, dates). Direct inline editing with debounced socket autosave. |
-| Resources | Per-node Resource Pool: tabs for Faculty, Subjects, and Rooms. Search library items, Add to pool, Exclude inherited items, Mark Required (ancestors), Mark Pinned. Read-only item inspection cards with "Open in Library" links. |
-| Assignments | (Active for Section and Batch nodes): Subject assignments table/list. Assign faculty, room, periods/week, lab toggle. Auto-fill selector: `Off`, `Same Department`, `Allow Other Departments`. |
-| Rules | Constraint configuration & inheritance. Shows inherited constraints from ancestors with clear override toggles. |
-| Check | Node readiness & validation checklist. Lists missing fields and warnings with one-click "Go fix" jump links. |
-| History | Live audit trail of changes made to this node; operation history. |
+**Single 48px Header (`BlueprintHeader`):**
+- Left: Back arrow (`/projects`), project name queried asynchronously from API (displays skeleton during fetch, never exposes DB id), Draft status pill.
+- Right:
+  - Autosave status: `● Saved · rev X` (muted check), `● Saving…` (amber pulsing dot), `● Offline` (amber).
+  - Single readiness chip: circular progress ring with `% ready` (green when 100%, yellow when in progress).
+  - Issues chip: displayed only when open issues > 0 (amber dot with issue count).
+  - Studio navigation: text link `Studio` (`/projects/:id/editor`).
+  - Primary action: yellow `Build` button (`/projects/:id/build`).
 
-**Resource Pool Cards & Library Navigation:**
-- Pool cards within the inspector are strictly read-only representations of Library items.
-- Cards show status tags (`Inherited from CSE Dept`, `Required`, `Pinned`, `Excluded`).
-- Clicking an item opens a quick preview with an external link "Open in Library" (`/library/faculty?id=...`); items cannot be mutated directly within the Blueprint workspace.
+**360px Right Sidebar (`BlueprintSidebar` & `SidePanelTabs`):**
+- 360px fixed width panel with clean underlined tab navigation (`Config`, `Constraints`, `Slotly AI`).
+- Node summary header without boxed badge; form inputs standardized to 36px height (`h-9`), 10px radius.
+- Resource Pools tab: read-only representations of Library faculty, subjects, and rooms with "Open in Library" links.
+- Sticky panel footer with quiet Reset and primary yellow `Apply Changes` button.
 
-**Canvas Interactions:**
-- Drag & Drop: Vertical connections only. Type hierarchy strictly enforced by `BLUEPRINT_RULES.md`.
-- Keyboard navigation: Arrow keys navigate between connected nodes in hierarchy order. `Enter` opens drawer. `N` triggers Guided Mode next step. `Delete` opens impact preview dialog.
-- Guided Mode: Automatically finds the top-most incomplete node and opens drawer with focused missing field.
+**First-Run Hint (`FirstRunHint`):**
+- Floating card for new/empty canvas (single Institution node), guiding the user to click the bottom `+` handle to add their first Department. Dismissible with localStorage persistence via `useSyncExternalStore`.
 
 ### 5.6 Build `/projects/[projectId]/build`
 

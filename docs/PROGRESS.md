@@ -2216,4 +2216,76 @@ Server implementation of Blueprint v2 resource pools, inheritance resolution, mu
 
 Merged via `feat/blueprint-v2-server`, tag `feat-blueprint-v2-server-merged`.
 
+---
+
+## Task: Blueprint Canvas Restyle (`ux/04-blueprint-canvas-style`)
+
+### What Was Built
+
+1. **Tokens & Theme Variables (`globals.css`):**
+   - Added `--blueprint-node-width: 200px`, `--blueprint-node-radius: 12px`, `--blueprint-control-radius: 10px`, `--blueprint-grid-color: rgba(255, 255, 255, 0.03)`, `--blueprint-edge-stroke: rgba(250, 250, 250, 0.55)`.
+   - Added `@keyframes edge-flow` and `.edge-flow` class for slow dash flow on selected connections, with full `prefers-reduced-motion` override.
+
+2. **Canvas Background & MiniMap (`blueprint-canvas.tsx`):**
+   - Replaced dot background with 24px faint square grid lines (`rgba(255, 255, 255, 0.03)`) on `#0A0A0A`.
+   - Added subtle radial corner vignette overlay (`pointer-events-none`).
+   - Removed unstyled default Controls panel.
+   - Restyled React Flow MiniMap into a 160×100 monochrome widget (`#2A2A2A` mask, 10px radius) toggleable via store `isMinimapOpen` and toolbar menu.
+   - Preserved ghost "Next step" button in top-left.
+
+3. **Single 48px Header (`BlueprintHeader`):**
+   - Displays project name queried from API with skeleton loading (never displays DB ID).
+   - Left: Back button to `/projects`, project name, Draft status chip.
+   - Right: Autosave status (`Saved • rev X`, `Saving...`, `Offline`), single readiness circular ring (% ready), issues count chip (only when > 0), Studio text link, and primary yellow `Build` button.
+
+4. **Minimal Node Card (`NodeCard` & `node-factory.tsx`):**
+   - 200px width, 12px radius, `#232323` 1px border, subtle vertical gradient (`from-[#141414] to-[#0D0D0D]`).
+   - 3-row layout:
+     - Row 1: 16px node-type icon, title (14px font-medium), uppercase mono type label (11px), status indicator dot (solid green complete, amber incomplete with missing count, grey blocked), plus corner presence/lock/comment indicators.
+     - Row 2: Metric line (`getNodeMetricLine`: student strength, duration, capacity, or resource pool summary `F 12 • S 8 • R 4`).
+     - Row 3: `NodeProgress` (4px track, white 85% opacity, mono 11px percentage).
+   - Handles:
+     - Top target ring (`HandleRing`): 10px circular target handle.
+     - Bottom source pill (`HandlePill`): 14×6px pill handle.
+     - Hover/selected `AddChildButton`: 22px circle "+" button anchored below the card with allowed child types dropdown and completion gate reason tooltips.
+
+5. **Dotted Edge (`DottedEdge` & `EdgeLabelPill`):**
+   - Vertical bezier curves with `strokeDasharray: "1 6"` and round caps.
+   - Animated flow (`.edge-flow`) when connected to selected nodes.
+   - Midpoint `EdgeLabelPill` showing child counts below target, automatically hidden at zoom < 0.6.
+
+6. **Floating Toolbar Pill & Menu (`FloatingToolbar`, `ToolbarMenu`):**
+   - 40px height, 12px radius, centered bottom toolbar with blur background.
+   - Controls: "+ Add" popover (shortcut `/`), zoom controls (`-`, %, `+`), fit view, vertical layout algorithm selector (Hierarchical TB, Compact, Department, Reset), history undo/redo (`⌘Z` / `⇧⌘Z`), search toggle with inline type-ahead drawer, and "More" menu (`ToolbarMenu`).
+   - "More" menu groups: View, Edit, History, Data, Collaboration, and Help.
+
+7. **360px Sidebar (`BlueprintSidebar` & `SidePanelTabs`):**
+   - 360px width with underlined white text tabs (`Config`, `Constraints`, `Slotly AI`).
+   - Clean summary block, standardized 36px inputs, sticky footer with quiet Reset and yellow `Apply Changes` button.
+
+8. **First-Run Onboarding Hint (`FirstRunHint`):**
+   - Floating card on single-node canvas with `useSyncExternalStore` for SSR-safe localStorage persistence without cascading renders.
+
+9. **Tests (`blueprint-restyled-canvas.spec.ts`):**
+   - 6 unit tests covering feature parity for all 25 historical actions, vertical-only algorithms, node card progress and metrics, pool chips, and edge label zoom threshold. All 92 client tests and 421 server tests passing.
+
+### Decisions Made
+
+- **Strictly Vertical Layout:** Removed direction arrows (down, right, up, left) in accordance with the minimal design decision; layout menu retains only algorithms (Hierarchical, Compact, Department-based, plus Reset).
+- **Restrained Yellow Accent:** Confined strictly to primary `Build` button, `Apply Changes` button, and small attention/warning dots.
+- **SSR-Safe External Store:** Used `useSyncExternalStore` for the first-run hint dismissal to comply with React 19 / ESLint `react-hooks/set-state-in-effect` rules.
+
+### Manual Test Checklist
+
+- [x] Open `/projects/:id/blueprint` — header shows project name (skeleton while fetching), single readiness ring, autosave status, and yellow Build button.
+- [x] Canvas displays `#0A0A0A` background with faint 24px square grid lines and subtle corner vignette.
+- [x] Nodes render 200px wide cards with 12px radius, 3-row layout, top ring handle, bottom pill handle, and bottom "+" add child button on hover/selection.
+- [x] Edges render as dotted vertical bezier curves with flow animation on selected connections.
+- [x] Floating toolbar pill at bottom provides "+ Add", zoom, fit view, layout algorithms (Hierarchical, Compact, Department, Reset), undo/redo, search with filter chips, and grouped "More" menu.
+- [x] Zooming out below 0.6 hides edge label pills cleanly.
+- [x] 360px sidebar opens with underlined tabs (Config, Constraints, Slotly AI), 36px inputs, and sticky footer.
+- [x] First-run hint displays on single-node canvas and dismisses permanently.
+
+Merged via `ux/04-blueprint-canvas-style`, tag `ux-04-blueprint-canvas-style-merged`.
+
 
