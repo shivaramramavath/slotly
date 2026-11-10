@@ -2011,3 +2011,75 @@ Fix for the bug where creating a department in the Institution page showed a suc
 
 Merged via `fix/institution-department-create`, tag `fix-institution-department-create-merged`.
 
+---
+
+## UX 07: Institution Layout Restyle and Sub-Routes
+
+Restyle and architectural restructuring of the Institution feature (`/institutions`) conforming to the sys0 visual language established in `ux/03` through `ux/06`.
+
+### What Was Built
+
+1. **Sub-Route Architecture (`/institutions/*`):**
+   - Split monolithic tab state into 8 distinct Next.js App Router sub-routes sharing a persistent layout shell:
+     - `/institutions` -> Overview Tree
+     - `/institutions/departments` -> Departments list and management cards
+     - `/institutions/programs` -> Degree Programs list and cohort creation
+     - `/institutions/academic-years` -> Academic Year cohorts
+     - `/institutions/semesters` -> Instructional Semesters and term bounds
+     - `/institutions/sections` -> Sections and student batch divisions
+     - `/institutions/calendar` -> Calendar events and holidays
+     - `/institutions/working-days` -> Working days and period timing matrix
+   - Added granular `loading.tsx` (accurate layout skeletons) and client `error.tsx` (retry error boundaries) for each sub-route.
+
+2. **Persistent Shell & Context (`app/institutions/layout.tsx`):**
+   - Renders inside `PageContainer` (centered, max-w-[1016px], px-6 / px-4 on mobile).
+   - Stays mounted across tab switches (zero flicker or re-mounting of header, stats, tabs, or modal dialogs).
+   - `PageHeader`: Title displays the institution name (or "Institution Settings" fallback) alongside an inline monospace badge reading "Main", with a muted description below.
+   - Header action button slot dynamically renders the primary yellow action corresponding to the active route, guaranteeing the Single Yellow Accent rule.
+   - `InstitutionProvider` & `useInstitutionContext`: Centralized hierarchy query data, dialog visibility, and entity deletion actions with TanStack Query invalidation.
+
+3. **Statistics Row (`InstitutionStatsRow`):**
+   - 6 clean stat cards on desktop (`grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3`), radius 16px (`--radius-stat: 16px`, `rounded-[16px]`), surface background (`#111111`), 1px border (`#232323`).
+   - Large monochrome numbers (30px, tabular figures, white `#FAFAFA`, never yellow) with muted mono labels below (12px, `#8A8A8A`).
+   - Zero decorative icon clutter.
+
+4. **Segmented Link Navigation (`InstitutionTabs`):**
+   - 40px high segmented link strip (`rounded-[12px]`, surface `#111111`, 1px border `#232323`).
+   - Full keyboard navigation with `ArrowLeft`, `ArrowRight`, `Home`, and `End` keys switching routes smoothly.
+
+5. **Single Yellow Accent Rule Enforcement:**
+   - Exactly ONE yellow element on screen: the primary CTA of the active tab located in the PageHeader's action slot (`+ Add Department`, `+ Add Program`, `+ Add Academic Year`, `+ Add Semester`, `+ Add Section`, `+ Add Holiday`, or neutral outline `Refresh Tree`).
+   - All empty states use `SurfaceCard variant="static"`, 32px monochrome glyphs, and neutral OUTLINE action buttons (never yellow).
+   - Working days form pills are styled with monochrome active state (`#1C1C1C` / `#FAFAFA`), reserving the single yellow button for `Save Configuration`.
+
+6. **Hierarchy Tree Polish (`StructureTree`):**
+   - 12px vertical padding per node item (`py-3`).
+   - 24px indent per depth level (`pl-8` / `border-l border-[#232323]`).
+   - 1px connector borders (`border-l border-[#232323]`).
+   - Monochrome icons and monospace badges for entity codes ("CS", "CSE-BTech", etc.).
+
+7. **Automated Tests:**
+   - `institution-tabs.spec.ts`: Tests `getActiveInstitutionTab` mapping all 8 paths and verifies `INSTITUTION_TABS` contains all 8 items with accurate URLs.
+
+### Manual Test Checklist
+
+1. Navigate to `http://localhost:3000/institutions`:
+   - Verify PageHeader displays institution name with "Main" mono badge and outline "Refresh Tree" button.
+   - Verify 6 stat cards have 16px border radius and clean white numbers (no yellow).
+   - Verify 8 tabs are rendered in a 40px high segmented strip.
+2. Click through all 8 tabs:
+   - Overview Tree (`/institutions`)
+   - Departments (`/institutions/departments`) -> Header shows single yellow "+ Add Department" button.
+   - Programs (`/institutions/programs`) -> Header shows single yellow "+ Add Program" button.
+   - Academic Years (`/institutions/academic-years`) -> Header shows single yellow "+ Add Academic Year" button.
+   - Semesters (`/institutions/semesters`) -> Header shows single yellow "+ Add Semester" button.
+   - Sections (`/institutions/sections`) -> Header shows single yellow "+ Add Section" button.
+   - Calendar (`/institutions/calendar`) -> Header shows single yellow "+ Add Holiday" button.
+   - Working Days (`/institutions/working-days`) -> Single yellow "Save Configuration" button.
+3. Test keyboard navigation on tabs: press ArrowRight / ArrowLeft / Home / End to verify active tab switches.
+4. Verify empty states on each tab: SurfaceCard with 32px monochrome icon, title, description, and outline action button (never yellow).
+5. Verify adding a department, program, or semester refreshes the tree and updates the statistics cards immediately.
+
+Merged via `ux/07-institution-layout`, tag `ux-07-institution-layout-merged`.
+
+

@@ -425,13 +425,30 @@ Same layout as Board plus a right panel (collapsible, 340px) with tabs **Cell**,
 
 Tabs: General, Term, Timing and breaks, Danger zone. Timing editor shows a day strip preview that updates as you change periods, plus a per-day overrides table (for example short Saturday). Changing periods warns how many existing entries would no longer fit. Danger zone: Archive (confirm), Delete (type the project name).
 
-### 5.12 Institution `/institution`
+### 5.12 Institution `/institutions`
 
-- Layout: left tree (Institution › Departments › Programs › Years › Semesters › Sections › Batches) with counts; right detail form for the selected node. Tabs above for Overview, Calendar, Working days.
-- **Add child** buttons disabled until the parent exists, with a reason tooltip.
-- Calendar tab: month grid with holiday chips; click a date to add; list view toggle.
-- Working days tab: day toggles and default period configuration with a day-strip preview.
-- Optimistic edits and creations; deletes show dependency impact and block when children exist.
+- **Routes & Sub-routes:**
+  - 8 distinct sub-routes sharing a persistent layout:
+    - `/institutions` -> Overview Tree
+    - `/institutions/departments` -> Departments list and management
+    - `/institutions/programs` -> Degree Programs list
+    - `/institutions/academic-years` -> Academic Year cohorts
+    - `/institutions/semesters` -> Instructional Semesters
+    - `/institutions/sections` -> Sections and Batches
+    - `/institutions/calendar` -> Calendar Events and Holidays
+    - `/institutions/working-days` -> Working Days and Period Timing
+  - Deep-linkable with full browser back/forward and keyboard navigation (`ArrowLeft`, `ArrowRight`, `Home`, `End`).
+- **Shared Layout (`app/institutions/layout.tsx`):**
+  - Renders inside `PageContainer` (max width 1016px, 24px horizontal padding, 16px mobile, 64px bottom padding).
+  - Stays mounted across tab switches (zero flicker or re-mounting of header, stats, tabs, or modal dialogs).
+  - `PageHeader`: Title displays institution name (fallback "Institution Settings") with an inline monospace badge reading "Main", muted description below.
+  - Quick Statistics Row: 6 cards on desktop (`grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3`), radius 16px (`--radius-stat: 16px`, `rounded-[16px]`), surface background (`#111111`), 1px border (`#232323`). Numbers are monochrome tabular figures (28 to 32px, `#FAFAFA`, never yellow) with muted mono labels below (12px, `#8A8A8A`).
+  - Navigation Tabs: 40px high segmented link control (`rounded-[12px]`, surface `#111111`, 1px border `#232323`).
+- **Single Yellow Accent Rule:**
+  - Exactly ONE yellow element on screen: the primary action of the active tab placed in the PageHeader's action slot on the right (`+ Add Department`, `+ Add Program`, `+ Add Academic Year`, `+ Add Semester`, `+ Add Section`, `+ Add Holiday`, or neutral outline `Refresh Tree`).
+  - Empty states across all tabs use `SurfaceCard variant="static"`, 32px monochrome glyphs, and neutral OUTLINE action buttons (never yellow).
+- **Tree View Polish (`/institutions`):**
+  - 12px vertical padding per item, 24px indent per depth level, 1px connector lines (`#232323`), clean monospace badges for node codes ("CS", "CSE-BTech"), status pills, and action buttons.
 
 ### 5.13 Library `/library/faculty`, `/library/subjects`, `/library/rooms`
 

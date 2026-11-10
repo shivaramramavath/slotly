@@ -87,11 +87,179 @@
 - **Route Page:** `/home` -> renders `default`
 - **Component** `HomeShellPage()` - React component rendering home shell page.
 
+### `client/src/app/institutions/academic-years/error.tsx`
+*Error boundary component for Academic Years route.*
+
+- **Error Boundary:** `/institutions/academic-years` -> renders `default`
+- **Component** `AcademicYearsError({
+  error,
+  reset,
+}: { error: Error & { digest?: string | undefined; }; reset: () => void; })` - React error boundary component for academic years view.
+
+### `client/src/app/institutions/academic-years/loading.tsx`
+*Loading skeleton placeholder for Academic Years route.*
+
+- **Loading Boundary:** `/institutions/academic-years` -> renders `default`
+- **Component** `AcademicYearsLoading()` - React component rendering loading skeleton for academic years grid.
+
+### `client/src/app/institutions/academic-years/page.tsx`
+*Academic years view displaying cohort levels and semester term management.*
+
+- **Route Page:** `/institutions/academic-years` -> renders `default`
+- **Component** `AcademicYearsPage()` - React page component rendering academic years list and management cards.
+
+### `client/src/app/institutions/calendar/error.tsx`
+*Error boundary component for Calendar route.*
+
+- **Error Boundary:** `/institutions/calendar` -> renders `default`
+- **Component** `CalendarError({
+  error,
+  reset,
+}: { error: Error & { digest?: string | undefined; }; reset: () => void; })` - React error boundary component for calendar view.
+
+### `client/src/app/institutions/calendar/loading.tsx`
+*Loading skeleton placeholder for Calendar route.*
+
+- **Loading Boundary:** `/institutions/calendar` -> renders `default`
+- **Component** `CalendarLoading()` - React component rendering loading skeleton for calendar events grid.
+
+### `client/src/app/institutions/calendar/page.tsx`
+*Calendar events and holidays management route for the institution.*
+
+- **Route Page:** `/institutions/calendar` -> renders `default`
+- **Component** `CalendarPage()` - React page component rendering holidays and institutional calendar events.
+
+### `client/src/app/institutions/departments/error.tsx`
+*Error boundary component for Departments route.*
+
+- **Error Boundary:** `/institutions/departments` -> renders `default`
+- **Component** `DepartmentsError({
+  error,
+  reset,
+}: { error: Error & { digest?: string | undefined; }; reset: () => void; })` - React error boundary component for departments view.
+
+### `client/src/app/institutions/departments/loading.tsx`
+*Loading skeleton placeholder for Departments route.*
+
+- **Loading Boundary:** `/institutions/departments` -> renders `default`
+- **Component** `DepartmentsLoading()` - React component rendering loading skeleton for departments grid.
+
+### `client/src/app/institutions/departments/page.tsx`
+*Departments view displaying academic department cards and child program creation.*
+
+- **Route Page:** `/institutions/departments` -> renders `default`
+- **Component** `DepartmentsPage()` - React page component rendering departments list and management cards.
+
+### `client/src/app/institutions/error.tsx`
+*Error boundary component for Overview Tree route.*
+
+- **Error Boundary:** `/institutions` -> renders `default`
+- **Component** `OverviewError({
+  error,
+  reset,
+}: { error: Error & { digest?: string | undefined; }; reset: () => void; })` - React error boundary component for overview tree view.
+
+### `client/src/app/institutions/layout.tsx`
+*Shared layout for institution routes providing persistent header, stats row, tabs, and modals.*
+
+- **Layout:** `/institutions` -> renders `default`
+- **Component** `InstitutionLayout({ children }: { children: React.ReactNode; })` - Shared layout for institution sub-routes maintaining persistent header, stats, and tabs.
+
+### `client/src/app/institutions/loading.tsx`
+*Loading skeleton placeholder for Overview Tree route.*
+
+- **Loading Boundary:** `/institutions` -> renders `default`
+- **Component** `OverviewLoading()` - React component rendering loading skeleton for institution tree view.
+
 ### `client/src/app/institutions/page.tsx`
-*React component for page.*
+*Overview hierarchy tree page displaying the complete academic graph for the institution.*
 
 - **Route Page:** `/institutions` -> renders `default`
-- **Component** `InstitutionsPage()` - React component rendering institutions page.
+- **Component** `OverviewTreePage()` - React page component rendering the Overview Tree tab for academic hierarchy.
+
+### `client/src/app/institutions/programs/error.tsx`
+*Error boundary component for Programs route.*
+
+- **Error Boundary:** `/institutions/programs` -> renders `default`
+- **Component** `ProgramsError({
+  error,
+  reset,
+}: { error: Error & { digest?: string | undefined; }; reset: () => void; })` - React error boundary component for programs view.
+
+### `client/src/app/institutions/programs/loading.tsx`
+*Loading skeleton placeholder for Programs route.*
+
+- **Loading Boundary:** `/institutions/programs` -> renders `default`
+- **Component** `ProgramsLoading()` - React component rendering loading skeleton for programs grid.
+
+### `client/src/app/institutions/programs/page.tsx`
+*Degree programs view displaying curriculum track cards and cohort creation.*
+
+- **Route Page:** `/institutions/programs` -> renders `default`
+- **Component** `ProgramsPage()` - React page component rendering degree programs list and management cards.
+
+### `client/src/app/institutions/sections/error.tsx`
+*Error boundary component for Sections route.*
+
+- **Error Boundary:** `/institutions/sections` -> renders `default`
+- **Component** `SectionsError({
+  error,
+  reset,
+}: { error: Error & { digest?: string | undefined; }; reset: () => void; })` - React error boundary component for sections view.
+
+### `client/src/app/institutions/sections/loading.tsx`
+*Loading skeleton placeholder for Sections route.*
+
+- **Loading Boundary:** `/institutions/sections` -> renders `default`
+- **Component** `SectionsLoading()` - React component rendering loading skeleton for sections grid.
+
+### `client/src/app/institutions/sections/page.tsx`
+*Sections and batches view displaying student cohorts and practical group divisions.*
+
+- **Route Page:** `/institutions/sections` -> renders `default`
+- **Component** `SectionsPage()` - React page component rendering sections and batches list and management cards.
+
+### `client/src/app/institutions/semesters/error.tsx`
+*Error boundary component for Semesters route.*
+
+- **Error Boundary:** `/institutions/semesters` -> renders `default`
+- **Component** `SemestersError({
+  error,
+  reset,
+}: { error: Error & { digest?: string | undefined; }; reset: () => void; })` - React error boundary component for semesters view.
+
+### `client/src/app/institutions/semesters/loading.tsx`
+*Loading skeleton placeholder for Semesters route.*
+
+- **Loading Boundary:** `/institutions/semesters` -> renders `default`
+- **Component** `SemestersLoading()` - React component rendering loading skeleton for semesters grid.
+
+### `client/src/app/institutions/semesters/page.tsx`
+*Instructional semesters view displaying term date ranges and section creation.*
+
+- **Route Page:** `/institutions/semesters` -> renders `default`
+- **Component** `SemestersPage()` - React page component rendering semesters list and management cards.
+
+### `client/src/app/institutions/working-days/error.tsx`
+*Error boundary component for Working Days route.*
+
+- **Error Boundary:** `/institutions/working-days` -> renders `default`
+- **Component** `WorkingDaysError({
+  error,
+  reset,
+}: { error: Error & { digest?: string | undefined; }; reset: () => void; })` - React error boundary component for working days view.
+
+### `client/src/app/institutions/working-days/loading.tsx`
+*Loading skeleton placeholder for Working Days route.*
+
+- **Loading Boundary:** `/institutions/working-days` -> renders `default`
+- **Component** `WorkingDaysLoading()` - React component rendering loading skeleton for working days form.
+
+### `client/src/app/institutions/working-days/page.tsx`
+*Working days and period schedule configuration route for the institution.*
+
+- **Route Page:** `/institutions/working-days` -> renders `default`
+- **Component** `WorkingDaysPage()` - React page component rendering working days and period timing configuration view.
 
 ### `client/src/app/kits/error.tsx`
 *Route error boundary component for kits.*

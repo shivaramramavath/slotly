@@ -25,13 +25,14 @@
 }: DepartmentDialogProps)` - React component rendering department dialog.
 
 ### `client/src/features/institution/components/holiday-calendar.tsx`
-*React component for holiday-calendar.*
+*Component rendering calendar events and holidays list matching sys0 styling.*
 
+- **Interface** `HolidayCalendarProps` - Props for HolidayCalendar component.
 - **Component** `HolidayCalendar({
   holidays,
   onAddHoliday,
   onDeleteHoliday,
-}: HolidayCalendarProps)` - React component rendering holiday calendar.
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/institution/components/holiday-calendar").HolidayCalendarProps)` - React component rendering calendar events and holidays grid.
 
 ### `client/src/features/institution/components/holiday-dialog.tsx`
 *React component for holiday-dialog.*
@@ -42,6 +43,47 @@
   institutionId,
   onSuccess,
 }: HolidayDialogProps)` - React component rendering holiday dialog.
+
+### `client/src/features/institution/components/institution-context.tsx`
+*React context provider managing institution hierarchy data, dialog states, and delete operations.*
+
+- **Interface** `InstitutionContextValue` - Interface defining institution context state and actions.
+- **Interface** `InstitutionProviderProps` - Props for InstitutionProvider component.
+- **Component** `InstitutionProvider({ children }: import("E:/Shiva Ram/Projects/slotly/client/src/features/institution/components/institution-context").InstitutionProviderProps)` - React provider wrapping institution sub-routes to retain hierarchy state and dialog control.
+- **Hook** `useInstitutionContext()`: `import("E:/Shiva Ram/Projects/slotly/client/src/features/institution/components/institution-context").InstitutionContextValue` - Hook to access institution hierarchy context data and modal dialog actions.
+
+### `client/src/features/institution/components/institution-empty-state.tsx`
+*Reusable empty state card for institution views matching sys0 visual guidelines.*
+
+- **Interface** `InstitutionEmptyStateProps` - Props for InstitutionEmptyState component.
+- **Component** `InstitutionEmptyState({
+  icon: Icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/institution/components/institution-empty-state").InstitutionEmptyStateProps)` - React component rendering monochrome centered empty state card with neutral outline button.
+
+### `client/src/features/institution/components/institution-header-actions.tsx`
+*Component rendering route-aware header actions enforcing the single yellow accent rule.*
+
+- **Component** `InstitutionHeaderActions()` - React component rendering header action controls dynamically based on active institution tab.
+
+### `client/src/features/institution/components/institution-stats-row.tsx`
+*Component rendering the 6-stat card summary row for academic institutions matching sys0 guidelines.*
+
+- **Interface** `InstitutionStatsRowProps` - Props for InstitutionStatsRow component.
+- **Component** `InstitutionStatsRow({ className = '' }: import("E:/Shiva Ram/Projects/slotly/client/src/features/institution/components/institution-stats-row").InstitutionStatsRowProps)` - React component rendering 6-item monochrome statistics cards row.
+
+### `client/src/features/institution/components/institution-tabs.tsx`
+*Segmented link tabs component for institution navigation with real URLs and keyboard support.*
+
+- **Interface** `InstitutionTabItem` - Interface defining an institution tab item.
+- **Interface** `InstitutionTabsProps` - Props for InstitutionTabs component.
+- **Function** `getActiveInstitutionTab(pathname: string)`: `string` - Pure helper to determine which institution tab is currently active.
+- **Component** `InstitutionTabs({ className = '' }: import("E:/Shiva Ram/Projects/slotly/client/src/features/institution/components/institution-tabs").InstitutionTabsProps)` - React component rendering 40px high accessible segmented navigation tabs for institution section.
+- **Const** `INSTITUTION_TABS`: `import("E:/Shiva Ram/Projects/slotly/client/src...` - The 8 canonical tabs for the institution section.
 
 ### `client/src/features/institution/components/program-dialog.tsx`
 *React component for program-dialog.*
@@ -83,8 +125,9 @@
 }: SemesterDialogProps)` - React component rendering semester dialog.
 
 ### `client/src/features/institution/components/structure-tree.tsx`
-*React component for structure-tree.*
+*Hierarchical tree view for academic institution structure with clean vertical padding, indent connectors, and monochrome styling.*
 
+- **Interface** `StructureTreeProps` - Props for StructureTree component.
 - **Component** `StructureTree({
   departments,
   onAddDepartment,
@@ -97,12 +140,13 @@
   onDeleteYear,
   onDeleteSemester,
   onDeleteSection,
-}: StructureTreeProps)` - React component rendering structure tree.
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/institution/components/structure-tree").StructureTreeProps)` - React component rendering polished academic hierarchy tree with collapse toggles and connectors.
 
 ### `client/src/features/institution/components/working-days-config.tsx`
-*React component for working-days-config.*
+*Working days and timing matrix configuration form with monochrome pill selection and sys0 styling.*
 
-- **Component** `WorkingDaysConfig({ institution, onSuccess }: WorkingDaysConfigProps)` - React component rendering working days config.
+- **Interface** `WorkingDaysConfigProps` - Props for WorkingDaysConfig component.
+- **Component** `WorkingDaysConfig({ institution, onSuccess }: import("E:/Shiva Ram/Projects/slotly/client/src/features/institution/components/working-days-config").WorkingDaysConfigProps)` - React component rendering working days and period timing configuration form.
 
 ### `client/src/features/institution/hooks/use-institution.ts`
 *Custom React hooks for institution data fetching and cache management via TanStack Query.*
