@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogHeader,
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { institutionApi } from '../services/institution.api';
+import { institutionKeys } from '../hooks/use-institution';
 import { toast } from '@/components/ui/toast';
 import type { SectionDto, SemesterDto, BatchDto } from '@slotly/contracts';
 import { Plus, Trash2 } from 'lucide-react';
@@ -23,7 +25,8 @@ interface SectionDialogProps {
   section?: SectionDto | null;
   semesters: SemesterDto[];
   defaultSemesterId?: string | null;
-  onSuccess: () => void;
+  institutionId?: string | undefined;
+  onSuccess?: () => void;
 }
 
 /** React component rendering section dialog. */
@@ -33,6 +36,7 @@ export function SectionDialog({
   section,
   semesters,
   defaultSemesterId,
+  institutionId,
   onSuccess,
 }: SectionDialogProps) {
   const [semesterId, setSemesterId] = useState(
@@ -51,6 +55,7 @@ export function SectionDialog({
   const [loading, setLoading] = useState(false);
   const [prevSection, setPrevSection] = useState(section);
   const [prevOpen, setPrevOpen] = useState(open);
+  const queryClient = useQueryClient();
 
   if (section !== prevSection || open !== prevOpen) {
     setPrevSection(section);
@@ -120,20 +125,26 @@ export function SectionDialog({
           strength,
           batches,
         });
+        await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
         toast.success('Section Updated', `Updated '${name}'.`);
       } else {
-        await institutionApi.createSection({
-          semesterId,
-          name: name.trim(),
-          strength,
-          batches,
-        });
+        await institutionApi.createSection(
+          {
+            semesterId,
+            name: name.trim(),
+            strength,
+            batches,
+            institutionId,
+          },
+          institutionId,
+        );
+        await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
         toast.success('Section Created', `Created '${name}'.`);
       }
-      onSuccess();
+      onSuccess?.();
       onOpenChange(false);
     } catch {
-      // error handled by apiClient
+      // Keep dialog open on failure; error feedback handled by apiClient/toast
     } finally {
       setLoading(false);
     }

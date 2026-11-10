@@ -1969,3 +1969,45 @@ Visual restyle of the public marketing landing page (`/`) conforming to the sys0
    - Verify page renders the landing page cleanly without redirect loops.
 
 Merged via `ux/06-landing-redirect`, tag `ux-06-landing-redirect-merged`.
+
+---
+
+## Fix: Institution Department Creation & Cache Synchronization
+
+Fix for the bug where creating a department in the Institution page showed a success toast but the department appeared neither in the UI hierarchy/lists nor in the database.
+
+### What Was Built & Fixed
+
+1. **Root Cause Analysis:**
+   - **Scope/Context Mismatch:** The client dialogs (`DepartmentDialog`, `ProgramDialog`, `AcademicYearDialog`, `SemesterDialog`, `SectionDialog`, `HolidayDialog`) never included the current `institutionId` in their request bodies or query parameters.
+   - **Session Provider Missing:** In `InstitutionsController`, `resolveInstitutionId(req, overrideId)` attempted to look up the session via `this.sessionsService`, but `InstitutionsModule` did not import `AuthModule` (which exports `SESSIONS_SERVICE`), leading to a silent failure to persist the active institution into the user's Redis session.
+   - **Cache Invalidation Desynchronization:** Sibling creation dialogs only called an un-awaited `fetchStructure()`, which only fetched the hierarchical structure tree without invalidating the broader TanStack Query cache (`institutionKeys.all`), leaving the `departments` and other entity lists stale.
+   - **Dialog Form Reset Failure:** When the dialog `open` state changed without an existing entity, form fields did not reset to empty values.
+
+2. **Backend Resolution (`server/src/modules/institutions/`):**
+   - Imported `forwardRef(() => AuthModule)` into `InstitutionsModule` so `SESSIONS_SERVICE` is properly injected.
+   - Updated `resolveInstitutionId` to persist `institutionId` across the request user context, the Redis session (`updateSessionInstitution`), and MongoDB user document.
+   - Updated all entity creation endpoints (`POST /institutions/departments`, `POST /institutions/programs`, etc.) to pass `dto.institutionId || queryInstId` into `resolveInstitutionId`.
+
+3. **Client Resolution (`client/src/features/institution/`):**
+   - Updated `useInstitutionMutations` with `invalidateStructure` that awaits `queryClient.invalidateQueries({ queryKey: institutionKeys.all })`.
+   - Updated `DepartmentDialog`, `ProgramDialog`, `AcademicYearDialog`, `SemesterDialog`, `SectionDialog`, and `HolidayDialog` to accept `institutionId?: string | undefined`, reset form state on open/close, pass `institutionId` in payloads, and properly await cache invalidation.
+   - Error responses keep dialogs open and display descriptive error toasts instead of false success toasts.
+
+4. **Automated Regression Tests (`institution-flow.spec.ts`):**
+   - Verified auto-creation of default institution when none exists.
+   - Verified department creation with explicit and session-derived `institutionId`.
+   - Verified that created departments are persisted in MongoDB and returned in both `/institutions/structure` and `/institutions/departments`.
+
+### Manual Test Checklist
+
+1. Navigate to `/institutions` as an admin or designer.
+2. Click "Add Department" or "Create First Department".
+3. Enter Code "CS" and Name "Computer Science" and submit.
+4. Verify HTTP 201 response with created department object.
+5. Verify dialog closes and department appears immediately in the Overview Tree and Departments list.
+6. Verify Department count in the statistics summary increments by 1.
+7. Refresh page and verify department persists.
+
+Merged via `fix/institution-department-create`, tag `fix-institution-department-create-merged`.
+

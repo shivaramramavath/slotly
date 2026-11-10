@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogHeader,
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { institutionApi } from '../services/institution.api';
+import { institutionKeys } from '../hooks/use-institution';
 import { toast } from '@/components/ui/toast';
 import type { AcademicYearDto, ProgramDto } from '@slotly/contracts';
 
@@ -22,7 +24,8 @@ interface AcademicYearDialogProps {
   academicYear?: AcademicYearDto | null;
   programs: ProgramDto[];
   defaultProgramId?: string | null;
-  onSuccess: () => void;
+  institutionId?: string | undefined;
+  onSuccess?: () => void;
 }
 
 /** React component rendering academic year dialog. */
@@ -32,6 +35,7 @@ export function AcademicYearDialog({
   academicYear,
   programs,
   defaultProgramId,
+  institutionId,
   onSuccess,
 }: AcademicYearDialogProps) {
   const [programId, setProgramId] = useState(
@@ -44,6 +48,7 @@ export function AcademicYearDialog({
   const [loading, setLoading] = useState(false);
   const [prevYear, setPrevYear] = useState(academicYear);
   const [prevOpen, setPrevOpen] = useState(open);
+  const queryClient = useQueryClient();
 
   if (academicYear !== prevYear || open !== prevOpen) {
     setPrevYear(academicYear);
@@ -83,19 +88,25 @@ export function AcademicYearDialog({
           yearNumber,
           label: label.trim(),
         });
+        await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
         toast.success('Academic Year Updated', `Updated '${label}'.`);
       } else {
-        await institutionApi.createAcademicYear({
-          programId,
-          yearNumber,
-          label: label.trim(),
-        });
+        await institutionApi.createAcademicYear(
+          {
+            programId,
+            yearNumber,
+            label: label.trim(),
+            institutionId,
+          },
+          institutionId,
+        );
+        await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
         toast.success('Academic Year Created', `Created '${label}'.`);
       }
-      onSuccess();
+      onSuccess?.();
       onOpenChange(false);
     } catch {
-      // error handled by apiClient
+      // Keep dialog open on failure; error feedback handled by apiClient/toast
     } finally {
       setLoading(false);
     }

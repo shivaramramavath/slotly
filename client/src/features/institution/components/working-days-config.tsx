@@ -2,10 +2,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { institutionApi } from '../services/institution.api';
+import { institutionKeys } from '../hooks/use-institution';
 import { toast } from '@/components/ui/toast';
 import type { InstitutionDto, PeriodConfig } from '@slotly/contracts';
 
@@ -61,6 +63,8 @@ export function WorkingDaysConfig({ institution, onSuccess }: WorkingDaysConfigP
     }
   };
 
+  const queryClient = useQueryClient();
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -79,10 +83,14 @@ export function WorkingDaysConfig({ institution, onSuccess }: WorkingDaysConfigP
     };
 
     try {
-      await institutionApi.updateInstitution({
-        workingDays,
-        defaultPeriodConfig,
-      });
+      await institutionApi.updateInstitution(
+        {
+          workingDays,
+          defaultPeriodConfig,
+        },
+        institution.id,
+      );
+      await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
       toast.success('Configuration Saved', 'Institutional calendar and period timing updated.');
       onSuccess();
     } catch {

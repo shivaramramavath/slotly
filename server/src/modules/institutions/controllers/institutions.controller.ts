@@ -90,9 +90,9 @@ export class InstitutionsController {
     req: Request & {
       user: RequestUser & { institutionId?: string | undefined };
     },
-    queryInstId?: string,
+    overrideId?: string,
   ): Promise<string> {
-    let id = queryInstId || req.user.institutionId;
+    let id = overrideId || req.user.institutionId;
     if (!id && this.institutionRepo) {
       let inst = await this.institutionRepo.findOne({ isDeleted: false });
       if (!inst) {
@@ -116,26 +116,26 @@ export class InstitutionsController {
         id = (
           inst.id || (inst as unknown as { _id?: { toString(): string } })._id
         )?.toString();
-        if (id) {
-          req.user.institutionId = id;
-          if (this.sessionsService && req.user.sessionId) {
-            await this.sessionsService.updateSessionInstitution(
-              req.user.sessionId,
-              id,
-            );
-          }
-          if (this.userRepo && req.user.id) {
-            await this.userRepo.update(req.user.id, {
-              institutionId: new Types.ObjectId(id),
-            });
-          }
-        }
       }
     }
     if (!id) {
       throw new BadRequestException(
         'Institution context is required. Please provide institutionId.',
       );
+    }
+    if (!req.user.institutionId && id) {
+      req.user.institutionId = id;
+      if (this.sessionsService && req.user.sessionId) {
+        await this.sessionsService.updateSessionInstitution(
+          req.user.sessionId,
+          id,
+        );
+      }
+      if (this.userRepo && req.user.id) {
+        await this.userRepo.update(req.user.id, {
+          institutionId: new Types.ObjectId(id),
+        });
+      }
     }
     return id;
   }
@@ -245,8 +245,10 @@ export class InstitutionsController {
     dto: CreateDepartmentDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<DepartmentDto> {
-    const instId =
-      dto.institutionId || (await this.resolveInstitutionId(req, queryInstId));
+    const instId = await this.resolveInstitutionId(
+      req,
+      dto.institutionId || queryInstId,
+    );
     return this.institutionsService.createDepartment(instId, dto, req.user.id);
   }
 
@@ -297,8 +299,10 @@ export class InstitutionsController {
     dto: CreateProgramDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<ProgramDto> {
-    const instId =
-      dto.institutionId || (await this.resolveInstitutionId(req, queryInstId));
+    const instId = await this.resolveInstitutionId(
+      req,
+      dto.institutionId || queryInstId,
+    );
     return this.institutionsService.createProgram(instId, dto, req.user.id);
   }
 
@@ -349,8 +353,10 @@ export class InstitutionsController {
     dto: CreateAcademicYearDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<AcademicYearDto> {
-    const instId =
-      dto.institutionId || (await this.resolveInstitutionId(req, queryInstId));
+    const instId = await this.resolveInstitutionId(
+      req,
+      dto.institutionId || queryInstId,
+    );
     return this.institutionsService.createAcademicYear(
       instId,
       dto,
@@ -405,8 +411,10 @@ export class InstitutionsController {
     dto: CreateSemesterDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<SemesterDto> {
-    const instId =
-      dto.institutionId || (await this.resolveInstitutionId(req, queryInstId));
+    const instId = await this.resolveInstitutionId(
+      req,
+      dto.institutionId || queryInstId,
+    );
     return this.institutionsService.createSemester(instId, dto, req.user.id);
   }
 
@@ -457,8 +465,10 @@ export class InstitutionsController {
     dto: CreateSectionDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<SectionDto> {
-    const instId =
-      dto.institutionId || (await this.resolveInstitutionId(req, queryInstId));
+    const instId = await this.resolveInstitutionId(
+      req,
+      dto.institutionId || queryInstId,
+    );
     return this.institutionsService.createSection(instId, dto, req.user.id);
   }
 
@@ -509,8 +519,10 @@ export class InstitutionsController {
     dto: CreateHolidayDto,
     @Query('institutionId') queryInstId?: string,
   ): Promise<HolidayDto> {
-    const instId =
-      dto.institutionId || (await this.resolveInstitutionId(req, queryInstId));
+    const instId = await this.resolveInstitutionId(
+      req,
+      dto.institutionId || queryInstId,
+    );
     return this.institutionsService.createHoliday(instId, dto, req.user.id);
   }
 

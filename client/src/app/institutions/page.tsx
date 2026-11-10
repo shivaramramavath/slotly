@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layouts/app-layout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { institutionApi } from '@/features/institution/services/institution.api';
 import {
   useInstitutionStructure,
+  institutionKeys,
   StructureTree,
   DepartmentDialog,
   ProgramDialog,
@@ -39,6 +41,7 @@ import {
 
 /** React component rendering institutions page. */
 export default function InstitutionsPage() {
+  const queryClient = useQueryClient();
   const {
     data: structure = null,
     isLoading: loading,
@@ -104,6 +107,7 @@ export default function InstitutionsPage() {
     if (!confirm(`Are you sure you want to delete department '${name}'?`)) return;
     try {
       await institutionApi.deleteDepartment(id);
+      await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
       toast.success('Department Deleted', `Removed '${name}'.`);
       void fetchStructure();
     } catch {
@@ -115,6 +119,7 @@ export default function InstitutionsPage() {
     if (!confirm(`Are you sure you want to delete program '${name}'?`)) return;
     try {
       await institutionApi.deleteProgram(id);
+      await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
       toast.success('Program Deleted', `Removed '${name}'.`);
       void fetchStructure();
     } catch {
@@ -126,6 +131,7 @@ export default function InstitutionsPage() {
     if (!confirm(`Are you sure you want to delete academic year '${label}'?`)) return;
     try {
       await institutionApi.deleteAcademicYear(id);
+      await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
       toast.success('Academic Year Deleted', `Removed '${label}'.`);
       void fetchStructure();
     } catch {
@@ -137,6 +143,7 @@ export default function InstitutionsPage() {
     if (!confirm(`Are you sure you want to delete semester '${name}'?`)) return;
     try {
       await institutionApi.deleteSemester(id);
+      await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
       toast.success('Semester Deleted', `Removed '${name}'.`);
       void fetchStructure();
     } catch {
@@ -148,6 +155,7 @@ export default function InstitutionsPage() {
     if (!confirm(`Are you sure you want to delete section '${name}'?`)) return;
     try {
       await institutionApi.deleteSection(id);
+      await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
       toast.success('Section Deleted', `Removed '${name}'.`);
       void fetchStructure();
     } catch {
@@ -159,6 +167,7 @@ export default function InstitutionsPage() {
     if (!confirm(`Are you sure you want to remove event '${name}'?`)) return;
     try {
       await institutionApi.deleteHoliday(id);
+      await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
       toast.success('Event Removed', `Removed '${name}'.`);
       void fetchStructure();
     } catch {
@@ -661,6 +670,7 @@ export default function InstitutionsPage() {
         open={deptDialogOpen}
         onOpenChange={setDeptDialogOpen}
         department={selectedDept}
+        institutionId={structure?.institution.id}
         onSuccess={() => void fetchStructure()}
       />
 
@@ -670,6 +680,7 @@ export default function InstitutionsPage() {
         program={selectedProg}
         departments={departments}
         defaultDepartmentId={targetDeptId}
+        institutionId={structure?.institution.id}
         onSuccess={() => void fetchStructure()}
       />
 
@@ -679,6 +690,7 @@ export default function InstitutionsPage() {
         academicYear={selectedYear}
         programs={programs}
         defaultProgramId={targetProgId}
+        institutionId={structure?.institution.id}
         onSuccess={() => void fetchStructure()}
       />
 
@@ -688,6 +700,7 @@ export default function InstitutionsPage() {
         semester={selectedSem}
         academicYears={academicYears}
         defaultAcademicYearId={targetYearId}
+        institutionId={structure?.institution.id}
         onSuccess={() => void fetchStructure()}
       />
 
@@ -697,12 +710,14 @@ export default function InstitutionsPage() {
         section={selectedSec}
         semesters={semesters}
         defaultSemesterId={targetSemId}
+        institutionId={structure?.institution.id}
         onSuccess={() => void fetchStructure()}
       />
 
       <HolidayDialog
         open={holidayDialogOpen}
         onOpenChange={setHolidayDialogOpen}
+        institutionId={structure?.institution.id}
         onSuccess={() => void fetchStructure()}
       />
     </AppLayout>

@@ -56,12 +56,13 @@ export function useInstitution(institutionId?: string) {
 export function useInstitutionMutations() {
   const queryClient = useQueryClient();
 
-  const invalidateStructure = () => {
-    void queryClient.invalidateQueries({ queryKey: institutionKeys.all });
+  const invalidateStructure = async () => {
+    await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
   };
 
   const createDepartment = useMutation({
-    mutationFn: (dto: CreateDepartmentDto) => institutionApi.createDepartment(dto),
+    mutationFn: (dto: CreateDepartmentDto) =>
+      institutionApi.createDepartment(dto, dto.institutionId),
     onSuccess: invalidateStructure,
   });
 
@@ -77,7 +78,8 @@ export function useInstitutionMutations() {
   });
 
   const createProgram = useMutation({
-    mutationFn: (dto: CreateProgramDto) => institutionApi.createProgram(dto),
+    mutationFn: (dto: CreateProgramDto) =>
+      institutionApi.createProgram(dto, dto.institutionId),
     onSuccess: invalidateStructure,
   });
 
@@ -93,7 +95,8 @@ export function useInstitutionMutations() {
   });
 
   const createAcademicYear = useMutation({
-    mutationFn: (dto: CreateAcademicYearDto) => institutionApi.createAcademicYear(dto),
+    mutationFn: (dto: CreateAcademicYearDto) =>
+      institutionApi.createAcademicYear(dto, dto.institutionId),
     onSuccess: invalidateStructure,
   });
 
@@ -109,7 +112,8 @@ export function useInstitutionMutations() {
   });
 
   const createSemester = useMutation({
-    mutationFn: (dto: CreateSemesterDto) => institutionApi.createSemester(dto),
+    mutationFn: (dto: CreateSemesterDto) =>
+      institutionApi.createSemester(dto, dto.institutionId),
     onSuccess: invalidateStructure,
   });
 
@@ -125,7 +129,8 @@ export function useInstitutionMutations() {
   });
 
   const createSection = useMutation({
-    mutationFn: (dto: CreateSectionDto) => institutionApi.createSection(dto),
+    mutationFn: (dto: CreateSectionDto) =>
+      institutionApi.createSection(dto, dto.institutionId),
     onSuccess: invalidateStructure,
   });
 

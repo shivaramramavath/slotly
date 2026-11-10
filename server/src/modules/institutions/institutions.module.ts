@@ -2,6 +2,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from '../users/users.module';
+import { AuthModule } from '../auth/auth.module';
 import { Institution, InstitutionSchema } from './schemas/institution.schema';
 import { Department, DepartmentSchema } from './schemas/department.schema';
 import { Program, ProgramSchema } from './schemas/program.schema';
@@ -72,6 +73,7 @@ import { AuditModule } from '../../common/audit/audit.module';
     ]),
     AuditModule,
     forwardRef(() => UsersModule),
+    forwardRef(() => AuthModule),
   ],
   controllers: [InstitutionsController],
   providers: [

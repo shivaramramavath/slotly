@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogHeader,
@@ -12,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { institutionApi } from '../services/institution.api';
+import { institutionKeys } from '../hooks/use-institution';
 import { toast } from '@/components/ui/toast';
 import type { DepartmentDto } from '@slotly/contracts';
 
@@ -19,7 +21,8 @@ interface DepartmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   department?: DepartmentDto | null;
-  onSuccess: () => void;
+  institutionId?: string | undefined;
+  onSuccess?: () => void;
 }
 
 /** React component rendering department dialog. */
@@ -27,15 +30,19 @@ export function DepartmentDialog({
   open,
   onOpenChange,
   department,
+  institutionId,
   onSuccess,
 }: DepartmentDialogProps) {
   const [name, setName] = useState(department ? department.name : '');
   const [code, setCode] = useState(department ? department.code : '');
   const [loading, setLoading] = useState(false);
   const [prevDept, setPrevDept] = useState(department);
+  const [prevOpen, setPrevOpen] = useState(open);
+  const queryClient = useQueryClient();
 
-  if (department !== prevDept) {
+  if (department !== prevDept || open !== prevOpen) {
     setPrevDept(department);
+    setPrevOpen(open);
     setName(department ? department.name : '');
     setCode(department ? department.code : '');
   }
@@ -51,18 +58,24 @@ export function DepartmentDialog({
           name: name.trim(),
           code: code.toUpperCase().trim(),
         });
+        await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
         toast.success('Department Updated', `Department '${code}' has been updated.`);
       } else {
-        await institutionApi.createDepartment({
-          name: name.trim(),
-          code: code.toUpperCase().trim(),
-        });
+        await institutionApi.createDepartment(
+          {
+            name: name.trim(),
+            code: code.toUpperCase().trim(),
+            institutionId,
+          },
+          institutionId,
+        );
+        await queryClient.invalidateQueries({ queryKey: institutionKeys.all });
         toast.success('Department Created', `Department '${code}' has been created.`);
       }
-      onSuccess();
+      onSuccess?.();
       onOpenChange(false);
     } catch {
-      // error handled by apiClient
+      // Keep dialog open on failure; error feedback handled by apiClient/toast
     } finally {
       setLoading(false);
     }
