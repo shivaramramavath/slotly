@@ -32,6 +32,7 @@
   - `POST /library/import/:entity/preview` -> `previewImport()` [perm: 'STRUCTURE_MANAGE']
   - `POST /library/import/:entity` -> `executeImport()` [perm: 'STRUCTURE_MANAGE']
   - `GET /library/export/:entity` -> `exportLibrary()` [perm: 'TIMETABLE_EXPORT']
+  - `GET /library/:type/:id/usage` -> `getItemUsage()` [perm: 'FACULTY_READ']
 
 ### `server/src/modules/library/library.module.ts`
 *Core implementation for library.module in server/src/modules/library.*

@@ -1,15 +1,19 @@
 // Core implementation for gate.interface in server/src/modules/blueprint/gates.
 import type {
+  AssignmentOpPayload,
   BlueprintEdgeDto,
   BlueprintNodeDto,
   BlueprintOp,
   FixHint,
+  PoolOpPayload,
   ReasonCode,
 } from '@slotly/contracts';
 
 /** Interface defining structure for gate context. */
 export interface GateContext {
   operation: BlueprintOp;
+  poolOperation?: PoolOpPayload | undefined;
+  assignmentOperation?: AssignmentOpPayload | undefined;
   project: {
     id: string;
     status: string;

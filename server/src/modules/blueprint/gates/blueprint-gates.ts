@@ -1,6 +1,8 @@
 // Core implementation for blueprint-gates in server/src/modules/blueprint/gates.
 import type {
+  AssignmentOpPayload,
   BlueprintNodeDto,
+  PoolOpPayload,
   ProjectLifecycleStatus,
 } from '@slotly/contracts';
 import type { GateContext, GateResult, IGate } from './gate.interface';
@@ -549,6 +551,341 @@ export class QualificationGate implements IGate {
           fixHint: { nodeId: facultyNode.id, field: 'subjectIds' },
         };
       }
+    }
+
+    return { allowed: true };
+  }
+}
+
+/** Gate verifying a pool addition does not duplicate an item already in additions. */
+export class PoolDuplicateGate implements IGate {
+  readonly name = 'PoolDuplicateGate';
+
+  evaluate(ctx: GateContext): GateResult {
+    const op = (ctx.poolOperation ||
+      (ctx.operation as unknown as PoolOpPayload)) as Partial<PoolOpPayload>;
+    if (op.op !== 'pool:add' || !op.nodeId || !op.itemId) {
+      return { allowed: true };
+    }
+
+    const node = ctx.graph.nodes.find((n) => n.id === op.nodeId);
+    if (!node) return { allowed: true };
+
+    const alreadyAdded = node.pool?.additions?.some(
+      (a) => a.itemId === op.itemId,
+    );
+    if (alreadyAdded) {
+      return {
+        allowed: false,
+        reasonCode: 'POOL_DUPLICATE',
+        message: 'Resource is already included in this node pool.',
+        fixHint: { nodeId: node.id, field: 'pool' },
+      };
+    }
+
+    return { allowed: true };
+  }
+}
+
+/** Gate verifying descendant nodes cannot exclude items marked required by ancestors. */
+export class PoolRequiredGate implements IGate {
+  readonly name = 'PoolRequiredGate';
+
+  evaluate(ctx: GateContext): GateResult {
+    const op = (ctx.poolOperation ||
+      (ctx.operation as unknown as PoolOpPayload)) as Partial<PoolOpPayload>;
+    if (
+      (op.op !== 'pool:exclude' && op.op !== 'pool:remove') ||
+      !op.nodeId ||
+      !op.itemId
+    ) {
+      return { allowed: true };
+    }
+
+    const nodesMap = new Map<string, BlueprintNodeDto>(
+      ctx.graph.nodes.map((n) => [n.id, n]),
+    );
+    const targetNode = nodesMap.get(op.nodeId);
+    if (!targetNode) return { allowed: true };
+
+    // Walk up ancestors
+    let curr = targetNode.parentId
+      ? nodesMap.get(targetNode.parentId)
+      : undefined;
+    const visited = new Set<string>();
+
+    while (curr && !visited.has(curr.id)) {
+      visited.add(curr.id);
+      const isAncestorRequired = curr.pool?.additions?.some(
+        (a) => a.itemId === op.itemId && a.required,
+      );
+
+      if (isAncestorRequired) {
+        return {
+          allowed: false,
+          reasonCode: 'POOL_ITEM_REQUIRED',
+          message: `Resource was marked required by ancestor "${getNodeName(curr)}" and cannot be excluded.`,
+          fixHint: { nodeId: curr.id, field: 'pool' },
+        };
+      }
+
+      curr = curr.parentId ? nodesMap.get(curr.parentId) : undefined;
+    }
+
+    return { allowed: true };
+  }
+}
+
+/** Gate verifying removing/excluding a pool item does not break active section assignments. */
+export class PoolImpactGate implements IGate {
+  readonly name = 'PoolImpactGate';
+
+  evaluate(ctx: GateContext): GateResult {
+    const op = (ctx.poolOperation ||
+      (ctx.operation as unknown as PoolOpPayload)) as Partial<PoolOpPayload>;
+    if (
+      (op.op !== 'pool:exclude' && op.op !== 'pool:remove') ||
+      !op.nodeId ||
+      !op.itemId
+    ) {
+      return { allowed: true };
+    }
+
+    // Find all descendants of targetNode
+    const descendantIds = new Set<string>([op.nodeId]);
+    let addedAny = true;
+    while (addedAny) {
+      addedAny = false;
+      for (const node of ctx.graph.nodes) {
+        if (
+          node.parentId &&
+          descendantIds.has(node.parentId) &&
+          !descendantIds.has(node.id)
+        ) {
+          descendantIds.add(node.id);
+          addedAny = true;
+        }
+      }
+    }
+
+    // Check if any descendant has active assignment referencing itemId
+    for (const node of ctx.graph.nodes) {
+      if (descendantIds.has(node.id) && node.assignments) {
+        const inUse = node.assignments.some(
+          (a) =>
+            a.subjectId === op.itemId ||
+            a.facultyId === op.itemId ||
+            a.roomId === op.itemId,
+        );
+
+        if (inUse) {
+          return {
+            allowed: false,
+            reasonCode: 'POOL_ITEM_IN_USE',
+            message: `Cannot exclude resource while it is assigned to active classes under "${getNodeName(node)}".`,
+            fixHint: { nodeId: node.id, field: 'assignments' },
+          };
+        }
+      }
+    }
+
+    return { allowed: true };
+  }
+}
+
+/** Gate verifying referenced library item exists in repository. */
+export class PoolItemExistsGate implements IGate {
+  readonly name = 'PoolItemExistsGate';
+
+  constructor(
+    private readonly itemExistsChecker?: (
+      kind: string,
+      itemId: string,
+    ) => Promise<boolean> | boolean,
+  ) {}
+
+  async evaluate(ctx: GateContext): Promise<GateResult> {
+    const op = (ctx.poolOperation ||
+      (ctx.operation as unknown as PoolOpPayload)) as Partial<PoolOpPayload>;
+    if (op.op !== 'pool:add' || !op.itemId) {
+      return { allowed: true };
+    }
+
+    if (this.itemExistsChecker && op.kind) {
+      const exists = await this.itemExistsChecker(op.kind, op.itemId);
+      if (!exists) {
+        return {
+          allowed: false,
+          reasonCode: 'POOL_ITEM_NOT_FOUND',
+          message: 'Referenced library item was not found.',
+        };
+      }
+    }
+
+    return { allowed: true };
+  }
+}
+
+/** Gate verifying referenced library item is not archived. */
+export class PoolItemActiveGate implements IGate {
+  readonly name = 'PoolItemActiveGate';
+
+  constructor(
+    private readonly isArchivedChecker?: (
+      kind: string,
+      itemId: string,
+    ) => Promise<boolean> | boolean,
+  ) {}
+
+  async evaluate(ctx: GateContext): Promise<GateResult> {
+    const op = (ctx.poolOperation ||
+      (ctx.operation as unknown as PoolOpPayload)) as Partial<PoolOpPayload>;
+    if (op.op !== 'pool:add' || !op.itemId) {
+      return { allowed: true };
+    }
+
+    if (this.isArchivedChecker && op.kind) {
+      const isArchived = await this.isArchivedChecker(op.kind, op.itemId);
+      if (isArchived) {
+        return {
+          allowed: false,
+          reasonCode: 'POOL_ITEM_ARCHIVED',
+          message: 'Referenced library item is archived and cannot be added.',
+        };
+      }
+    }
+
+    return { allowed: true };
+  }
+}
+
+/** Gate verifying resource department compatibility. */
+export class PoolDepartmentGate implements IGate {
+  readonly name = 'PoolDepartmentGate';
+
+  constructor(
+    private readonly departmentChecker?: (
+      kind: string,
+      itemId: string,
+      nodeDepartmentId?: string,
+    ) => Promise<boolean> | boolean,
+  ) {}
+
+  async evaluate(ctx: GateContext): Promise<GateResult> {
+    const op = (ctx.poolOperation ||
+      (ctx.operation as unknown as PoolOpPayload)) as Partial<PoolOpPayload>;
+    if (op.op !== 'pool:add' || !op.itemId || !op.nodeId) {
+      return { allowed: true };
+    }
+
+    const node = ctx.graph.nodes.find((n) => n.id === op.nodeId);
+    if (!node) return { allowed: true };
+
+    const departmentId = node.data?.['departmentId'] as string | undefined;
+
+    if (this.departmentChecker && op.kind && departmentId) {
+      const allowed = await this.departmentChecker(
+        op.kind,
+        op.itemId,
+        departmentId,
+      );
+      if (!allowed) {
+        return {
+          allowed: false,
+          reasonCode: 'POOL_DEPARTMENT_FORBIDDEN',
+          message:
+            'Resource belongs to another department and cross-department allocation is disallowed.',
+          fixHint: { nodeId: node.id, field: 'pool' },
+        };
+      }
+    }
+
+    return { allowed: true };
+  }
+}
+
+/** Gate verifying that assigned subjects, faculty, and rooms exist in effective pool. */
+export class AssignmentInPoolGate implements IGate {
+  readonly name = 'AssignmentInPoolGate';
+
+  evaluate(ctx: GateContext): GateResult {
+    const op = (ctx.assignmentOperation ||
+      (ctx.operation as unknown as AssignmentOpPayload)) as Partial<AssignmentOpPayload>;
+    if (op.op !== 'assignment:upsert' || !op.nodeId || !op.assignment) {
+      return { allowed: true };
+    }
+
+    const node = ctx.graph.nodes.find((n) => n.id === op.nodeId);
+    if (!node) return { allowed: true };
+
+    const assignment = op.assignment;
+
+    // Collect effective pool item IDs across ancestors up to root
+    const nodesMap = new Map<string, BlueprintNodeDto>(
+      ctx.graph.nodes.map((n) => [n.id, n]),
+    );
+    const effectiveItemIds = new Set<string>();
+    const exclusions = new Set<string>();
+
+    let curr: BlueprintNodeDto | undefined = node;
+    const chain: BlueprintNodeDto[] = [];
+    while (curr) {
+      chain.unshift(curr);
+      curr = curr.parentId ? nodesMap.get(curr.parentId) : undefined;
+    }
+
+    for (const item of chain) {
+      for (const ex of item.pool?.exclusions || []) {
+        exclusions.add(ex);
+      }
+      for (const add of item.pool?.additions || []) {
+        if (!exclusions.has(add.itemId)) {
+          effectiveItemIds.add(add.itemId);
+        }
+      }
+    }
+
+    // 1. Subject must always be in pool
+    if (
+      effectiveItemIds.size > 0 &&
+      !effectiveItemIds.has(assignment.subjectId)
+    ) {
+      return {
+        allowed: false,
+        reasonCode: 'ASSIGNMENT_NOT_IN_POOL',
+        message:
+          'Assigned subject is not present in the section resource pool.',
+        fixHint: { nodeId: node.id, field: 'assignments' },
+      };
+    }
+
+    // 2. Faculty must be in pool unless auto-fill is active and facultyId is empty
+    if (
+      assignment.facultyId &&
+      effectiveItemIds.size > 0 &&
+      !effectiveItemIds.has(assignment.facultyId)
+    ) {
+      return {
+        allowed: false,
+        reasonCode: 'ASSIGNMENT_NOT_IN_POOL',
+        message:
+          'Assigned faculty is not present in the section resource pool.',
+        fixHint: { nodeId: node.id, field: 'assignments' },
+      };
+    }
+
+    // 3. Room must be in pool unless auto-fill is active and roomId is empty
+    if (
+      assignment.roomId &&
+      effectiveItemIds.size > 0 &&
+      !effectiveItemIds.has(assignment.roomId)
+    ) {
+      return {
+        allowed: false,
+        reasonCode: 'ASSIGNMENT_NOT_IN_POOL',
+        message: 'Assigned room is not present in the section resource pool.',
+        fixHint: { nodeId: node.id, field: 'assignments' },
+      };
     }
 
     return { allowed: true };

@@ -188,7 +188,10 @@ export class SemesterCompletionRule implements CompletionRuleStrategy {
 
 /** Class implementing section completion rule. */
 export class SectionCompletionRule implements CompletionRuleStrategy {
-  compute(data: Record<string, unknown>): CompletionResult {
+  compute(
+    data: Record<string, unknown>,
+    context?: CompletionContext,
+  ): CompletionResult {
     const missing: MissingField[] = [];
     const name = str(data['name']);
     const strength = num(data['strength']);
@@ -206,7 +209,59 @@ export class SectionCompletionRule implements CompletionRuleStrategy {
       });
     }
 
-    if (Object.keys(data).length === 0) {
+    const node = context?.node;
+    if (node) {
+      if (node.assignments && node.assignments.length > 0) {
+        for (let i = 0; i < node.assignments.length; i++) {
+          const assign = node.assignments[i]!;
+          if (!assign.subjectId) {
+            missing.push({
+              field: `assignments[${i}].subjectId`,
+              message: 'Subject is required for all assignments',
+            });
+          }
+          if (!assign.periodsPerWeek || assign.periodsPerWeek <= 0) {
+            missing.push({
+              field: `assignments[${i}].periodsPerWeek`,
+              message: 'Periods per week must be at least 1',
+            });
+          }
+        }
+      }
+
+      if (context?.effectivePool) {
+        const pool = context.effectivePool;
+        const autoFill = node.autoFill || 'off';
+        if (autoFill === 'off') {
+          if (pool.faculty.length === 0) {
+            missing.push({
+              field: 'pool.faculty',
+              message:
+                'Faculty resource pool is empty. Add faculty or enable auto-fill.',
+            });
+          }
+          if (pool.rooms.length === 0) {
+            missing.push({
+              field: 'pool.rooms',
+              message:
+                'Room resource pool is empty. Add rooms or enable auto-fill.',
+            });
+          }
+        }
+        if (pool.subjects.length === 0) {
+          missing.push({
+            field: 'pool.subjects',
+            message:
+              'Subject resource pool is empty. Add subjects from Library.',
+          });
+        }
+      }
+    }
+
+    if (
+      Object.keys(data).length === 0 &&
+      (!node || (!node.assignments?.length && !node.pool))
+    ) {
       return { status: 'empty', missing };
     }
     return {

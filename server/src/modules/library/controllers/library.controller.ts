@@ -714,4 +714,10 @@ export class LibraryController {
       res.send(buffer);
     }
   }
+
+  @Get(':type/:id/usage')
+  @RequirePermissions('FACULTY_READ')
+  async getItemUsage(@Param('type') type: string, @Param('id') id: string) {
+    return this.libraryService.getItemUsage(type, id);
+  }
 }

@@ -1,5 +1,10 @@
 // Strategy implementation for completion-rule.strategy.
-import type { MissingField, NodeStatus } from '@slotly/contracts';
+import type {
+  BlueprintNodeDto,
+  MissingField,
+  NodeStatus,
+  ResolvedPool,
+} from '@slotly/contracts';
 
 /** Interface defining structure for completion context. */
 export interface CompletionContext {
@@ -15,6 +20,8 @@ export interface CompletionContext {
         data: Record<string, unknown>;
       }>
     | undefined;
+  node?: BlueprintNodeDto | undefined;
+  effectivePool?: ResolvedPool | undefined;
 }
 
 /** Interface defining structure for completion result. */

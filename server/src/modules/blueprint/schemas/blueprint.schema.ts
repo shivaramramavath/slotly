@@ -2,9 +2,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 import type {
+  Assignment,
+  AutoFillMode,
   BlueprintEdgeDto,
   BlueprintNodeDto,
   BlueprintNodeType,
+  NodePool,
   NodePosition,
   NodeStatus,
 } from '@slotly/contracts';
@@ -76,6 +79,54 @@ export class BlueprintNodeSchemaClass {
 
   @Prop({ type: Object, default: {} })
   constraints?: Record<string, unknown>;
+
+  @Prop({ type: Number, default: 1 })
+  version?: number;
+
+  @Prop({
+    type: {
+      additions: [
+        {
+          id: { type: String, required: true },
+          kind: {
+            type: String,
+            enum: ['faculty', 'subject', 'room'],
+            required: true,
+          },
+          itemId: { type: String, required: true },
+          required: { type: Boolean, default: false },
+          pinned: { type: Boolean, default: false },
+          addedAt: { type: String, default: null },
+        },
+      ],
+      exclusions: [{ type: String }],
+    },
+    default: { additions: [], exclusions: [] },
+  })
+  pool?: NodePool;
+
+  @Prop({
+    type: [
+      {
+        id: { type: String, required: true },
+        subjectId: { type: String, required: true },
+        facultyId: { type: String, default: null },
+        roomId: { type: String, default: null },
+        periodsPerWeek: { type: Number, required: true, min: 1 },
+        isLab: { type: Boolean, default: false },
+        labDuration: { type: Number, default: 1, min: 1 },
+      },
+    ],
+    default: [],
+  })
+  assignments?: Assignment[];
+
+  @Prop({
+    type: String,
+    enum: ['off', 'same_department', 'allow_other_departments'],
+    default: 'off',
+  })
+  autoFill?: AutoFillMode;
 }
 
 /** Class implementing blueprint edge schema class. */
