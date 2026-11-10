@@ -1,11 +1,15 @@
 // Domain service orchestrating blueprint.service business logic.
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import type {
   ApplyOperationsDto,
+  AssignmentOpPayload,
+  AutoFillMode,
   BatchOperationResult,
   BlueprintCommentDto,
   BlueprintEdgeDto,
@@ -16,6 +20,10 @@ import type {
   BlueprintReadinessDto,
   BlueprintRecommendationDto,
   BlueprintSnapshotDto,
+  NodePatchPayload,
+  PoolItemType,
+  PoolOpPayload,
+  ResolvedPool,
 } from '@slotly/contracts';
 import { CachedBlueprintRepository } from '../repositories/cached-blueprint.repository';
 import { CachedProjectRepository } from '../../projects/repositories/cached-project.repository';
@@ -30,6 +38,11 @@ import {
   BlueprintSnapshotRepository,
 } from '../repositories/blueprint-auxiliary.repositories';
 import { EventBus } from '../../../common/events/event-bus.service';
+import {
+  PoolResolverService,
+  type WhereUsedResult,
+} from './pool-resolver.service';
+import { GateChain } from '../gates/gate-chain';
 
 function getId(
   doc:
@@ -56,6 +69,8 @@ export class BlueprintService {
     private readonly snapshotRepo: BlueprintSnapshotRepository,
     private readonly commentRepo: BlueprintCommentRepository,
     private readonly eventBus: EventBus,
+    private readonly poolResolver: PoolResolverService,
+    private readonly gateChain: GateChain,
   ) {}
 
   async getGraph(projectId: string): Promise<BlueprintGraphDto> {
@@ -409,6 +424,265 @@ export class BlueprintService {
       userName: comment.userName,
       text: comment.text,
       createdAt: comment.createdAt?.toISOString() || new Date().toISOString(),
+    };
+  }
+
+  async getNodePool(projectId: string, nodeId: string): Promise<ResolvedPool> {
+    const graph = await this.getGraph(projectId);
+    return this.poolResolver.resolveEffectivePool(nodeId, graph.nodes);
+  }
+
+  async getWhereUsed(
+    projectId: string,
+    refType: PoolItemType,
+    refId: string,
+  ): Promise<WhereUsedResult[]> {
+    const graph = await this.getGraph(projectId);
+    return this.poolResolver.getWhereUsed(projectId, refType, refId, graph);
+  }
+
+  async mutatePool(projectId: string, payload: PoolOpPayload, userId: string) {
+    const graph = await this.getGraph(projectId);
+    const node = graph.nodes.find((n) => n.id === payload.nodeId);
+    if (!node) {
+      throw new NotFoundException(`Node ${payload.nodeId} not found`);
+    }
+
+    const gateResult = await this.gateChain.evaluate({
+      operation: {
+        opId: randomUUID(),
+        type: 'update_node',
+        targetId: payload.nodeId,
+      },
+      poolOperation: payload,
+      project: { id: projectId, status: 'draft' },
+      graph,
+    });
+
+    if (!gateResult.allowed) {
+      throw new BadRequestException({
+        code: gateResult.reasonCode || 'INVALID_OPERATION',
+        message: gateResult.message || 'Pool mutation rejected by gate check',
+        fixHint: gateResult.fixHint,
+      });
+    }
+
+    node.pool = node.pool || { additions: [], exclusions: [] };
+    node.pool.additions = node.pool.additions || [];
+    node.pool.exclusions = node.pool.exclusions || [];
+
+    switch (payload.op) {
+      case 'pool:add': {
+        const itemKind = payload.kind || 'faculty';
+        node.pool.additions.push({
+          id: randomUUID(),
+          kind: itemKind,
+          itemId: payload.itemId,
+          required: Boolean(payload.required),
+          pinned: Boolean(payload.pinned),
+          addedAt: new Date().toISOString(),
+        });
+        node.pool.exclusions = node.pool.exclusions.filter(
+          (id) => id !== payload.itemId,
+        );
+        break;
+      }
+      case 'pool:exclude': {
+        if (!node.pool.exclusions.includes(payload.itemId)) {
+          node.pool.exclusions.push(payload.itemId);
+        }
+        break;
+      }
+      case 'pool:restore': {
+        node.pool.exclusions = node.pool.exclusions.filter(
+          (id) => id !== payload.itemId,
+        );
+        break;
+      }
+      case 'pool:remove': {
+        node.pool.additions = node.pool.additions.filter(
+          (a) => a.itemId !== payload.itemId,
+        );
+        break;
+      }
+      case 'pool:require': {
+        const target = node.pool.additions.find(
+          (a) => a.itemId === payload.itemId,
+        );
+        if (target) target.required = true;
+        break;
+      }
+      case 'pool:pin': {
+        const target = node.pool.additions.find(
+          (a) => a.itemId === payload.itemId,
+        );
+        if (target) target.pinned = true;
+        break;
+      }
+    }
+
+    const newVersion = (node.version || 1) + 1;
+    node.version = newVersion;
+
+    const { updatedNodes, changes } = this.completionService.recomputeGraph(
+      graph.nodes,
+    );
+
+    await this.blueprintRepo.saveGraph(projectId, {
+      nodes: updatedNodes,
+      edges: graph.edges,
+    });
+
+    await this.historyRepo.create({
+      projectId,
+      revision: newVersion,
+      operationType: payload.op,
+      description: `Pool operation ${payload.op} on node ${payload.nodeId}`,
+      userId,
+    });
+
+    return {
+      success: true,
+      pool: node.pool,
+      version: newVersion,
+      changes,
+    };
+  }
+
+  async mutateAssignment(
+    projectId: string,
+    payload: AssignmentOpPayload,
+    userId: string,
+  ) {
+    const graph = await this.getGraph(projectId);
+    const node = graph.nodes.find((n) => n.id === payload.nodeId);
+    if (!node) {
+      throw new NotFoundException(`Node ${payload.nodeId} not found`);
+    }
+
+    const gateResult = await this.gateChain.evaluate({
+      operation: {
+        opId: randomUUID(),
+        type: 'update_node',
+        targetId: payload.nodeId,
+      },
+      assignmentOperation: payload,
+      project: { id: projectId, status: 'draft' },
+      graph,
+    });
+
+    if (!gateResult.allowed) {
+      throw new BadRequestException({
+        code: gateResult.reasonCode || 'INVALID_OPERATION',
+        message: gateResult.message || 'Assignment rejected by gate check',
+        fixHint: gateResult.fixHint,
+      });
+    }
+
+    node.assignments = node.assignments || [];
+
+    if (payload.op === 'assignment:upsert' && payload.assignment) {
+      const idx = node.assignments.findIndex(
+        (a) => a.id === payload.assignment!.id,
+      );
+      if (idx >= 0) {
+        node.assignments[idx] = payload.assignment;
+      } else {
+        node.assignments.push(payload.assignment);
+      }
+    } else if (payload.op === 'assignment:remove' && payload.assignmentId) {
+      node.assignments = node.assignments.filter(
+        (a) => a.id !== payload.assignmentId,
+      );
+    }
+
+    const newVersion = (node.version || 1) + 1;
+    node.version = newVersion;
+
+    const { updatedNodes, changes } = this.completionService.recomputeGraph(
+      graph.nodes,
+    );
+
+    await this.blueprintRepo.saveGraph(projectId, {
+      nodes: updatedNodes,
+      edges: graph.edges,
+    });
+
+    await this.historyRepo.create({
+      projectId,
+      revision: newVersion,
+      operationType: payload.op,
+      description: `Assignment operation ${payload.op} on node ${payload.nodeId}`,
+      userId,
+    });
+
+    return {
+      success: true,
+      assignments: node.assignments,
+      version: newVersion,
+      changes,
+    };
+  }
+
+  async patchNode(
+    projectId: string,
+    payload: NodePatchPayload,
+    userId: string,
+  ) {
+    const graph = await this.getGraph(projectId);
+    const node = graph.nodes.find((n) => n.id === payload.nodeId);
+    if (!node) {
+      throw new NotFoundException(`Node ${payload.nodeId} not found`);
+    }
+
+    if (
+      typeof payload.version === 'number' &&
+      typeof node.version === 'number' &&
+      payload.version !== node.version
+    ) {
+      throw new ConflictException({
+        code: 'REVISION_CONFLICT',
+        message: `Node version mismatch: server is at ${node.version}, client sent ${payload.version}`,
+        currentVersion: node.version,
+        rejectedVersion: payload.version,
+      });
+    }
+
+    if (payload.patch['data']) {
+      node.data = {
+        ...node.data,
+        ...(payload.patch['data'] as Record<string, unknown>),
+      };
+    }
+    if (payload.patch['autoFill']) {
+      node.autoFill = payload.patch['autoFill'] as AutoFillMode;
+    }
+
+    const newVersion = (node.version || 1) + 1;
+    node.version = newVersion;
+
+    const { updatedNodes, changes } = this.completionService.recomputeGraph(
+      graph.nodes,
+    );
+
+    await this.blueprintRepo.saveGraph(projectId, {
+      nodes: updatedNodes,
+      edges: graph.edges,
+    });
+
+    await this.historyRepo.create({
+      projectId,
+      revision: newVersion,
+      operationType: 'node:patch',
+      description: `Patched node ${payload.nodeId}`,
+      userId,
+    });
+
+    return {
+      success: true,
+      node,
+      version: newVersion,
+      changes,
     };
   }
 }

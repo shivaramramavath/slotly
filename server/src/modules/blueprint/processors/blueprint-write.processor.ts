@@ -7,7 +7,13 @@ import {
   WriteBehindService,
 } from '../../../common/queue/write-behind.service';
 import { CachedBlueprintRepository } from '../repositories/cached-blueprint.repository';
-import type { NodePosition } from '@slotly/contracts';
+import type {
+  Assignment,
+  AutoFillMode,
+  NodePool,
+  NodePosition,
+  NodeStatus,
+} from '@slotly/contracts';
 
 /** Interface defining structure for sync node job data. */
 export interface SyncNodeJobData {
@@ -17,6 +23,13 @@ export interface SyncNodeJobData {
   payload: {
     position?: NodePosition | undefined;
     data?: Record<string, unknown> | undefined;
+    version?: number | undefined;
+    pool?: NodePool | undefined;
+    assignments?: Assignment[] | undefined;
+    autoFill?: AutoFillMode | undefined;
+    status?: NodeStatus | undefined;
+    effectiveStatus?: NodeStatus | undefined;
+    missing?: Array<{ field: string; message: string }> | undefined;
   };
   timestamp: number;
 }
@@ -53,6 +66,13 @@ export class BlueprintWriteProcessor extends WorkerHost {
       await this.blueprintRepo.updateNode(projectId, nodeId, {
         position: payload.position,
         data: payload.data,
+        version: payload.version,
+        pool: payload.pool,
+        assignments: payload.assignments,
+        autoFill: payload.autoFill,
+        status: payload.status,
+        effectiveStatus: payload.effectiveStatus,
+        missing: payload.missing,
       });
 
       return { success: true };

@@ -22,6 +22,9 @@ describe('BlueprintGateway & Write-Behind Processor', () => {
   const mockBlueprintService = {
     applyOperations: jest.fn(),
     getGraph: jest.fn(),
+    patchNode: jest.fn(),
+    mutatePool: jest.fn(),
+    mutateAssignment: jest.fn(),
   };
 
   const mockWriteBehindService = {
@@ -472,6 +475,123 @@ describe('BlueprintGateway & Write-Behind Processor', () => {
       expect(
         mockWriteBehindService.decrementPendingWrites,
       ).toHaveBeenCalledWith('proj_1', 'node:node_1');
+    });
+  });
+
+  describe('Blueprint v2 Real-Time Autosave Gateway Handlers', () => {
+    it('handles node:patch and broadcasts node:patched', async () => {
+      mockBlueprintService.patchNode.mockResolvedValueOnce({
+        success: true,
+        node: { id: 'node_1', version: 2 },
+        version: 2,
+        changes: [],
+      });
+
+      const client = {
+        data: {
+          user: {
+            id: 'u_1',
+            role: 'DESIGNER',
+            sessionId: 'ses_1',
+            name: 'User',
+          },
+        },
+      } as unknown as AuthenticatedSocket;
+
+      const res = await gateway.handleNodePatch(client, {
+        projectId: 'proj_1',
+        nodeId: 'node_1',
+        patch: { data: { name: 'Updated' } },
+        version: 1,
+      });
+
+      expect(res).toEqual({ success: true, version: 2 });
+      expect(mockBlueprintService.patchNode).toHaveBeenCalled();
+      expect(mockServer.to).toHaveBeenCalledWith('project:proj_1');
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        'node:patched',
+        expect.objectContaining({ nodeId: 'node_1', version: 2 }),
+      );
+    });
+
+    it('handles pool:mutate and broadcasts pool:mutated', async () => {
+      mockBlueprintService.mutatePool.mockResolvedValueOnce({
+        success: true,
+        pool: { additions: [], exclusions: [] },
+        version: 2,
+        changes: [],
+      });
+
+      const client = {
+        data: {
+          user: {
+            id: 'u_1',
+            role: 'DESIGNER',
+            sessionId: 'ses_1',
+            name: 'User',
+          },
+        },
+      } as unknown as AuthenticatedSocket;
+
+      const res = await gateway.handlePoolMutate(client, {
+        projectId: 'proj_1',
+        nodeId: 'node_1',
+        op: 'pool:add',
+        itemId: 'fac_1',
+      });
+
+      expect(res).toEqual({
+        success: true,
+        pool: expect.any(Object),
+        version: 2,
+      });
+      expect(mockBlueprintService.mutatePool).toHaveBeenCalled();
+      expect(mockServer.to).toHaveBeenCalledWith('project:proj_1');
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        'pool:mutated',
+        expect.objectContaining({ nodeId: 'node_1', version: 2 }),
+      );
+    });
+
+    it('handles assignment:mutate and broadcasts assignment:mutated', async () => {
+      mockBlueprintService.mutateAssignment.mockResolvedValueOnce({
+        success: true,
+        assignments: [],
+        version: 2,
+        changes: [],
+      });
+
+      const client = {
+        data: {
+          user: {
+            id: 'u_1',
+            role: 'DESIGNER',
+            sessionId: 'ses_1',
+            name: 'User',
+          },
+        },
+      } as unknown as AuthenticatedSocket;
+
+      const res = await gateway.handleAssignmentMutate(client, {
+        projectId: 'proj_1',
+        nodeId: 'node_1',
+        op: 'assignment:upsert',
+        assignment: {
+          id: 'as_1',
+          subjectId: 'sub_1',
+          periodsPerWeek: 4,
+          isLab: false,
+          labDuration: 1,
+        },
+      });
+
+      expect(res).toEqual({ success: true, assignments: [], version: 2 });
+      expect(mockBlueprintService.mutateAssignment).toHaveBeenCalled();
+      expect(mockServer.to).toHaveBeenCalledWith('project:proj_1');
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        'assignment:mutated',
+        expect.objectContaining({ nodeId: 'node_1', version: 2 }),
+      );
     });
   });
 });

@@ -2143,4 +2143,77 @@ Complete architectural specification, schema additions, gate rules, and server c
 
 Merged via `docs/blueprint-v2-spec`, tag `docs-blueprint-v2-spec-merged`.
 
+---
+
+## Blueprint v2 - Pass B: Server Model, Pool Resolver, and Socket Autosave
+
+Server implementation of Blueprint v2 resource pools, inheritance resolution, mutation gates, write-behind processor adaptation, and real-time WebSocket autosave.
+
+### What Was Built
+
+1. **Mongoose Schema & Repository Updates (`server/src/modules/blueprint/`):**
+   - Updated `BlueprintNodeSchemaClass` with:
+     - `version` (`Number`, default 1)
+     - `pool` (`{ additions: [...], exclusions: [...] }`)
+     - `assignments` (`[{ id, subjectId, facultyId, roomId, periodsPerWeek, isLab, labDuration }]`)
+     - `autoFill` (`'off' | 'same_department' | 'allow_other_departments'`, default `'off'`)
+   - Extended `IBlueprintRepository`, `MongoBlueprintRepository`, and `CachedBlueprintRepository.updateNode` to support granular updates for `version`, `pool`, `assignments`, `autoFill`, `status`, `effectiveStatus`, and `missing`.
+
+2. **Pool Resolver Service (`PoolResolverService`):**
+   - Implemented recursive top-down effective pool calculation:
+     `effectivePool(node) = effectivePool(parent) + own additions - own exclusions`.
+   - Enforced Ancestor Required Rule: items marked `required: true` by an ancestor cannot be excluded by descendants (`POOL_ITEM_REQUIRED`).
+   - Resolved Library item details (name, code, departmentId) via injected `FacultyRepository`, `SubjectRepository`, and `RoomRepository`.
+   - Implemented `getWhereUsed(projectId, refType, refId)` returning nodes where library resources are referenced in pools or assignments.
+
+3. **Blueprint v2 Gates & Section Completion (`server/src/modules/blueprint/gates/`):**
+   - Added `PoolDuplicateGate`: blocks duplicate addition of resources into a node's pool (`POOL_DUPLICATE`).
+   - Added `PoolRequiredGate`: blocks descendant nodes from excluding ancestor required items (`POOL_ITEM_REQUIRED`).
+   - Added `PoolImpactGate`: blocks excluding or removing resources actively assigned to classes (`POOL_ITEM_IN_USE`).
+   - Added `AssignmentInPoolGate`: validates that assigned subjects, faculty, and rooms exist in the section's effective pool (`ASSIGNMENT_NOT_IN_POOL`).
+   - Added `PoolItemExistsGate`, `PoolItemActiveGate`, `PoolDepartmentGate`.
+   - Registered all gates in `GateChain`.
+   - Updated `SectionCompletionRule` to validate assignments and resource pool presence / autoFill settings.
+
+4. **Write-Behind Processor Adaptation (`BlueprintWriteProcessor`):**
+   - Updated `SyncNodeJobData` and processor execution to persist `version`, `pool`, `assignments`, and `autoFill` changes to MongoDB.
+
+5. **Real-Time WebSocket Autosave (`BlueprintGateway`):**
+   - Implemented `@SubscribeMessage(SocketEvents.NODE_PATCH)` (`node:patch`):
+     - Validates edit permissions.
+     - Performs optimistic concurrency check on `node.version`, returning `REVISION_CONFLICT` on stale writes.
+     - Increments `node.version`, updates Redis cache, enqueues write-behind job, and broadcasts `node:patched`.
+     - Recomputes completion status and broadcasts `node:status-changed`.
+   - Implemented `@SubscribeMessage(SocketEvents.POOL_MUTATE)` (`pool:mutate`):
+     - Evaluates pool gates through `GateChain`.
+     - Applies mutations (`add`, `exclude`, `restore`, `remove`, `require`, `pin`).
+     - Increments `version`, updates Redis, enqueues write-behind, and broadcasts `pool:mutated`.
+   - Implemented `@SubscribeMessage(SocketEvents.ASSIGNMENT_MUTATE)` (`assignment:mutate`):
+     - Evaluates `AssignmentInPoolGate`.
+     - Upserts or removes section assignments, updates Redis, and broadcasts `assignment:mutated`.
+
+6. **REST Endpoints (`BlueprintController` & `LibraryController`):**
+   - `GET /projects/:projectId/blueprint/nodes/:nodeId/pool`
+   - `POST /projects/:projectId/blueprint/nodes/:nodeId/pool`
+   - `GET /projects/:projectId/blueprint/where-used`
+   - `GET /library/:type/:id/usage`
+
+7. **Unit & Integration Tests (14 new tests, 77 blueprint tests total passing):**
+   - `pool-resolver.spec.ts`: 5 tests covering direct additions, hierarchy inheritance, child exclusions, ancestor required protection, and where-used lookup.
+   - `blueprint-v2-gates.spec.ts`: 6 tests covering `PoolDuplicateGate`, `PoolRequiredGate`, `PoolImpactGate`, `AssignmentInPoolGate`, and `SectionCompletionRule`.
+   - `blueprint-gateway.spec.ts`: 3 new tests covering `node:patch`, `pool:mutate`, and `assignment:mutate` socket autosave handlers.
+
+### Decisions Made
+
+- **Atomic Node Versioning for Optimistic Concurrency:** Each node maintains an independent `version` counter incremented on patches, pool mutations, and assignment changes, providing fine-grained cell-level conflict detection without invalidating the whole graph revision for non-structural edits.
+- **Pure Synchronous Gate Evaluation:** Core pool and assignment gates evaluate pure graph relationships synchronously, ensuring zero latency on WebSocket autosave operations while enforcing business rules strictly.
+
+### What Was Skipped (Scheduled for Later Passes)
+
+- Pass C: Engine solver auto-fill adaptation, Section assignment build mapping, and pre-build validation.
+- Pass D: Client minimal design cards, 360px drawer, resource pool inspector, floating toolbar pill, and real-time socket autosave hooks.
+- Pass E: Feature flag flip to true, data migration, removal of deprecated node types, and final verification.
+
+Merged via `feat/blueprint-v2-server`, tag `feat-blueprint-v2-server-merged`.
+
 

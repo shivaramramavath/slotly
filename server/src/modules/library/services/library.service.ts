@@ -821,4 +821,21 @@ export class LibraryService {
       timestamp: new Date().toISOString(),
     });
   }
+
+  async getItemUsage(
+    type: string,
+    id: string,
+  ): Promise<{
+    type: string;
+    id: string;
+    usageCount: number;
+    references: unknown[];
+  }> {
+    return {
+      type,
+      id,
+      usageCount: 0,
+      references: [],
+    };
+  }
 }

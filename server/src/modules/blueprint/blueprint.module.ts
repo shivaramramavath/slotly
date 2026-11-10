@@ -44,6 +44,8 @@ import { TemplateController } from './controllers/template.controller';
 import { ProjectsModule } from '../projects/projects.module';
 import { CacheModule } from '../../common/cache/cache.module';
 import { UsersModule } from '../users/users.module';
+import { LibraryModule } from '../library/library.module';
+import { PoolResolverService } from './services/pool-resolver.service';
 
 /** Class implementing blueprint module. */
 @Module({
@@ -58,6 +60,7 @@ import { UsersModule } from '../users/users.module';
     CacheModule,
     forwardRef(() => ProjectsModule),
     forwardRef(() => UsersModule),
+    forwardRef(() => LibraryModule),
   ],
   controllers: [BlueprintController, TemplateController],
   providers: [
@@ -77,6 +80,7 @@ import { UsersModule } from '../users/users.module';
     RecommendationsService,
     GraphFromInstitutionBuilder,
     TemplateService,
+    PoolResolverService,
     BlueprintService,
     BlueprintGateway,
     BlueprintWriteProcessor,
@@ -93,6 +97,7 @@ import { UsersModule } from '../users/users.module';
     RecommendationsService,
     GraphFromInstitutionBuilder,
     TemplateService,
+    PoolResolverService,
     BlueprintService,
   ],
 })

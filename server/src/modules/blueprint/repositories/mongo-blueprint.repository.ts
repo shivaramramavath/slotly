@@ -5,7 +5,14 @@ import { Model } from 'mongoose';
 import { MongoBaseRepository } from '../../../common/database/mongo-base.repository';
 import { Blueprint, BlueprintDocument } from '../schemas/blueprint.schema';
 import type { IBlueprintRepository } from './blueprint.repository.interface';
-import type { BlueprintGraphDto, NodePosition } from '@slotly/contracts';
+import type {
+  Assignment,
+  AutoFillMode,
+  BlueprintGraphDto,
+  NodePool,
+  NodePosition,
+  NodeStatus,
+} from '@slotly/contracts';
 
 /** Injectable service providing mongo blueprint repository logic. */
 @Injectable()
@@ -83,6 +90,13 @@ export class MongoBlueprintRepository
     update: {
       position?: NodePosition | undefined;
       data?: Record<string, unknown> | undefined;
+      version?: number | undefined;
+      pool?: NodePool | undefined;
+      assignments?: Assignment[] | undefined;
+      autoFill?: AutoFillMode | undefined;
+      status?: NodeStatus | undefined;
+      effectiveStatus?: NodeStatus | undefined;
+      missing?: Array<{ field: string; message: string }> | undefined;
     },
   ): Promise<boolean> {
     const $set: Record<string, unknown> = { updatedAt: new Date() };
@@ -91,6 +105,27 @@ export class MongoBlueprintRepository
     }
     if (update.data) {
       $set['nodes.$.data'] = update.data;
+    }
+    if (typeof update.version === 'number') {
+      $set['nodes.$.version'] = update.version;
+    }
+    if (update.pool) {
+      $set['nodes.$.pool'] = update.pool;
+    }
+    if (update.assignments) {
+      $set['nodes.$.assignments'] = update.assignments;
+    }
+    if (update.autoFill) {
+      $set['nodes.$.autoFill'] = update.autoFill;
+    }
+    if (update.status) {
+      $set['nodes.$.status'] = update.status;
+    }
+    if (update.effectiveStatus) {
+      $set['nodes.$.effectiveStatus'] = update.effectiveStatus;
+    }
+    if (update.missing) {
+      $set['nodes.$.missing'] = update.missing;
     }
 
     const res = await this.model

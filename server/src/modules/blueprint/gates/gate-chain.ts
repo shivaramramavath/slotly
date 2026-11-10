@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import type { GateContext, GateResult, IGate } from './gate.interface';
 import { NodeTypeRegistry } from '../model/node-type.registry';
 import {
+  AssignmentInPoolGate,
   CapacityGate,
   ConnectionEndpointGate,
   DuplicateNameGate,
@@ -11,6 +12,9 @@ import {
   ParentExistsGate,
   ParentTypeAllowedGate,
   PermissionGate,
+  PoolDuplicateGate,
+  PoolImpactGate,
+  PoolRequiredGate,
   ProjectNotLockedGate,
   QualificationGate,
   SingleParentGate,
@@ -38,6 +42,10 @@ export class GateChain {
       new CapacityGate(),
       new ConnectionEndpointGate(),
       new QualificationGate(),
+      new PoolDuplicateGate(),
+      new PoolRequiredGate(),
+      new PoolImpactGate(),
+      new AssignmentInPoolGate(),
     );
   }
 

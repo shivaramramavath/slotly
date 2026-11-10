@@ -6,7 +6,14 @@ import type { CacheService } from '../../../common/cache/cache.interface';
 import type { Blueprint } from '../schemas/blueprint.schema';
 import type { IBlueprintRepository } from './blueprint.repository.interface';
 import { MongoBlueprintRepository } from './mongo-blueprint.repository';
-import type { BlueprintGraphDto, NodePosition } from '@slotly/contracts';
+import type {
+  Assignment,
+  AutoFillMode,
+  BlueprintGraphDto,
+  NodePool,
+  NodePosition,
+  NodeStatus,
+} from '@slotly/contracts';
 
 /** Injectable service providing cached blueprint repository logic. */
 @Injectable()
@@ -64,6 +71,13 @@ export class CachedBlueprintRepository
     update: {
       position?: NodePosition | undefined;
       data?: Record<string, unknown> | undefined;
+      version?: number | undefined;
+      pool?: NodePool | undefined;
+      assignments?: Assignment[] | undefined;
+      autoFill?: AutoFillMode | undefined;
+      status?: NodeStatus | undefined;
+      effectiveStatus?: NodeStatus | undefined;
+      missing?: Array<{ field: string; message: string }> | undefined;
     },
   ): Promise<boolean> {
     return this.blueprintRepo.updateNode(projectId, nodeId, update);

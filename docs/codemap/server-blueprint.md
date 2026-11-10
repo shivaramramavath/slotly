@@ -12,6 +12,9 @@
   - `GET /projects/:projectId/blueprint` -> `getGraph()` [perm: 'BLUEPRINT_READ']
   - `GET /projects/:projectId/blueprint/readiness` -> `getReadiness()` [perm: 'BLUEPRINT_READ']
   - `GET /projects/:projectId/blueprint/nodes/:nodeId/impact` -> `getImpact()` [perm: 'BLUEPRINT_READ']
+  - `GET /projects/:projectId/blueprint/nodes/:nodeId/pool` -> `getNodePool()` [perm: 'BLUEPRINT_READ']
+  - `POST /projects/:projectId/blueprint/nodes/:nodeId/pool` -> `mutatePool()` [perm: 'BLUEPRINT_EDIT']
+  - `GET /projects/:projectId/blueprint/where-used` -> `getWhereUsed()` [perm: 'BLUEPRINT_READ']
   - `POST /projects/:projectId/blueprint/operations` -> `applyOperations()` [perm: 'BLUEPRINT_EDIT']
   - `GET /projects/:projectId/blueprint/history` -> `getHistory()` [perm: 'BLUEPRINT_READ']
   - `GET /projects/:projectId/blueprint/recommendations` -> `getRecommendations()` [perm: 'BLUEPRINT_READ']
@@ -50,6 +53,13 @@
 - **Class** `CapacityGate` implements `IGate` - Class implementing capacity gate.
 - **Class** `ConnectionEndpointGate` implements `IGate` - Class implementing connection endpoint gate.
 - **Class** `QualificationGate` implements `IGate` - Class implementing qualification gate.
+- **Class** `PoolDuplicateGate` implements `IGate` - Gate verifying a pool addition does not duplicate an item already in additions.
+- **Class** `PoolRequiredGate` implements `IGate` - Gate verifying descendant nodes cannot exclude items marked required by ancestors.
+- **Class** `PoolImpactGate` implements `IGate` - Gate verifying removing/excluding a pool item does not break active section assignments.
+- **Class** `PoolItemExistsGate` implements `IGate` - Gate verifying referenced library item exists in repository.
+- **Class** `PoolItemActiveGate` implements `IGate` - Gate verifying referenced library item is not archived.
+- **Class** `PoolDepartmentGate` implements `IGate` - Gate verifying resource department compatibility.
+- **Class** `AssignmentInPoolGate` implements `IGate` - Gate verifying that assigned subjects, faculty, and rooms exist in effective pool.
 
 ### `server/src/modules/blueprint/gates/gate-chain.ts`
 *Core implementation for gate-chain in server/src/modules/blueprint/gates.*
@@ -78,6 +88,9 @@
   - `/blueprint: SocketEvents.EDGE_DELETE` -> `handleEdgeDelete()`
   - `/blueprint: SocketEvents.NODE_MOVE` -> `handleNodeMove()`
   - `/blueprint: SocketEvents.NODE_UPDATE` -> `handleNodeUpdate()`
+  - `/blueprint: SocketEvents.NODE_PATCH` -> `handleNodePatch()`
+  - `/blueprint: SocketEvents.POOL_MUTATE` -> `handlePoolMutate()`
+  - `/blueprint: SocketEvents.ASSIGNMENT_MUTATE` -> `handleAssignmentMutate()`
 - **Interface** `SocketUserData` - Interface defining structure for socket user data.
 - **Interface** `SocketData` - Interface defining structure for socket data.
 - **Type** `AuthenticatedSocket` - Type alias for authenticated socket.
@@ -180,7 +193,7 @@
 ### `server/src/modules/blueprint/services/blueprint.service.ts`
 *Domain service orchestrating blueprint.service business logic.*
 
-- **Injectable** `BlueprintService` (deps: CachedBlueprintRepository, CachedProjectRepository, OperationService, CompletionService, ReadinessService, ImpactAnalyzerService, RecommendationsService, BlueprintHistoryRepository, BlueprintSnapshotRepository, BlueprintCommentRepository, EventBus) - Injectable service providing blueprint service logic.
+- **Injectable** `BlueprintService` (deps: CachedBlueprintRepository, CachedProjectRepository, OperationService, CompletionService, ReadinessService, ImpactAnalyzerService, RecommendationsService, BlueprintHistoryRepository, BlueprintSnapshotRepository, BlueprintCommentRepository, EventBus, PoolResolverService, GateChain) - Injectable service providing blueprint service logic.
 
 ### `server/src/modules/blueprint/services/completion.service.ts`
 *Domain service orchestrating completion.service business logic.*
@@ -209,6 +222,12 @@
 
 - **Injectable** `OperationService` (deps: GateChain, CompletionService) - Injectable service providing operation service logic.
 - **Interface** `ApplyBatchResult` - Interface defining structure for apply batch result.
+
+### `server/src/modules/blueprint/services/pool-resolver.service.ts`
+*Service resolving hierarchical resource pools and where-used references for blueprint nodes.*
+
+- **Injectable** `PoolResolverService` (deps: @Inject(FACULTY_REPOSITORY), @Inject(SUBJECT_REPOSITORY), @Inject(ROOM_REPOSITORY), CachedBlueprintRepository | undefined) - Injectable service resolving effective resource pools with inheritance rules.
+- **Interface** `WhereUsedResult` - Result item representing a node where a library resource is referenced.
 
 ### `server/src/modules/blueprint/services/readiness.service.ts`
 *Domain service orchestrating readiness.service business logic.*

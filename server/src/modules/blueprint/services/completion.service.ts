@@ -52,7 +52,7 @@ export class CompletionService {
       }
     }
 
-    const context: CompletionContext = { parentNode, siblingNodes };
+    const context: CompletionContext = { parentNode, siblingNodes, node };
     const { status, missing } = def.completionRule.compute(node.data, context);
 
     // Compute effective status:

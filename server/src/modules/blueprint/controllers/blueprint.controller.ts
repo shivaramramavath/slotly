@@ -26,6 +26,9 @@ import type {
   BlueprintSnapshotDto,
   CreateBlueprintCommentDto,
   CreateBlueprintSnapshotDto,
+  PoolItemType,
+  PoolOpPayload,
+  ResolvedPool,
 } from '@slotly/contracts';
 
 /** Controller handling blueprint controller HTTP endpoints. */
@@ -57,6 +60,38 @@ export class BlueprintController {
     @Param('nodeId') nodeId: string,
   ): Promise<BlueprintImpactDto> {
     return this.blueprintService.getImpact(projectId, nodeId);
+  }
+
+  @Get('nodes/:nodeId/pool')
+  @RequirePermissions('BLUEPRINT_READ')
+  async getNodePool(
+    @Param('projectId') projectId: string,
+    @Param('nodeId') nodeId: string,
+  ): Promise<ResolvedPool> {
+    return this.blueprintService.getNodePool(projectId, nodeId);
+  }
+
+  @Post('nodes/:nodeId/pool')
+  @RequirePermissions('BLUEPRINT_EDIT')
+  async mutatePool(
+    @Param('projectId') projectId: string,
+    @Param('nodeId') nodeId: string,
+    @Body() payload: PoolOpPayload,
+    @Request() req: { user: RequestUser },
+  ) {
+    payload.nodeId = nodeId;
+    payload.projectId = projectId;
+    return this.blueprintService.mutatePool(projectId, payload, req.user.id);
+  }
+
+  @Get('where-used')
+  @RequirePermissions('BLUEPRINT_READ')
+  async getWhereUsed(
+    @Param('projectId') projectId: string,
+    @Query('refType') refType: PoolItemType,
+    @Query('refId') refId: string,
+  ) {
+    return this.blueprintService.getWhereUsed(projectId, refType, refId);
   }
 
   @Post('operations')

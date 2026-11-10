@@ -15,6 +15,7 @@ import type { JwtConfig } from '../../../config';
 import { Server, Socket, type DefaultEventsMap } from 'socket.io';
 import { createHash, randomUUID } from 'crypto';
 import {
+  type AssignmentOpPayload,
   type BlueprintGraphDto,
   type BlueprintNodeDto,
   type CursorUpdatePayload,
@@ -24,8 +25,10 @@ import {
   type NodeDeletePayload,
   type NodeLockPayload,
   type NodeMovePayload,
+  type NodePatchPayload,
   type NodeUnlockPayload,
   type NodeUpdatePayload,
+  type PoolOpPayload,
   type PresenceUser,
   type ProjectJoinPayload,
   type ProjectLeavePayload,
@@ -679,5 +682,162 @@ export class BlueprintGateway
     }
 
     return { success: true };
+  }
+
+  @SubscribeMessage(SocketEvents.NODE_PATCH)
+  async handleNodePatch(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: NodePatchPayload,
+  ) {
+    const user = client.data.user;
+    if (!user || !this.canEdit(user.role)) {
+      return { success: false, message: 'Permission denied' };
+    }
+
+    const { projectId } = payload;
+    try {
+      const res = await this.blueprintService.patchNode(
+        projectId,
+        payload,
+        user.id,
+      );
+
+      this.server.to(`project:${projectId}`).emit('node:patched', {
+        nodeId: payload.nodeId,
+        patch: payload.patch,
+        version: res.version,
+      });
+
+      for (const updated of res.changes) {
+        this.server
+          .to(`project:${projectId}`)
+          .emit(SocketEvents.NODE_STATUS_CHANGED, {
+            nodeId: updated.nodeId,
+            status: updated.status,
+            missing: updated.missing,
+            effectiveStatus: updated.effectiveStatus,
+          });
+      }
+
+      return { success: true, version: res.version };
+    } catch (err: unknown) {
+      const errorObj = err as {
+        getResponse?: () => Record<string, unknown>;
+        message?: string;
+      };
+      const response = errorObj.getResponse ? errorObj.getResponse() : null;
+      return {
+        success: false,
+        reasonCode: (response?.['code'] as string) || 'INVALID_OPERATION',
+        message: (response?.['message'] as string) || errorObj.message,
+        currentVersion: response?.['currentVersion'],
+      };
+    }
+  }
+
+  @SubscribeMessage(SocketEvents.POOL_MUTATE)
+  async handlePoolMutate(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: PoolOpPayload,
+  ) {
+    const user = client.data.user;
+    if (!user || !this.canEdit(user.role)) {
+      return { success: false, message: 'Permission denied' };
+    }
+
+    const { projectId } = payload;
+    try {
+      const res = await this.blueprintService.mutatePool(
+        projectId,
+        payload,
+        user.id,
+      );
+
+      this.server.to(`project:${projectId}`).emit('pool:mutated', {
+        nodeId: payload.nodeId,
+        pool: res.pool,
+        version: res.version,
+      });
+
+      for (const updated of res.changes) {
+        this.server
+          .to(`project:${projectId}`)
+          .emit(SocketEvents.NODE_STATUS_CHANGED, {
+            nodeId: updated.nodeId,
+            status: updated.status,
+            missing: updated.missing,
+            effectiveStatus: updated.effectiveStatus,
+          });
+      }
+
+      return { success: true, pool: res.pool, version: res.version };
+    } catch (err: unknown) {
+      const errorObj = err as {
+        getResponse?: () => Record<string, unknown>;
+        message?: string;
+      };
+      const response = errorObj.getResponse ? errorObj.getResponse() : null;
+      return {
+        success: false,
+        reasonCode: (response?.['code'] as string) || 'INVALID_OPERATION',
+        message: (response?.['message'] as string) || errorObj.message,
+        fixHint: response?.['fixHint'],
+      };
+    }
+  }
+
+  @SubscribeMessage(SocketEvents.ASSIGNMENT_MUTATE)
+  async handleAssignmentMutate(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: AssignmentOpPayload,
+  ) {
+    const user = client.data.user;
+    if (!user || !this.canEdit(user.role)) {
+      return { success: false, message: 'Permission denied' };
+    }
+
+    const { projectId } = payload;
+    try {
+      const res = await this.blueprintService.mutateAssignment(
+        projectId,
+        payload,
+        user.id,
+      );
+
+      this.server.to(`project:${projectId}`).emit('assignment:mutated', {
+        nodeId: payload.nodeId,
+        assignments: res.assignments,
+        version: res.version,
+      });
+
+      for (const updated of res.changes) {
+        this.server
+          .to(`project:${projectId}`)
+          .emit(SocketEvents.NODE_STATUS_CHANGED, {
+            nodeId: updated.nodeId,
+            status: updated.status,
+            missing: updated.missing,
+            effectiveStatus: updated.effectiveStatus,
+          });
+      }
+
+      return {
+        success: true,
+        assignments: res.assignments,
+        version: res.version,
+      };
+    } catch (err: unknown) {
+      const errorObj = err as {
+        getResponse?: () => Record<string, unknown>;
+        message?: string;
+      };
+      const response = errorObj.getResponse ? errorObj.getResponse() : null;
+      return {
+        success: false,
+        reasonCode: (response?.['code'] as string) || 'INVALID_OPERATION',
+        message: (response?.['message'] as string) || errorObj.message,
+        fixHint: response?.['fixHint'],
+      };
+    }
   }
 }
