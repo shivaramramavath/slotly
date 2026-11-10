@@ -94,4 +94,29 @@ export class CachedProjectRepository
     }
     return result;
   }
+
+  async countUserPins(userId: string): Promise<number> {
+    return this.projectRepo.countUserPins(userId);
+  }
+
+  async pinProject(userId: string, projectId: string): Promise<void> {
+    await this.projectRepo.pinProject(userId, projectId);
+    await this.cache.del(`slotly:user:${userId}:project-pins`);
+    await this.cache.invalidateTag(`user:${userId}:pins`);
+  }
+
+  async unpinProject(userId: string, projectId: string): Promise<void> {
+    await this.projectRepo.unpinProject(userId, projectId);
+    await this.cache.del(`slotly:user:${userId}:project-pins`);
+    await this.cache.invalidateTag(`user:${userId}:pins`);
+  }
+
+  async getUserPins(
+    userId: string,
+  ): Promise<Array<{ projectId: string; pinnedAt: Date }>> {
+    const key = `slotly:user:${userId}:project-pins`;
+    return this.cache.remember(key, 300, () =>
+      this.projectRepo.getUserPins(userId),
+    );
+  }
 }

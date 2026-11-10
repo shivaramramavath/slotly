@@ -23,4 +23,10 @@ export interface IProjectRepository extends BaseRepository<Project> {
     id: string,
     expectedRevision?: number,
   ): Promise<Project | null>;
+  pinProject(userId: string, projectId: string): Promise<void>;
+  unpinProject(userId: string, projectId: string): Promise<void>;
+  getUserPins(
+    userId: string,
+  ): Promise<Array<{ projectId: string; pinnedAt: Date }>>;
+  countUserPins(userId: string): Promise<number>;
 }

@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Request,
   UseGuards,
@@ -60,13 +61,35 @@ export class ProjectsController {
       search,
       pageNum,
       limitNum,
+      req.user.id,
     );
   }
 
   @Get(':projectId')
   @RequirePermissions('PROJECT_READ')
-  async getById(@Param('projectId') projectId: string): Promise<ProjectDto> {
-    return this.projectsService.findById(projectId);
+  async getById(
+    @Param('projectId') projectId: string,
+    @Request() req: { user: RequestUser },
+  ): Promise<ProjectDto> {
+    return this.projectsService.findById(projectId, req.user.id);
+  }
+
+  @Put(':projectId/pin')
+  @RequirePermissions('PROJECT_READ')
+  async pin(
+    @Param('projectId') projectId: string,
+    @Request() req: { user: RequestUser },
+  ): Promise<{ success: boolean; pinned: boolean }> {
+    return this.projectsService.pinProject(projectId, req.user.id);
+  }
+
+  @Delete(':projectId/pin')
+  @RequirePermissions('PROJECT_READ')
+  async unpin(
+    @Param('projectId') projectId: string,
+    @Request() req: { user: RequestUser },
+  ): Promise<{ success: boolean; pinned: boolean }> {
+    return this.projectsService.unpinProject(projectId, req.user.id);
   }
 
   @Patch(':projectId')
@@ -107,5 +130,14 @@ export class ProjectsController {
     @Request() req: { user: RequestUser },
   ): Promise<ProjectDto> {
     return this.projectsService.archive(projectId, req.user.id);
+  }
+
+  @Post(':projectId/restore')
+  @RequirePermissions('PROJECT_ARCHIVE')
+  async restore(
+    @Param('projectId') projectId: string,
+    @Request() req: { user: RequestUser },
+  ): Promise<ProjectDto> {
+    return this.projectsService.restore(projectId, req.user.id);
   }
 }
