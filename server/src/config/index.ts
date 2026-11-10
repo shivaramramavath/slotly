@@ -12,4 +12,5 @@ export * from './email.config';
 export * from './cache.config';
 export * from './queue.config';
 export * from './groq.config';
+export * from './blueprint.config';
 export * from './config.module';

@@ -292,53 +292,65 @@ Three steps with a stepper; Back/Next; progress is kept if the modal is dismisse
 
 Footer: summary line ("Odd term 2026–27, 6 days, 7 periods"). Primary **Create project** goes straight to the Blueprint.
 
-### 5.5 Blueprint `/projects/[projectId]/blueprint`
+### 5.5 Blueprint `/projects/[projectId]/blueprint` (Blueprint v2: Minimal Design & Resource Pools)
 
 ```
-┌ Palette ┬──────────────── Canvas ────────────────────┬ Sidebar (slot) ──────┐
-│ Institution │ ↶ ↷ │ Fit │ Layout ▾ │ Search │ Next step │ Config | Constraints | Validation | History | AI
-│ Department  │                                       │ [selected node form]  │
-│ Program …   │            graph (vertical)            │ missing checklist     │
-│             │                      minimap  Ready 72%│ recommendations       │
-└─────────────┴────────────────────────────────────────┴───────────────────────┘
+┌ Canvas (Vertical Graph) ─────────────────────────────┬ 360px Drawer (Right) ──────────┐
+│ [Floating Toolbar Pill: ↶ ↷ | Fit | Layout ▾ | Search | Next Step | Saved ●]          │
+│                                                      │ Tabs: Details | Resources     │
+│             Hierarchy Nodes (220px cards)            │       Rules   | Check         │
+│               [Institution: Slotly Univ]             │       History | Assignments   │
+│                           │                          │                               │
+│              [Department: Computer Science]          │ [Selected node form / pool]   │
+│                           │                          │ Pool: + Add from Library      │
+│                 [Program: B.Tech CSE]                │ Faculty (12) Subjects (8)     │
+│                           │                          │ Required items, Pinned items  │
+│                 [Semester: Semester 5]               │                               │
+│                           │                          │ Assignments (Section only):   │
+│                 [Section: CSE-A]                     │ OS (Prof. Smith, Room 301)    │
+│               minimap                  Ready 85%     │ Auto-fill: Same Department    │
+└──────────────────────────────────────────────────────┴───────────────────────────────┘
 ```
 
-**Palette (left, 220px, collapsible):** items grouped Structure and Resources, each with icon and mono type label. An item is disabled until a valid complete parent is selected and shows a tooltip such as "Complete 'CSE Program' first". Drag from the palette or click to add under the selection.
+**Minimal Node Card (220px width, vertical flow):**
+- Clean, restrained aesthetic matching the black-and-white visual spec. 1px border (`#232323`), surface bg (`#111111`), rounded 16px.
+- Header: mono type indicator (e.g. `SECTION`), title (e.g. `CSE-A`), and status dot:
+  - Complete: solid green dot (`#22C55E`)
+  - Incomplete: dashed yellow border / amber dot (`#FACC15`) with "N missing"
+  - Blocked: muted grey dot (`#8A8A8A`) with "Parent incomplete"
+- Body chips: key counts and metrics (student strength, pool count chips: `12 faculty`, `8 subjects`, `3 rooms`).
+- Add-child "+" handle: anchored at the bottom edge, active only when node is complete; opens child creation menu.
+- Selection: high-contrast white ring or subtle yellow border with no layout shift.
 
-**Toolbar:** undo, redo, fit view, layout menu (direction TB default, LR, BT, RL; algorithm Hierarchical, Compact, Department; Preview and Reset), search (⌘F), **Next step** (guided mode), snap size, lock canvas, fullscreen, shortcuts (?), import/export, templates, history.
+**Floating Toolbar Pill (top center of canvas):**
+- Floating pill: Undo (`⌘Z`), Redo (`⇧⌘Z`), Fit view, Layout Algorithm (Hierarchical TB, Compact, Department-based — strictly vertical layout, no direction toggles), Search (`⌘F`), **Next step** (guided mode), and real-time Autosave status indicator.
 
-**Node card (180–220px):**
-- Header: type icon, name, mono type label.
-- Body: 1 to 3 key facts (strength, weekly hours, capacity). Faculty nodes show a mini availability grid.
-- Footer: status ring + text, lock icon when locked, comment count.
-- **Add-child "+" handle** at the bottom edge appears only when the node is complete; click shows a menu of valid child types only.
-- Status styles: complete (thin green ring), incomplete (dashed yellow border and "N missing"), blocked (grey, "Parent incomplete"), error (red ring).
-- Selected: 1px accent border with 6% tint.
+**Autosave Status Indicator:**
+- `Saved`: muted mono text with subtle green dot (`● Saved`).
+- `Saving`: pulsing amber dot (`● Saving…`).
+- `Offline (N pending)`: amber badge showing pending write-behind operations (`● Offline (3 pending)`).
+- `Conflict`: red indicator with prompt to resolve stale revisions (`● Conflict [Review]`).
+- `Error`: red indicator with retry action (`● Error [Retry]`).
 
-**Interactions:**
-- Click selects and opens Config. Double-click focuses the first missing field.
-- Rejected action (for example creating a child under an incomplete parent): the drop target gives a 120ms shake, and a toast explains in plain language with **Go fix** which selects the parent and focuses the missing field.
-- Making a parent incomplete shows a banner across the top of the canvas: "3 descendants are now blocked because 'CSE Program' is incomplete. [Review]". Blocked nodes grey out live.
-- Delete: always shows the impact preview dialog (descendants, assignments, builds affected). Cascade delete is one undoable action with an Undo toast.
-- Multi-select shows a floating bar: Align (6), Distribute (2), Group, Lock, Hide, Delete.
-- Right-click menu: Copy, Paste, Duplicate subtree, Add child, Lock, Hide, Focus mode, Comments, Save as template, Delete.
-- Keyboard alternative to dragging: select a node, press `Enter` on a palette item to add under the selection; arrow keys with `Alt` move the selection between connected nodes.
-
-**Sidebar tabs (parallel routes, each with its own loading and error):**
-
-| Tab | Content |
+**360px Right Drawer (slide-over panel with granular tabs):**
+| Tab | Content & Functionality |
 |---|---|
-| Config | Dynamic form for the selected node, required dots, missing-fields checklist pinned at the top (click an item to focus the field), recommendations as chips with reasons, sticky footer: Apply, Reset, autosave status |
-| Constraints | Scope selector (Institution, Department, Program, Section), hard/soft sub-tabs, groups (Faculty, Room, Section, Laboratory), inheritance badge on each value (Inherited from Department / Override) with an Override action |
-| Validation | Counts by severity; grouped list; click focuses the node; "Fix automatically" for safe fixes |
-| History | Timeline of operations; Snapshots list with Restore and Compare |
-| AI | Chat with quick actions; previewed operations with Accept / Discard (Phase 14) |
+| Details | Node core attributes (name, code, strength, duration, dates). Direct inline editing with debounced socket autosave. |
+| Resources | Per-node Resource Pool: tabs for Faculty, Subjects, and Rooms. Search library items, Add to pool, Exclude inherited items, Mark Required (ancestors), Mark Pinned. Read-only item inspection cards with "Open in Library" links. |
+| Assignments | (Active for Section and Batch nodes): Subject assignments table/list. Assign faculty, room, periods/week, lab toggle. Auto-fill selector: `Off`, `Same Department`, `Allow Other Departments`. |
+| Rules | Constraint configuration & inheritance. Shows inherited constraints from ancestors with clear override toggles. |
+| Check | Node readiness & validation checklist. Lists missing fields and warnings with one-click "Go fix" jump links. |
+| History | Live audit trail of changes made to this node; operation history. |
 
-**Readiness chip** (bottom right of canvas): "Ready 72%". Opens a panel with counts, missing items each with **Go fix**, and the Build button (disabled until complete, with reason).
+**Resource Pool Cards & Library Navigation:**
+- Pool cards within the inspector are strictly read-only representations of Library items.
+- Cards show status tags (`Inherited from CSE Dept`, `Required`, `Pinned`, `Excluded`).
+- Clicking an item opens a quick preview with an external link "Open in Library" (`/library/faculty?id=...`); items cannot be mutated directly within the Blueprint workspace.
 
-**States:** loading is `GraphSkeleton` plus `SidebarSkeleton`; empty project shows a centered card on the canvas "Start with your institution" with an Add button that creates the root; reconnecting shows a small "Reconnecting…" chip in the toolbar and read-only mode until back.
-
-**Mobile:** canvas is pan/zoom with pinch; tapping a node opens its Config in a bottom sheet; add children through the "+" handle menu only; palette hidden; tabs become a segmented control in the sheet.
+**Canvas Interactions:**
+- Drag & Drop: Vertical connections only. Type hierarchy strictly enforced by `BLUEPRINT_RULES.md`.
+- Keyboard navigation: Arrow keys navigate between connected nodes in hierarchy order. `Enter` opens drawer. `N` triggers Guided Mode next step. `Delete` opens impact preview dialog.
+- Guided Mode: Automatically finds the top-most incomplete node and opens drawer with focused missing field.
 
 ### 5.6 Build `/projects/[projectId]/build`
 

@@ -428,6 +428,13 @@ export const ReasonCodeSchema = z.enum([
   'MISSING_ALLOCATION',
   'FACULTY_OVERLOAD',
   'INVALID_GRAPH',
+  'POOL_ITEM_NOT_FOUND',
+  'POOL_ITEM_ARCHIVED',
+  'POOL_ITEM_REQUIRED',
+  'POOL_ITEM_IN_USE',
+  'POOL_DEPARTMENT_FORBIDDEN',
+  'POOL_DUPLICATE',
+  'ASSIGNMENT_NOT_IN_POOL',
 ]);
 /** TypeScript type inferred from reason code Zod schema. */
 export type ReasonCode = z.infer<typeof ReasonCodeSchema>;
@@ -462,6 +469,20 @@ export const REASON_CODE_ALIASES: Record<string, ReasonCode> = {
   missing_allocation: 'MISSING_ALLOCATION',
   faculty_overload: 'FACULTY_OVERLOAD',
   invalid_graph: 'INVALID_GRAPH',
+  pool_item_not_found: 'POOL_ITEM_NOT_FOUND',
+  'pool-item-not-found': 'POOL_ITEM_NOT_FOUND',
+  pool_item_archived: 'POOL_ITEM_ARCHIVED',
+  'pool-item-archived': 'POOL_ITEM_ARCHIVED',
+  pool_item_required: 'POOL_ITEM_REQUIRED',
+  'pool-item-required': 'POOL_ITEM_REQUIRED',
+  pool_item_in_use: 'POOL_ITEM_IN_USE',
+  'pool-item-in-use': 'POOL_ITEM_IN_USE',
+  pool_department_forbidden: 'POOL_DEPARTMENT_FORBIDDEN',
+  'pool-department-forbidden': 'POOL_DEPARTMENT_FORBIDDEN',
+  pool_duplicate: 'POOL_DUPLICATE',
+  'pool-duplicate': 'POOL_DUPLICATE',
+  assignment_not_in_pool: 'ASSIGNMENT_NOT_IN_POOL',
+  'assignment-not-in-pool': 'ASSIGNMENT_NOT_IN_POOL',
 };
 
 /** User-friendly explanations for every canonical reason code. */
@@ -483,6 +504,13 @@ export const REASON_CODE_MESSAGES: Record<ReasonCode, string> = {
   MISSING_ALLOCATION: 'Required faculty or room allocation is missing for this subject.',
   FACULTY_OVERLOAD: 'Assigned teaching hours exceed maximum allowed faculty hours.',
   INVALID_GRAPH: 'Graph structure contains detached, cyclic, or invalid nodes.',
+  POOL_ITEM_NOT_FOUND: 'Referenced library item was not found.',
+  POOL_ITEM_ARCHIVED: 'Referenced library item is archived and cannot be added.',
+  POOL_ITEM_REQUIRED: 'This resource was marked required by an ancestor and cannot be excluded.',
+  POOL_ITEM_IN_USE: 'Cannot remove or exclude resource while it is assigned to an active class.',
+  POOL_DEPARTMENT_FORBIDDEN: 'Resource belongs to another department and cross-department allocation is disallowed.',
+  POOL_DUPLICATE: 'Resource is already included in this node pool.',
+  ASSIGNMENT_NOT_IN_POOL: 'Assigned subject, faculty, or room is not present in the effective resource pool.',
 };
 
 /** Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation. */
@@ -541,6 +569,30 @@ export const BlueprintNodeTypeSchema = z.enum([
 ]);
 /** TypeScript type inferred from blueprint node type Zod schema. */
 export type BlueprintNodeType = z.infer<typeof BlueprintNodeTypeSchema>;
+
+/** Zod schema validating Blueprint v2 hierarchy node type (7 types only). */
+export const BlueprintNodeTypeV2Schema = z.enum([
+  'institution',
+  'department',
+  'program',
+  'academicYear',
+  'semester',
+  'section',
+  'batch',
+]);
+/** TypeScript type inferred from Blueprint v2 node type Zod schema. */
+export type BlueprintNodeTypeV2 = z.infer<typeof BlueprintNodeTypeV2Schema>;
+
+/** Array of Blueprint v2 allowed 7 hierarchy node types. */
+export const BLUEPRINT_V2_NODE_TYPES = [
+  'institution',
+  'department',
+  'program',
+  'academicYear',
+  'semester',
+  'section',
+  'batch',
+] as const;
 
 /** Zod schema validating node type. */
 export const NodeTypeSchema = z.enum([
@@ -613,6 +665,9 @@ export const SocketEvents = {
   NODE_LOCKED: 'node:locked',
   NODE_UNLOCKED: 'node:unlocked',
   REVISION_CONFLICT: 'revision:conflict',
+  NODE_PATCHED: 'node:patched',
+  POOL_MUTATED: 'pool:mutated',
+  ASSIGNMENT_MUTATED: 'assignment:mutated',
 
   // Client to server
   JOIN_PROJECT: 'project:join',
@@ -626,7 +681,13 @@ export const SocketEvents = {
   NODE_DELETE: 'node:delete',
   EDGE_ADD: 'edge:add',
   EDGE_DELETE: 'edge:delete',
+  NODE_PATCH: 'node:patch',
+  POOL_MUTATE: 'pool:mutate',
+  ASSIGNMENT_MUTATE: 'assignment:mutate',
 } as const;
+
+/** Blueprint socket events constant matching SocketEvents. */
+export const BlueprintSocketEvents = SocketEvents;
 
 // ==========================================
 // HEALTH CONTRACT
@@ -1409,6 +1470,133 @@ export const NodePositionSchema = z.object({
 /** TypeScript type inferred from node position Zod schema. */
 export type NodePosition = z.infer<typeof NodePositionSchema>;
 
+/** Zod schema validating resource pool item kind. */
+export const PoolItemTypeSchema = z.enum(['faculty', 'subject', 'room']);
+/** TypeScript type inferred from pool item type Zod schema. */
+export type PoolItemType = z.infer<typeof PoolItemTypeSchema>;
+
+/** Zod schema validating single resource pool entry in node additions. */
+export const PoolEntrySchema = z.object({
+  id: z.string(),
+  kind: PoolItemTypeSchema,
+  itemId: z.string(),
+  required: z.boolean().default(false),
+  pinned: z.boolean().default(false),
+  addedAt: z.string().optional(),
+});
+/** TypeScript type inferred from pool entry Zod schema. */
+export type PoolEntry = z.infer<typeof PoolEntrySchema>;
+
+/** Zod schema validating node resource pool. */
+export const NodePoolSchema = z.object({
+  additions: z.array(PoolEntrySchema).default([]),
+  exclusions: z.array(z.string()).default([]),
+});
+/** TypeScript type inferred from node pool Zod schema. */
+export type NodePool = z.infer<typeof NodePoolSchema>;
+
+/** Zod schema validating section auto-fill mode. */
+export const AutoFillModeSchema = z.enum([
+  'off',
+  'same_department',
+  'allow_other_departments',
+]);
+/** TypeScript type inferred from auto-fill mode Zod schema. */
+export type AutoFillMode = z.infer<typeof AutoFillModeSchema>;
+
+/** Zod schema validating section subject assignment. */
+export const AssignmentSchema = z.object({
+  id: z.string(),
+  subjectId: z.string(),
+  facultyId: z.string().nullable().optional(),
+  roomId: z.string().nullable().optional(),
+  periodsPerWeek: z.number().int().min(1),
+  isLab: z.boolean().default(false),
+  labDuration: z.number().int().min(1).default(1),
+});
+/** TypeScript type inferred from assignment Zod schema. */
+export type Assignment = z.infer<typeof AssignmentSchema>;
+
+/** Zod schema validating resolved pool item with inheritance metadata. */
+export const ResolvedPoolItemSchema = z.object({
+  itemId: z.string(),
+  kind: PoolItemTypeSchema,
+  name: z.string(),
+  code: z.string().optional(),
+  departmentId: z.string().optional(),
+  sourceNodeId: z.string(),
+  sourceNodeType: z.string(),
+  required: z.boolean().default(false),
+  pinned: z.boolean().default(false),
+  isExcluded: z.boolean().default(false),
+});
+/** TypeScript type inferred from resolved pool item Zod schema. */
+export type ResolvedPoolItem = z.infer<typeof ResolvedPoolItemSchema>;
+
+/** Zod schema validating resolved effective pool for a node across all kinds. */
+export const ResolvedPoolSchema = z.object({
+  nodeId: z.string(),
+  faculty: z.array(ResolvedPoolItemSchema),
+  subjects: z.array(ResolvedPoolItemSchema),
+  rooms: z.array(ResolvedPoolItemSchema),
+});
+/** TypeScript type inferred from resolved pool Zod schema. */
+export type ResolvedPool = z.infer<typeof ResolvedPoolSchema>;
+
+/** Zod schema validating pool mutation operations. */
+export const PoolOpTypeSchema = z.enum([
+  'pool:add',
+  'pool:exclude',
+  'pool:restore',
+  'pool:remove',
+  'pool:require',
+  'pool:pin',
+]);
+/** TypeScript type inferred from pool op type Zod schema. */
+export type PoolOpType = z.infer<typeof PoolOpTypeSchema>;
+
+/** Zod schema validating pool mutation operation payload. */
+export const PoolOpPayloadSchema = z.object({
+  projectId: z.string(),
+  nodeId: z.string(),
+  op: PoolOpTypeSchema,
+  itemId: z.string(),
+  kind: PoolItemTypeSchema.optional(),
+  required: z.boolean().optional(),
+  pinned: z.boolean().optional(),
+});
+/** TypeScript type inferred from pool op payload Zod schema. */
+export type PoolOpPayload = z.infer<typeof PoolOpPayloadSchema>;
+
+/** Zod schema validating assignment mutation operations. */
+export const AssignmentOpTypeSchema = z.enum([
+  'assignment:upsert',
+  'assignment:remove',
+]);
+/** TypeScript type inferred from assignment op type Zod schema. */
+export type AssignmentOpType = z.infer<typeof AssignmentOpTypeSchema>;
+
+/** Zod schema validating assignment mutation operation payload. */
+export const AssignmentOpPayloadSchema = z.object({
+  projectId: z.string(),
+  nodeId: z.string(),
+  op: AssignmentOpTypeSchema,
+  assignment: AssignmentSchema.optional(),
+  assignmentId: z.string().optional(),
+});
+/** TypeScript type inferred from assignment op payload Zod schema. */
+export type AssignmentOpPayload = z.infer<typeof AssignmentOpPayloadSchema>;
+
+/** Zod schema validating node patch payload. */
+export const NodePatchPayloadSchema = z.object({
+  projectId: z.string(),
+  nodeId: z.string(),
+  patch: z.record(z.unknown()),
+  version: z.number().int().optional(),
+});
+/** TypeScript type inferred from node patch payload Zod schema. */
+export type NodePatchPayload = z.infer<typeof NodePatchPayloadSchema>;
+
 /** Zod schema validating blueprint node dto. */
 export const BlueprintNodeDtoSchema = z.object({
   id: z.string(),
@@ -1426,6 +1614,10 @@ export const BlueprintNodeDtoSchema = z.object({
   missing: z.array(MissingFieldSchema).default([]),
   effectiveStatus: NodeStatusSchema.default('incomplete'),
   constraints: z.record(z.unknown()).optional(),
+  version: z.number().int().default(1).optional(),
+  pool: NodePoolSchema.optional(),
+  assignments: z.array(AssignmentSchema).optional(),
+  autoFill: AutoFillModeSchema.optional(),
 });
 /** TypeScript type inferred from blueprint node dto Zod schema. */
 export type BlueprintNodeDto = z.infer<typeof BlueprintNodeDtoSchema>;

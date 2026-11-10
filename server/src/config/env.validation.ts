@@ -203,6 +203,9 @@ export const envValidationSchema = Joi.object({
   GROQ_TEMPERATURE: Joi.number().default(
     DEFAULT_CONFIG.groq.requestLimits.temperature,
   ),
+
+  // Blueprint
+  BLUEPRINT_V2: Joi.boolean().default(DEFAULT_CONFIG.blueprint.v2Enabled),
 }).unknown(true);
 
 /** Function checking for legacy environment variables and failing with descriptive messages. */

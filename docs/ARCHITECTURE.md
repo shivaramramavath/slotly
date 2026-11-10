@@ -537,14 +537,19 @@ Roles: SUPER_ADMIN (reserved), ADMIN (institution admin), DESIGNER, FACULTY, STU
 
 ## 12. Domain references
 
-### 12.1 Blueprint
+### 12.1 Blueprint (Blueprint v2)
 
-- Hierarchy: Institution, Department, Program, Academic Year, Semester, Section, Batch; subject assignments under Section; elective groups under Semester; Faculty and Room as independent resource nodes.
-- Statuses: empty, incomplete, complete, and blocked (effective status when an ancestor is not complete).
-- Gate chain in order: ProjectNotLocked, Permission, ParentExists, ParentTypeAllowed, ParentComplete, SingleParent, NoCycle, DuplicateName, Capacity, ConnectionEndpoint, Qualification. Result `{allowed, reasonCode, message, fixHint}`.
+- Hierarchy: exactly 7 node types: Institution, Department, Program, Academic Year, Semester, Section, Batch. Faculty and Room nodes and subjectAssignment/electiveGroup nodes are removed from the canvas.
+- Resource Pools: Faculty, subjects, and rooms are references to Library items stored in per-node Resource Pools (`data.pool`). A child inherits the parent's effective pool: `effectivePool(node) = effectivePool(parent) + own additions - own exclusions`. Ancestor required items cannot be excluded (`POOL_ITEM_REQUIRED`); pinned items survive ancestor removal.
+- Section Assignments: Subject assignments are configured directly inside Section and Batch node configurations (`data.assignments`). Unassigned faculty/rooms can be resolved at build time via Auto-fill (`off`, `same_department`, `allow_other_departments`).
+- Layout: strictly vertical (TB layout only; algorithm selector retains Hierarchical Dagre, Compact, Department-based).
+- Statuses: incomplete, complete, and blocked (effective status when an ancestor is not complete). Section completion requires valid assignments and either non-empty resource pools or auto-fill enabled.
+- Gate chain in order: ProjectNotLocked, Permission, ParentExists, ParentTypeAllowed, ParentComplete, SingleParent, NoCycle, DuplicateName, Capacity, ConnectionEndpoint, Qualification, PoolItemExists, PoolItemActive, PoolDepartment, PoolRequired, PoolImpact, PoolDuplicate, AssignmentInPool. Result `{allowed, reasonCode, message, fixHint}`.
+- Feature flag: `BLUEPRINT_V2` controls whether Blueprint v2 pool resolution and autosave behavior is enabled (default `false` until cutover).
+- Real-time autosave: WebSocket events over `/blueprint` namespace with write-behind persistence to MongoDB and single-flight cache invalidation.
 - Batch operations apply in topological order and skip dependents of failures.
 - Revisions: stale write returns 409 `REVISION_CONFLICT` with current and rejected revision and the current graph.
-- Reason codes were canonicalized across contracts, server and client in AUD-005 (canonical set from the Phase 5 `ReasonCodeSchema`: `PARENT_NOT_FOUND`, `CYCLE_DETECTED`, `UNAUTHORIZED` and the unchanged others; legacy spellings accepted and mapped in one place).
+- Reason codes canonicalized across contracts, server and client with stable error mapping and fix hints.
 
 ### 12.2 Engine and generation
 

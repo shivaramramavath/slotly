@@ -121,4 +121,7 @@ export const DEFAULT_CONFIG = {
       temperature: 0.2,
     },
   },
+  blueprint: {
+    v2Enabled: false,
+  },
 };
