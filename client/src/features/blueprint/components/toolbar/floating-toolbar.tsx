@@ -21,15 +21,13 @@ import { useReactFlow, useStore } from '@xyflow/react';
 import { useBlueprintStore } from '../../store/blueprint.store';
 import { useBlueprintCommands } from '../../hooks/use-blueprint-commands';
 import { useBlueprintLayout } from '../../hooks/use-blueprint-layout';
-import { useGateValidation } from '../../hooks/use-gate-validation';
-import { PALETTE_ITEMS } from '../palette/blueprint-palette';
 import { ToolbarMenu } from './toolbar-menu';
 import type { BlueprintNodeType } from '@slotly/contracts';
 import type { LayoutAlgorithm } from '../../types/canvas.types';
 import { cn } from '@/lib/utils';
 
 export interface FloatingToolbarProps {
-  onAddNode: (type: BlueprintNodeType, parentId?: string) => Promise<{ success: boolean }>;
+  onAddNode?: (type: BlueprintNodeType, parentId?: string) => Promise<{ success: boolean }>;
   onCopy?: (() => void) | undefined;
   onPaste?: (() => void) | undefined;
   onDuplicate?: (() => void) | undefined;
@@ -37,7 +35,6 @@ export interface FloatingToolbarProps {
 
 /** React component rendering floating bottom pill toolbar */
 export function FloatingToolbar({
-  onAddNode,
   onCopy,
   onPaste,
   onDuplicate,
@@ -52,14 +49,9 @@ export function FloatingToolbar({
   const edges = useBlueprintStore((s) => s.edges);
   const setNodes = useBlueprintStore((s) => s.setNodes);
   const setEdges = useBlueprintStore((s) => s.setEdges);
-  const selectedNodeId = useBlueprintStore((s) => s.selectedNodeId);
   const selectNode = useBlueprintStore((s) => s.selectNode);
 
-  const { canAddNodeType, getNodeById } = useGateValidation(nodes, edges);
-  const selectedParent = getNodeById(selectedNodeId);
-
   // Popover states
-  const [isAddOpen, setIsAddOpen] = useState(false);
   const [isLayoutOpen, setIsLayoutOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -69,22 +61,16 @@ export function FloatingToolbar({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Refs for clicking outside
-  const addPopoverRef = useRef<HTMLDivElement>(null);
   const layoutDropdownRef = useRef<HTMLDivElement>(null);
   const searchCardRef = useRef<HTMLDivElement>(null);
 
-  // Global shortcut "/" to open Add popover
+  // Global shortcut Escape to close popovers
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
-      if (e.key === '/') {
-        e.preventDefault();
-        setIsAddOpen((prev) => !prev);
-      }
       if (e.key === 'Escape') {
-        setIsAddOpen(false);
         setIsLayoutOpen(false);
         setIsSearchOpen(false);
       }
@@ -97,9 +83,6 @@ export function FloatingToolbar({
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node;
-      if (addPopoverRef.current && !addPopoverRef.current.contains(target)) {
-        setIsAddOpen(false);
-      }
       if (layoutDropdownRef.current && !layoutDropdownRef.current.contains(target)) {
         setIsLayoutOpen(false);
       }
@@ -256,135 +239,6 @@ export function FloatingToolbar({
         aria-label="Blueprint Canvas Controls"
         className="h-10 px-2 py-1 rounded-[12px] bg-[#111111]/85 backdrop-blur-md border border-[#232323] flex items-center gap-1.5 shadow-2xl"
       >
-        {/* + Add Popover Trigger */}
-        <div className="relative" ref={addPopoverRef}>
-          <button
-            type="button"
-            aria-label="Add node"
-            aria-expanded={isAddOpen}
-            onClick={() => setIsAddOpen(!isAddOpen)}
-            className={cn(
-              'h-7 px-2 rounded-[8px] text-xs font-medium text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
-              isAddOpen && 'bg-[#1A1A1A]',
-            )}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Add</span>
-          </button>
-
-          {/* Palette Popover */}
-          {isAddOpen && (
-            <div
-              role="region"
-              aria-label="Node Palette"
-              className="absolute bottom-11 left-0 w-72 max-h-[460px] overflow-y-auto bg-[#111111] border border-[#232323] rounded-[12px] shadow-2xl p-2 z-50 text-left divide-y divide-[#1C1C1C]"
-            >
-              {/* Structure Nodes */}
-              <div className="pb-2">
-                <div className="px-2 py-1 text-[10px] font-mono text-[#8A8A8A] uppercase tracking-wider">
-                  Hierarchy Structure
-                </div>
-                <div className="space-y-0.5 mt-0.5">
-                  {PALETTE_ITEMS.filter((i) => i.category === 'structure').map((item) => {
-                    const validation = canAddNodeType(item.type, selectedParent);
-                    const isAllowed = validation.allowed;
-                    const ItemIcon = item.icon;
-
-                    return (
-                      <button
-                        key={item.type}
-                        type="button"
-                        disabled={!isAllowed}
-                        draggable={isAllowed}
-                        onDragStart={(e) => {
-                          if (isAllowed) {
-                            e.dataTransfer.setData('application/slotly-node-type', item.type);
-                            e.dataTransfer.effectAllowed = 'copy';
-                          }
-                        }}
-                        onClick={() => {
-                          if (isAllowed) {
-                            void onAddNode(item.type, selectedParent?.id);
-                            setIsAddOpen(false);
-                          }
-                        }}
-                        title={isAllowed ? item.description : validation.reason}
-                        className={cn(
-                          'w-full flex items-center gap-2.5 px-2 py-1.5 rounded-[8px] text-left transition-colors',
-                          isAllowed
-                            ? 'hover:bg-[#1A1A1A] text-[#FAFAFA] cursor-pointer'
-                            : 'opacity-40 text-[#666666] cursor-not-allowed',
-                        )}
-                      >
-                        <ItemIcon className="h-3.5 w-3.5 shrink-0 text-[#8A8A8A]" />
-                        <div className="min-w-0 flex-1 truncate">
-                          <div className="text-xs font-medium truncate">{item.label}</div>
-                          <div className="text-[10px] font-mono text-[#8A8A8A] truncate">
-                            {item.description}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Resource Nodes */}
-              <div className="pt-2">
-                <div className="px-2 py-1 text-[10px] font-mono text-[#8A8A8A] uppercase tracking-wider">
-                  Resources
-                </div>
-                <div className="space-y-0.5 mt-0.5">
-                  {PALETTE_ITEMS.filter((i) => i.category === 'resource').map((item) => {
-                    const validation = canAddNodeType(item.type, selectedParent);
-                    const isAllowed = validation.allowed;
-                    const ItemIcon = item.icon;
-
-                    return (
-                      <button
-                        key={item.type}
-                        type="button"
-                        disabled={!isAllowed}
-                        draggable={isAllowed}
-                        onDragStart={(e) => {
-                          if (isAllowed) {
-                            e.dataTransfer.setData('application/slotly-node-type', item.type);
-                            e.dataTransfer.effectAllowed = 'copy';
-                          }
-                        }}
-                        onClick={() => {
-                          if (isAllowed) {
-                            void onAddNode(item.type, selectedParent?.id);
-                            setIsAddOpen(false);
-                          }
-                        }}
-                        title={isAllowed ? item.description : validation.reason}
-                        className={cn(
-                          'w-full flex items-center gap-2.5 px-2 py-1.5 rounded-[8px] text-left transition-colors',
-                          isAllowed
-                            ? 'hover:bg-[#1A1A1A] text-[#FAFAFA] cursor-pointer'
-                            : 'opacity-40 text-[#666666] cursor-not-allowed',
-                        )}
-                      >
-                        <ItemIcon className="h-3.5 w-3.5 shrink-0 text-[#8A8A8A]" />
-                        <div className="min-w-0 flex-1 truncate">
-                          <div className="text-xs font-medium truncate">{item.label}</div>
-                          <div className="text-[10px] font-mono text-[#8A8A8A] truncate">
-                            {item.description}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="w-[1px] h-4 bg-[#232323]" />
-
         {/* Zoom Controls */}
         <button
           type="button"

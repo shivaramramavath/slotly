@@ -1,7 +1,7 @@
 // React component for blueprint-canvas.
 'use client';
 
-import React, { useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -22,6 +22,8 @@ import { DottedEdge } from './dotted-edge';
 import { BlueprintContextMenu } from './blueprint-context-menu';
 import { BlueprintFloatingAlignBar } from './blueprint-floating-align-bar';
 import { FloatingToolbar } from '../toolbar/floating-toolbar';
+import { NodeLibraryPanel } from '../palette/node-library-panel';
+import { NodeIssuesCard } from './node-issues-card';
 import { FirstRunHint } from '../hint/first-run-hint';
 import { useBlueprintStore } from '../../store/blueprint.store';
 import { useGateValidation } from '../../hooks/use-gate-validation';
@@ -79,6 +81,85 @@ export function BlueprintCanvas({
   const { undo, redo, canUndo, canRedo } = useBlueprintCommands();
   const { goToNextStep } = useGuidedMode();
   const incompleteCount = nodes.filter((n) => n.data.effectiveStatus === 'incomplete').length;
+
+  // Node Issues Card Hover & Focus state
+  const [activeIssueNodeId, setActiveIssueNodeId] = useState<string | null>(null);
+  const [issueAnchorRect, setIssueAnchorRect] = useState<DOMRect | null>(null);
+  const openTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const activeIssueNode = useMemo(
+    () => nodes.find((n) => n.id === activeIssueNodeId) || null,
+    [nodes, activeIssueNodeId],
+  );
+
+  useEffect(() => {
+    const handleNodeHover = (e: Event) => {
+      const { nodeId } = (e as CustomEvent<{ nodeId: string }>).detail;
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      if (openTimerRef.current) clearTimeout(openTimerRef.current);
+
+      openTimerRef.current = setTimeout(() => {
+        const el = document.querySelector<HTMLElement>(`[data-testid="blueprint-node-${nodeId}"]`);
+        if (el) {
+          setIssueAnchorRect(el.getBoundingClientRect());
+          setActiveIssueNodeId(nodeId);
+        }
+      }, 150);
+    };
+
+    const handleNodeLeave = () => {
+      if (openTimerRef.current) clearTimeout(openTimerRef.current);
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+
+      closeTimerRef.current = setTimeout(() => {
+        setActiveIssueNodeId(null);
+      }, 100);
+    };
+
+    const handleNodeFocus = (e: Event) => {
+      const { nodeId } = (e as CustomEvent<{ nodeId: string }>).detail;
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      if (openTimerRef.current) clearTimeout(openTimerRef.current);
+
+      const el = document.querySelector<HTMLElement>(`[data-testid="blueprint-node-${nodeId}"]`);
+      if (el) {
+        setIssueAnchorRect(el.getBoundingClientRect());
+        setActiveIssueNodeId(nodeId);
+      }
+    };
+
+    const handleNodeBlur = () => {
+      if (openTimerRef.current) clearTimeout(openTimerRef.current);
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+
+      closeTimerRef.current = setTimeout(() => {
+        setActiveIssueNodeId(null);
+      }, 100);
+    };
+
+    window.addEventListener('slotly:node-hover', handleNodeHover);
+    window.addEventListener('slotly:node-leave', handleNodeLeave);
+    window.addEventListener('slotly:node-focus', handleNodeFocus);
+    window.addEventListener('slotly:node-blur', handleNodeBlur);
+
+    return () => {
+      window.removeEventListener('slotly:node-hover', handleNodeHover);
+      window.removeEventListener('slotly:node-leave', handleNodeLeave);
+      window.removeEventListener('slotly:node-focus', handleNodeFocus);
+      window.removeEventListener('slotly:node-blur', handleNodeBlur);
+      if (openTimerRef.current) clearTimeout(openTimerRef.current);
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
+  const handleNodeDragStart = useCallback(() => {
+    setActiveIssueNodeId(null);
+  }, []);
+
+  const handleMoveStart = useCallback(() => {
+    setActiveIssueNodeId(null);
+  }, []);
 
   // Listen for custom "slotly:add-child" event dispatched from Node "+" button
   useEffect(() => {
@@ -360,7 +441,9 @@ export function BlueprintCanvas({
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
+        onNodeDragStart={handleNodeDragStart}
         onNodeDragStop={handleNodeDragStop}
+        onMoveStart={handleMoveStart}
         onNodeClick={(_, node) => selectNode(node.id)}
         onEdgeClick={(_, edge) => selectEdge(edge.id)}
         onSelectionChange={handleSelectionChange}
@@ -368,6 +451,7 @@ export function BlueprintCanvas({
           selectNode(null);
           selectEdge(null);
           setContextMenu(null);
+          setActiveIssueNodeId(null);
         }}
         isValidConnection={isValidConnection}
         selectionOnDrag
@@ -375,6 +459,7 @@ export function BlueprintCanvas({
         snapToGrid
         snapGrid={[gridSize, gridSize]}
         fitView
+        fitViewOptions={{ padding: 0.2 }}
         deleteKeyCode={null}
       >
         <Background
@@ -396,13 +481,16 @@ export function BlueprintCanvas({
       {/* Subtle corner vignette */}
       <div className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_120px_rgba(0,0,0,0.85)]" />
 
-      {/* Guided Mode ("Next step") Ghost Button at Top Left */}
+      {/* Floating Vertical Node Library on Left */}
+      <NodeLibraryPanel onAddNode={onAddNode} />
+
+      {/* Guided Mode ("Next step") Ghost Button positioned next to Library Rail */}
       {incompleteCount > 0 && (
         <button
           type="button"
           onClick={goToNextStep}
           aria-label="Next incomplete node"
-          className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#111111]/85 backdrop-blur-sm border border-[#232323] hover:border-[#383838] text-xs font-mono text-[#FAFAFA] transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="absolute top-4 left-[76px] z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#111111]/85 backdrop-blur-sm border border-[#232323] hover:border-[#383838] text-xs font-mono text-[#FAFAFA] transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <span className="w-2 h-2 rounded-full bg-[#FACC15] animate-pulse" />
           <span>Next step</span>
@@ -410,12 +498,27 @@ export function BlueprintCanvas({
         </button>
       )}
 
+      {/* Node Issues Hover & Focus Card */}
+      <NodeIssuesCard
+        node={activeIssueNode}
+        anchorRect={issueAnchorRect}
+        isOpen={Boolean(activeIssueNodeId)}
+        onClose={() => setActiveIssueNodeId(null)}
+        onMouseEnter={() => {
+          if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+        }}
+        onMouseLeave={() => {
+          closeTimerRef.current = setTimeout(() => {
+            setActiveIssueNodeId(null);
+          }, 100);
+        }}
+      />
+
       {/* First-Run Onboarding Hint for Empty Canvas */}
       <FirstRunHint />
 
       {/* Floating Bottom Center Pill Toolbar */}
       <FloatingToolbar
-        onAddNode={onAddNode}
         onCopy={() => {
           const selected = nodes.find((n) => n.id === selectedNodeId);
           if (selected) handleCopy(selected);

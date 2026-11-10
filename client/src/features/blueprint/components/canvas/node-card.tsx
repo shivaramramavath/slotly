@@ -19,8 +19,6 @@ import {
   Plus,
   AlertTriangle,
   MessageSquare,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import type { BlueprintCanvasNode } from '../../types/canvas.types';
 import type { BlueprintNodeType } from '@slotly/contracts';
@@ -281,7 +279,6 @@ export const NodeCard = memo(function NodeCard({
   onOpenComments,
 }: NodeCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [showMissing, setShowMissing] = useState(false);
 
   const { id, data } = node;
   const nodeType = data.nodeType || 'institution';
@@ -311,12 +308,45 @@ export const NodeCard = memo(function NodeCard({
     cardBorder = 'border-dashed border-[#FACC15]/50';
   }
 
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    window.dispatchEvent(
+      new CustomEvent('slotly:node-hover', { detail: { nodeId: id } }),
+    );
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    window.dispatchEvent(
+      new CustomEvent('slotly:node-leave', { detail: { nodeId: id } }),
+    );
+  };
+
+  const handleFocus = () => {
+    window.dispatchEvent(
+      new CustomEvent('slotly:node-focus', { detail: { nodeId: id } }),
+    );
+  };
+
+  const handleBlur = () => {
+    window.dispatchEvent(
+      new CustomEvent('slotly:node-blur', { detail: { nodeId: id } }),
+    );
+  };
+
+  const issuesSummary = isBlocked
+    ? 'Node is blocked by parent'
+    : isIncomplete && missingCount > 0
+      ? `${missingCount} requirements missing: ${(data.missing || []).map((m) => m.field).join(', ')}`
+      : 'Node is complete and valid';
+
   return (
     <div
       role="button"
       tabIndex={0}
       data-testid={`blueprint-node-${id}`}
       data-status={effectiveStatus}
+      aria-describedby={`node-issues-summary-${id}`}
       onClick={onSelect}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -325,8 +355,10 @@ export const NodeCard = memo(function NodeCard({
         }
       }}
       onContextMenu={onContextMenu}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       className={cn(
         'relative group w-[200px] min-h-[72px] rounded-[12px] border p-[12px_14px] select-none cursor-pointer transition-[border-color,opacity] duration-120 outline-none focus-visible:ring-2 focus-visible:ring-white/40',
         'bg-gradient-to-b from-[#141414] to-[#0D0D0D]',
@@ -334,6 +366,10 @@ export const NodeCard = memo(function NodeCard({
         data.hidden && 'opacity-40 border-dashed',
       )}
     >
+      {/* Screen Reader Summary of Issues */}
+      <span id={`node-issues-summary-${id}`} className="sr-only">
+        {issuesSummary}
+      </span>
       {/* Top Handle (Target) */}
       {nodeType !== 'institution' && <HandleRing />}
 
@@ -417,39 +453,24 @@ export const NodeCard = memo(function NodeCard({
       {/* Row 3: Progress Bar */}
       <NodeProgress percent={progressPercent} isComplete={isComplete} />
 
-      {/* Optional Incomplete Missing Fields Dropdown */}
-      {isIncomplete && !isBlocked && missingCount > 0 && (
-        <div className="mt-1.5 pt-1 border-t border-[#1C1C1C]">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMissing(!showMissing);
-            }}
-            className="flex items-center justify-between w-full text-[11px] font-mono text-[#FACC15] hover:underline"
-          >
-            <span>{missingCount} missing</span>
-            {showMissing ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </button>
+      {/* Static Compact Footer Status (No inline expansion or layout shift) */}
+      <div className="mt-1.5 pt-1 border-t border-[#1C1C1C] flex items-center justify-between font-mono text-[11px] leading-none">
+        {isIncomplete && !isBlocked && missingCount > 0 ? (
+          <span className="text-[#FACC15]">{missingCount} missing</span>
+        ) : isBlocked ? (
+          <span className="text-[#8A8A8A]">Blocked</span>
+        ) : isComplete ? (
+          <span className="text-[#22C55E]">Ready</span>
+        ) : (
+          <span className="text-[#8A8A8A]">Draft</span>
+        )}
 
-          {showMissing && data.missing && (
-            <div className="mt-1 space-y-0.5 bg-[#0A0A0A] p-1.5 rounded-[6px] border border-[#232323]">
-              {data.missing.map((m, idx) => (
-                <div key={idx} className="text-[10px] font-mono text-[#8A8A8A] leading-tight truncate">
-                  • {m.field}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Optional Footer: Child count */}
-      {childCount > 0 && !showMissing && (
-        <div className="mt-1 font-mono text-[11px] text-[#8A8A8A] leading-none">
-          {childCount} {childCount === 1 ? 'child' : 'children'}
-        </div>
-      )}
+        {childCount > 0 && (
+          <span className="text-[#8A8A8A]">
+            {childCount} {childCount === 1 ? 'child' : 'children'}
+          </span>
+        )}
+      </div>
 
       {/* Bottom Handle / Add Child Control */}
       {isComplete && allowedChildTypes.length > 0 && !isLocked ? (

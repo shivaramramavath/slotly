@@ -37,6 +37,13 @@
 - **Component** `EdgeLabelPill()` - Edge Label Pill rendered at edge midpoint
 - **Component** `DottedEdge()` - Custom React Flow Edge with dotted styling and slow flow animation when connected to selected node
 
+### `client/src/features/blueprint/components/canvas/issue-label.ts`
+*Helper utility for formatting blueprint node issues and labels.*
+
+- **Interface** `NodeIssueItem` - Interface defining a structured node issue item.
+- **Function** `formatIssueLabel(field: string)`: `string` - Formats a raw field key into a readable, plain-language sentence.
+- **Function** `groupAndSortIssues(node: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/types/canvas.types").BlueprintCanvasNode)`: `{ errors: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/issue-label").NodeIssueItem[]; warnings: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/issue-label").NodeIssueItem[]; all: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/issue-label").NodeIssueItem[]; totalCount: number; }` - Groups and sorts issues for a node: blocking errors first, then warnings/missing fields.
+
 ### `client/src/features/blueprint/components/canvas/node-card.tsx`
 *Presentation component rendering NodeCard and its subcomponents.*
 
@@ -57,6 +64,24 @@
 - **Component** `BlueprintNode()` - React component rendering standard blueprint node
 - **Component** `BlueprintGroupNode()` - React component rendering blueprint group node.
 - **Const** `nodeTypes`: `{ blueprint: React.MemoExoticComponent<({ id, d...` - Constant representing node types for React Flow.
+
+### `client/src/features/blueprint/components/canvas/node-issues-card.tsx`
+*React component for node-issues-card.*
+
+- **Interface** `NodeIssuesCardProps`
+- **Component** `NodeIssuesCard({
+  node,
+  anchorRect,
+  isOpen,
+  onClose,
+  onMouseEnter,
+  onMouseLeave,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/node-issues-card").NodeIssuesCardProps)` - React component rendering hover & focus card for node errors and requirements
+
+### `client/src/features/blueprint/components/canvas/safe-defaults.ts`
+*Helper utility providing safe default configurations for blueprint auto-fix.*
+
+- **Function** `getSafeDefaultsForNodeType(nodeType: "institution" | "department" | "program" | "academicYear" | "semester" | "section" | "batch" | "subjectAssignment" | "electiveGroup" | "faculty" | "room", currentConfig: Record<string, unknown> | undefined)`: `Record<string, unknown>` - Returns safe default configuration values for a node type to resolve missing requirements.
 
 ### `client/src/features/blueprint/components/dialogs/bulk-add-dialog.tsx`
 *React component for bulk-add-dialog.*
@@ -153,6 +178,27 @@
 - **Component** `BlueprintPalette({ onAddNode }: BlueprintPaletteProps)` - React component rendering blueprint palette.
 - **Const** `PALETTE_ITEMS`: `import("E:/Shiva Ram/Projects/slotly/client/src...`
 
+### `client/src/features/blueprint/components/palette/node-library-item.tsx`
+*React component for node-library-item.*
+
+- **Interface** `NodeLibraryItemProps`
+- **Component** `NodeLibraryItem({
+  item,
+  isExpanded,
+  isAllowed,
+  reason,
+  isFocused,
+  onSelect,
+  onKeyDown,
+  itemRef,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/palette/node-library-item").NodeLibraryItemProps)` - React component rendering an individual node library item
+
+### `client/src/features/blueprint/components/palette/node-library-panel.tsx`
+*React component for node-library-panel.*
+
+- **Interface** `NodeLibraryPanelProps`
+- **Component** `NodeLibraryPanel({ onAddNode }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/palette/node-library-panel").NodeLibraryPanelProps)` - React component rendering floating vertical node library panel
+
 ### `client/src/features/blueprint/components/sidebar/blueprint-sidebar.tsx`
 *React component for blueprint-sidebar.*
 
@@ -184,7 +230,6 @@
 
 - **Interface** `FloatingToolbarProps`
 - **Component** `FloatingToolbar({
-  onAddNode,
   onCopy,
   onPaste,
   onDuplicate,

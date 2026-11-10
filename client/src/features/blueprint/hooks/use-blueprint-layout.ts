@@ -83,6 +83,19 @@ function calculateHierarchicalOrCompact(
 
   dagre.layout(dagreGraph);
 
+  // Compute minimum X to enforce 72px+ left inset (clearing left floating library panel)
+  let minRawX = Infinity;
+  nodesList.forEach((node) => {
+    const pos = dagreGraph.node(node.id);
+    if (pos) {
+      const x = pos.x - NODE_WIDTH / 2;
+      if (x < minRawX) minRawX = x;
+    }
+  });
+
+  const LEFT_INSET = 80;
+  const xOffset = minRawX < LEFT_INSET && minRawX !== Infinity ? LEFT_INSET - minRawX : 0;
+
   return nodesList.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
     if (!nodeWithPosition) return node;
@@ -90,7 +103,7 @@ function calculateHierarchicalOrCompact(
     return {
       ...node,
       position: {
-        x: nodeWithPosition.x - NODE_WIDTH / 2,
+        x: nodeWithPosition.x - NODE_WIDTH / 2 + xOffset,
         y: nodeWithPosition.y - NODE_HEIGHT / 2,
       },
     };
