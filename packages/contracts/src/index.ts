@@ -1428,6 +1428,8 @@ export const ProjectDtoSchema = z.object({
   lastOpenedAt: z.string().optional(),
   revision: z.number().int().default(1),
   blueprintProgress: z.number().min(0).max(100).nullable().optional(),
+  pinned: z.boolean().optional(),
+  pinnedAt: z.string().nullable().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });
