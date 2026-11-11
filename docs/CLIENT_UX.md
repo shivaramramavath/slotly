@@ -329,6 +329,23 @@ Footer: summary line ("Odd term 2026–27, 6 days, 7 periods"). Primary **Create
 - Mobile (< 768px): Transforms into a 48px floating "Add node" icon button at the left edge that opens a bottom sheet with the full node list and large 48px touch targets; sheet closes on item addition.
 - Keyboard navigation: Accessible `role="toolbar"` with roving tabindex (Tab enters once, Arrow Up/Down moves between items, Enter/Space adds, Home/End jumps to first/last, Escape returns focus to canvas). Global shortcut `/` expands and focuses the library panel.
 - Disabled items: Stay visible at 50% opacity, focusable (`aria-disabled="true"`), displaying styled reason tooltip cards to the right (e.g. "Cannot add Academic Year under Institution. Needs a Program.").
+- **Constraint-Driven Gated Addition & Drag Highlighting (`canAddChild`)**:
+  - A node type in the library can be dragged or clicked only when allowed: a valid parent exists AND that parent is complete (`effectiveStatus === 'complete'`).
+  - Item blocked states:
+    - *Parent incomplete*: 50% opacity, small lock icon, reason "Complete <Parent name> first (N to fix)". Clicking selects the incomplete parent, pans to it, and opens its Config tab scrolled to the first issue.
+    - *Parent type missing*: 50% opacity, reason "Add a <Parent type> first". Clicking focuses and highlights the missing type in the library.
+    - *Cardinality / Locked*: 50% opacity with reason and quick-fix button.
+  - Multi-parent count: Types valid in multiple places show count (e.g. "2 places"). Clicking when multiple parents exist and none is selected opens `AddUnderMenu`.
+  - While dragging enabled type: valid complete parents get a 2px light ring (`border-strong`), incomplete potential parents get a 1px dashed muted ring with an "Incomplete" chip, and non-valid nodes dim to 60%.
+  - Drop on empty canvas: root types created at drop position; child types with exactly 1 complete parent attach to it with a toast; multiple complete parents show "Drop onto the parent you want".
+- **Connect-End Creation (`ConnectEndMenu`)**:
+  - Dragging a connection handle out of a node and releasing on empty canvas opens `ConnectEndMenu` at the release point (232px width, radius 12px, surface background, 1px border).
+  - Lists valid child types for that parent. Selecting a type calls `createChildNode(parentId, childType, position)` and connects it immediately.
+  - If parent is incomplete, shows a lock badge with reason and "Open config" button. If parent is a leaf node, shows "No child types". Escape or outside click cancels with no dangling edge.
+- **Parent-to-Child Inheritance**:
+  - `createChildNode` copies inheritable fields (timing, working days, period duration, departmentId, pools) into the child's initial draft configuration snapshot. Identity fields (`name`, `label`, `code`, `id`) are never inherited.
+  - In the Inspector, inherited fields show an "Inherited from <Parent>" label (clicking parent name navigates to parent). Editing changes the label to "Overridden" with a 28px "Reset to inherited" icon button (`RotateCcw`).
+  - Single atomic undo/redo command removes/restores both node and edge.
 - Viewport & Layout Inset: Layout algorithms and `fitViewOptions` account for a 72px left inset (56px collapsed rail + 16px margin) so nodes are never hidden behind the library panel on load, Fit, or Layout. `fitView` enforces `maxZoom: 1` so lone nodes never exceed 100% zoom.
 
 **Compact Node Card (`NodeCard` — 232px width, 64px min height, 12px radius):**

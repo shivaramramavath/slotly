@@ -2651,6 +2651,68 @@ Merged via `ux/12-blueprint-inspector`, tag `ux-12-blueprint-inspector-merged`.
 
 Merged via `feat/sidebar-server`, tag `feat-sidebar-server-merged`.
 
+---
+
+## Phase UX-13: Constraint-Driven Blueprint Gated Node Addition
+
+### What Was Built
+
+1. **Single Source of Truth for Gated Addition (`canAddChild` & `getLibraryTypesState`):**
+   - Implemented pure validation function `canAddChild(nodes, parentId, type, isCanvasLocked)` returning `{ ok, code, reason, fix }`.
+   - Canonical error codes: `ok`, `parent-missing`, `parent-incomplete`, `invalid-parent-type`, `cardinality`, `locked`.
+   - Rich fix hints: `action: 'open-config'` with `targetNodeId` and `targetField` to automatically jump to the missing requirement, or `action: 'focus-library'` with `targetType` to highlight the prerequisite node type.
+   - Memoized selector `getLibraryTypesState(nodes, selectedNodeId, isCanvasLocked)` computing live library enablement, reason, valid parent nodes, and complete parent nodes.
+
+2. **Unified Node Creation Function (`createChildNode`):**
+   - Single orchestrator for all addition paths (click-to-add, palette drag-and-drop, connect-end creation, subtree paste).
+   - Validates through `canAddChild`, computes initial inherited data snapshot from parent, places node, sets optimistic node and edge, selects new node, switches inspector to Config tab, and records a single atomic Undo/Redo command that removes/restores both node and edge.
+
+3. **Parent-to-Child Inheritance Snapshot (`inheritance.ts`):**
+   - Defined hierarchy inheritance map copying working days, period timings, start/end dates, department/program/semester context IDs, and resource pool data from parent to child upon creation.
+   - Identity fields (`id`, `name`, `label`, `code`, `strength`, `size`, `yearNumber`, `durationYears`) are strictly excluded from inheritance.
+   - Recorded provenance metadata (`_inheritedFrom`, `_inheritedKeys`).
+
+4. **Live Library Rail States & Drag Experience (`NodeLibraryPanel` & `NodeLibraryItem`):**
+   - Gated library states: enabled (full opacity, draggable), blocked with incomplete parent (50% opacity with lock badge and "Complete <Parent name> first (N to fix)"), blocked with missing parent type (50% opacity, "Add a <Parent type> first").
+   - Clicking blocked items triggers helpful action: incomplete parent selects parent and scrolls to first issue in Config tab; missing parent type focuses and expands missing item in library.
+   - Multi-parent count badge ("2 places") displayed in expanded library list.
+   - Canvas drag highlights: valid complete parents display a 2px light ring (`border-strong`), incomplete parents show 1px dashed ring with an "Incomplete" badge, invalid parents are dimmed to 60%.
+   - Dropping on empty canvas: root types placed at drop coordinates; child types with exactly one complete parent attach automatically with toast and Undo; multiple complete parents show "Drop onto the parent you want".
+   - `AddUnderMenu`: Floating picker menu opened when click-to-add qualifies multiple valid complete parents.
+
+5. **Connect-End Node Creation (`ConnectEndMenu`):**
+   - Dragging a connection handle from a node and releasing on empty canvas opens a floating card (232px width, 12px radius, surface background, shadow).
+   - Lists allowed child types for the source node with icons and descriptions; selecting creates and connects the child at the release coordinates.
+   - Incomplete parent shows a lock icon, blocking message, and an "Open Config" shortcut.
+   - Leaf nodes display a brief "No child types" message. Escape or click outside cleanly cancels without creating dangling edges or nodes.
+
+6. **Inspector Provenance & Overrides (`NodeConfigForm`):**
+   - Displayed "Inherited from <Parent>" labels for inherited timing and resource fields, with clickable parent link to select parent node.
+   - Editing changes label to "Overridden" with a 28px "Reset to inherited" icon button (`RotateCcw`) restoring parent values into the draft.
+
+7. **Tests & Verification:**
+   - Added unit test suite in `client/src/features/blueprint/tests/can-add-child.spec.ts` covering root cardinality, locked canvas, incomplete parent rejections, valid 7-node pairs, and selector reactivity.
+   - Added unit test suite in `client/src/features/blueprint/tests/inheritance.spec.ts` covering snapshot extraction, identity key exclusion, and atomic single-step undo/redo.
+
+### Decisions Made
+
+- **Completion Gating Source of Truth:** Enforced `effectiveStatus === 'complete'` on parent nodes for all child creations, matching the product visual gating specification.
+- **Inheritance Resolution:** Implemented snapshot-at-creation with provenance tracking (`_inheritedFrom`) and local override detection in the Inspector, allowing "Reset to inherited" without destructive parent re-writes.
+
+### Manual Test Checklist
+
+- [x] Drag Department from library rail when Institution is incomplete — item is locked with 50% opacity and lock badge.
+- [x] Click locked Department in library rail — automatically selects Institution and scrolls directly to its missing field in Config tab.
+- [x] Complete Institution required fields — Department immediately unlocks in library rail with full opacity.
+- [x] Drag Department onto Institution — creates Department connected to Institution with working days and timing inherited.
+- [x] Drag connection handle from Department and release on empty canvas — opens `ConnectEndMenu` with Program option.
+- [x] Select Program in `ConnectEndMenu` — creates Program connected to Department at drop position.
+- [x] Modify Program timing — Inspector displays "Overridden" with "Reset to inherited" button; clicking restores Department timing.
+- [x] Press Undo (Cmd+Z) after creating a child node — removes both the node and its connecting edge in one atomic step.
+
+Merged via `ux/13-blueprint-gated-add`, tag `ux-13-blueprint-gated-add-merged`.
+
+
 
 
 
