@@ -95,6 +95,7 @@ GET /projects/:projectId/blueprint/export?format=json|svg|png
 POST /projects/:projectId/blueprint/import
 GET /projects/:projectId/blueprint/nodes/:nodeId/comments
 POST /projects/:projectId/blueprint/nodes/:nodeId/comments
+POST /projects/:projectId/blueprint/ai/chat whole-blueprint AI assistant chat (rate-limited, Redis-cached blueprint context)
 GET /projects/:projectId/blueprint/nodes/:nodeId/pool effective resource pool with origins, required, pinned, exclusions (cached with project tags)
 GET /projects/:projectId/blueprint/where-used?refType=&refId= nodes whose effective pool contains the specified library item
 GET /library/:type/:id/usage usage count and referencing projects/nodes for a library item

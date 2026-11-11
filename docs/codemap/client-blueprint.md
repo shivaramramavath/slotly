@@ -199,10 +199,107 @@
 - **Interface** `NodeLibraryPanelProps`
 - **Component** `NodeLibraryPanel({ onAddNode }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/palette/node-library-panel").NodeLibraryPanelProps)` - React component rendering floating vertical node library panel
 
-### `client/src/features/blueprint/components/sidebar/blueprint-sidebar.tsx`
-*React component for blueprint-sidebar.*
+### `client/src/features/blueprint/components/sidebar/ai-chat-panel.tsx`
+*Chat panel component providing whole-blueprint AI assistance with streaming, context toggles, and suggestions.*
 
-- **Component** `BlueprintSidebar({ projectId, onUpdateConfig }: BlueprintSidebarProps)` - React component rendering blueprint sidebar.
+- **Interface** `ChatMessage` - Interface representing chat message state.
+- **Interface** `AiChatPanelProps` - Props for AiChatPanel component.
+- **Component** `AiChatPanel({ projectId, className = '' }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/ai-chat-panel").AiChatPanelProps)` - React component rendering whole-blueprint AI chat assistant.
+
+### `client/src/features/blueprint/components/sidebar/blueprint-overview.tsx`
+*Overview component rendered in inspector when no canvas node or multiple nodes are selected.*
+
+- **Interface** `BlueprintOverviewProps` - Props for BlueprintOverview component.
+- **Component** `BlueprintOverview({ className = '' }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/blueprint-overview").BlueprintOverviewProps)` - React component rendering whole-blueprint summary and needs-attention list.
+
+### `client/src/features/blueprint/components/sidebar/blueprint-sidebar.tsx`
+*Sidebar entry point rendering InspectorPanel for the blueprint designer canvas.*
+
+- **Component** `BlueprintSidebar({
+  projectId,
+  onUpdateConfig,
+  className,
+}: BlueprintSidebarProps)` - React component rendering redesigned blueprint inspector sidebar.
+
+### `client/src/features/blueprint/components/sidebar/inspector-panel.tsx`
+*Inspector sidebar panel providing docked, drawer, and bottom sheet modes with tab navigation.*
+
+- **Interface** `InspectorPanelProps` - Props for InspectorPanel component.
+- **Component** `InspectorPanel({
+  projectId,
+  onUpdateConfig,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/inspector-panel").InspectorPanelProps)` - React component rendering responsive inspector sidebar with collapsible state.
+
+### `client/src/features/blueprint/components/sidebar/inspector-section.tsx`
+*Accordion section component for inspector panel with collapsible headers and resource counters.*
+
+- **Interface** `InspectorSectionProps` - Props for InspectorSection component.
+- **Component** `InspectorSection({
+  id,
+  title,
+  icon: Icon,
+  count,
+  isOpen,
+  onToggle,
+  onAdd,
+  addTooltip = 'Add item',
+  hasIssues = false,
+  children,
+  className,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/inspector-section").InspectorSectionProps)` - React component rendering 48px header accordion section with count badge and action trigger.
+
+### `client/src/features/blueprint/components/sidebar/issues-summary.tsx`
+*Issues summary component highlighting unresolved requirements with auto-fix trigger.*
+
+- **Interface** `IssuesSummaryProps` - Props for IssuesSummary component.
+- **Component** `IssuesSummary({
+  node,
+  onAutoFix,
+  onJumpToField,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/issues-summary").IssuesSummaryProps)` - React component rendering issues banner with 2px yellow left indicator and jump-to-field rows.
+
+### `client/src/features/blueprint/components/sidebar/node-config-form.tsx`
+*Form component managing draft configuration, resource sections, and sticky apply actions for selected node.*
+
+- **Interface** `NodeConfigFormProps` - Props for NodeConfigForm component.
+- **Component** `NodeConfigForm({
+  node,
+  onUpdateConfig,
+  recommendations = [],
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/node-config-form").NodeConfigFormProps)` - React component rendering node inspector configuration tab.
+
+### `client/src/features/blueprint/components/sidebar/resource-picker.tsx`
+*Combobox popover picker allowing multi-select assignment of library resources.*
+
+- **Interface** `PickerResourceItem` - Interface representing selectable resource item.
+- **Interface** `ResourcePickerProps` - Props for ResourcePicker component.
+- **Component** `ResourcePicker({
+  isOpen,
+  onClose,
+  title,
+  resourceType,
+  items,
+  selectedIds,
+  onToggleItem,
+  isLoading = false,
+  className,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/resource-picker").ResourcePickerProps)` - React component rendering popover combobox picker with search and multi-select.
+
+### `client/src/features/blueprint/components/sidebar/resource-row.tsx`
+*Row item component rendering assigned resources with undoable removal state.*
+
+- **Interface** `ResourceRowProps` - Props for ResourceRow component.
+- **Component** `ResourceRow({
+  id,
+  name,
+  meta,
+  resourceType,
+  onRemove,
+  className,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/resource-row").ResourceRowProps)` - React component rendering 44px resource row with 5-second inline undo.
 
 ### `client/src/features/blueprint/components/sidebar/side-panel-tabs.tsx`
 *React component for side-panel-tabs.*
@@ -214,6 +311,14 @@
 *React component for blueprint-constraints-tab.*
 
 - **Component** `BlueprintConstraintsTab({ projectId }: BlueprintConstraintsTabProps)` - React component rendering blueprint constraints tab.
+
+### `client/src/features/blueprint/components/sidebar/times-editor.tsx`
+*Times editor component configuring working days, period lengths, and break slots.*
+
+- **Interface** `BreakSlot` - Break slot definition.
+- **Interface** `TimesConfig` - Times configuration structure.
+- **Interface** `TimesEditorProps` - Props for TimesEditor component.
+- **Component** `TimesEditor({ config, onChange, className }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/times-editor").TimesEditorProps)` - React component rendering timetable timing inspector with day toggles and period configurations.
 
 ### `client/src/features/blueprint/components/toolbar/blueprint-search-filter.tsx`
 *React component for blueprint-search-filter.*

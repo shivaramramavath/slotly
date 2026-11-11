@@ -182,17 +182,17 @@
 <!-- GENERATED:START -->
 | Module Map | Area | Line count |
 | :--- | :--- | :--- |
-| [contracts.md](docs/codemap/contracts.md) | Shared Contracts | 545 lines |
+| [contracts.md](docs/codemap/contracts.md) | Shared Contracts | 551 lines |
 | [server-common.md](docs/codemap/server-common.md) | Server Common & Infrastructure | 449 lines |
 | [server-auth.md](docs/codemap/server-auth.md) | Server Auth Module | 218 lines |
-| [server-blueprint.md](docs/codemap/server-blueprint.md) | Server Blueprint Module | 252 lines |
+| [server-blueprint.md](docs/codemap/server-blueprint.md) | Server Blueprint Module | 258 lines |
 | [server-builds.md](docs/codemap/server-builds.md) | Server Builds Module | 62 lines |
 | [server-engine.md](docs/codemap/server-engine.md) | Engine Module & Library | 256 lines |
 | [server-institutions.md](docs/codemap/server-institutions.md) | Server Institutions Module | 163 lines |
 | [server-library.md](docs/codemap/server-library.md) | Server Library Module | 141 lines |
 | [client-app.md](docs/codemap/client-app.md) | Client App Routes | 481 lines |
 | [client-auth.md](docs/codemap/client-auth.md) | Client Auth Feature | 100 lines |
-| [client-blueprint.md](docs/codemap/client-blueprint.md) | Client Blueprint Feature | 318 lines |
+| [client-blueprint.md](docs/codemap/client-blueprint.md) | Client Blueprint Feature | 423 lines |
 | [client-builds.md](docs/codemap/client-builds.md) | Client Builds Feature | 84 lines |
 | [client-institution.md](docs/codemap/client-institution.md) | Client Institution Feature | 175 lines |
 | [client-library.md](docs/codemap/client-library.md) | Client Library Feature | 176 lines |
