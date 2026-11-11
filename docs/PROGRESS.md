@@ -2712,6 +2712,92 @@ Merged via `feat/sidebar-server`, tag `feat-sidebar-server-merged`.
 
 Merged via `ux/13-blueprint-gated-add`, tag `ux-13-blueprint-gated-add-merged`.
 
+---
+
+## Phase Blueprint Sidebar Pass B: Client Sidebar, Node & Check Tabs
+
+### What Was Built
+
+1. **Resizable & Responsive Sidebar Shell (`InspectorPanel` & `BlueprintSidebar`):**
+   - Default width 360px, resizable 320px to 480px with left-edge drag handle, width remembered in `localStorage` (`slotly:blueprint:inspector-width`).
+   - Collapsible to 0px with toggle button (`PanelRightClose`); floating 32px trigger button (`PanelRightOpen`) on canvas right edge when collapsed.
+   - Off-canvas slide-over drawer below 1024px with dark backdrop scrim; bottom sheet on mobile (< 768px) with half (48vh) and full (88vh) snap heights.
+   - Three canonical tabs: `Node`, `Check`, and `AI`.
+
+2. **Sidebar Header (`SidebarHeader`):**
+   - 20px node type icon, 14px font-semibold title, uppercase mono node type badge (`INSTITUTION`, `DEPARTMENT`, `PROGRAM`, `ACADEMIC_YEAR`, `SEMESTER`, `SECTION`, `BATCH`).
+   - Clickable ancestor breadcrumb navigation trail allowing instant parent selection.
+   - Status indicator (Complete with green check or Incomplete with yellow warning) with "N of M required" counts.
+   - Autosave status badge with polite live region (`role="status"`, `aria-live="polite"`): Saved, Saving..., Offline.
+   - Presence avatars in the header showing active collaborators.
+   - Action dropdown menu: Duplicate Node, Copy Settings... (opens modal), Lock/Unlock, Comments, Delete Node (opens impact preview).
+   - "Locked by X" read-only warning banner when node is locked by another user.
+
+3. **Schema-Driven Form Engine (`NodeFormRegistry` & `NodeConfigForm`):**
+   - Open/Closed registry mapping all 7 node types to their Zod schemas, field metadata, and layout keys.
+   - Native field inputs: Text, Number, Select, Combobox (pool-driven for `classTeacherId`, `homeRoomId`, `headOfDepartmentId`, `labSubjectIds`), DayChips (Mon-Sun), TimeInput (HH:mm), BreakList, DateRange.
+   - Real-time field validation: Invalid fields do not save and display inline error messages.
+   - WebSocket autosave: Debounced ~400ms pause or on blur emitting socket updates with optimistic concurrency; transient green "Saved" tick per field.
+   - Provenance tracking: Inherited timing/context fields display "From <Parent>" chips with "Overridden" badge and "Reset to inherited" button (`RotateCcw`).
+
+4. **Resource Pools (`ResourceBlock` & `PoolPicker`):**
+   - Dedicated blocks for Faculty, Subjects, and Rooms.
+   - View tabs: `Effective | Own | Excluded` with search filter.
+   - Rows display name, code, origin badge (`From <Parent>`, `Added`, `Excluded`).
+   - Actions: Exclude for inherited, Remove for own, Restore for excluded.
+   - Toggles: Required (locks against child exclusion) and Pinned (survives ancestor removal) on own items.
+   - Hover peeks (`ResourcePeekCard`): Queries `/library/:type/:id/peek` displaying workload/capacity/credits summary.
+   - Candidate Picker (`PoolPicker`): Server-side cursor-paginated candidates (`GET /nodes/:id/pool/candidates`) with department and candidate type filters, multi-select, and disabled states for `alreadyInPool` and `doNotLend` items.
+
+5. **Subject Assignments (`AssignmentsBlock`):**
+   - Rendered on Section and Batch nodes.
+   - Subject -> Faculty -> Room assignment rows with read-only weekly hours.
+   - Row status indicators: missing faculty, conflict, or auto-filled with reason tooltips.
+   - "Auto-assign all" button: Calls `POST /assignments/suggest` applying ranked solver recommendations.
+
+6. **Check Tab (`NodeCheckTab`):**
+   - Queries `GET /projects/:projectId/blueprint/nodes/:nodeId/check`.
+   - Mandatory configuration checklist with "Go fix" jump links that switch to Node tab and focus the invalid input.
+   - Warnings list surfacing pool warnings (`NO_QUALIFIED_FACULTY`, `LAB_ROOM_MISSING`, `ROOM_CAPACITY_DEFICIT`, `CLASS_TEACHER_NOT_IN_POOL`, `HOME_ROOM_NOT_IN_POOL`, `ARCHIVED_RESOURCE`, `SHARED_WORKLOAD`).
+   - Children summary displaying total children with ready vs incomplete breakdown.
+   - Recommended next action hints.
+
+7. **Copy Settings Dialog (`CopySettingsDialog`):**
+   - Modal allowing users to selectively copy `fields`, `pool`, `assignments`, and `rules` from another node in the graph.
+   - Calls `POST /projects/:projectId/blueprint/nodes/:nodeId/copy-settings` atomically.
+
+8. **Bulk Multi-Select Panel (`BulkPanel`):**
+   - Triggered when multiple nodes are selected (`selectedNodeIds.length > 1`).
+   - Shared editing for student capacity/strength, working days, and auto-fill borrow policy.
+   - Batch apply button updating all selected nodes in one atomic operation.
+
+9. **Tests & Verification:**
+   - Added unit test suite `client/src/features/blueprint/components/__tests__/blueprint-sidebar-client.spec.ts` testing `NodeFormRegistry`, per-type schemas, pool views, assignments, copy settings, resizing clamping, and ancestor breadcrumbs.
+   - 159 client unit tests and 445 server unit tests passing cleanly.
+
+### Decisions Made
+
+- **Autosave UX:** Removed manual "Apply changes" button in favor of automatic WebSocket debounced autosave (~400ms pause or on blur) with inline field error validation and "Saved" feedback.
+- **Rules Collapsed:** Embedded constraint overrides and auto-fill borrow policies into a collapsed "Rules & Overrides" section inside the Node tab.
+- **Narrow Selectors:** Sidebar state uses narrow Zustand selectors and per-node remounting keys to guarantee canvas rendering performance and zero extraneous canvas re-renders.
+
+### Manual Test Checklist
+
+- [x] Click node on canvas — sidebar opens to Node tab with type icon, name, mono badge, and breadcrumbs.
+- [x] Drag left edge of inspector — width resizes smoothly between 320px and 480px and persists across reload.
+- [x] Click collapse button — sidebar collapses to 0 width and 32px floating button appears on canvas edge.
+- [x] Edit field in Node tab — debounced autosave triggers after 400ms pause, displays "Saved" tick, and invalid inputs display inline error.
+- [x] Open ResourceBlock (Faculty/Rooms/Subjects) — view Effective, Own, and Excluded items with search filter.
+- [x] Hover resource row — `ResourcePeekCard` displays lightweight workload, capacity, or subject credits summary.
+- [x] Click "Add" on resource pool — opens `PoolPicker` with cursor pagination, candidate flags, and multi-select.
+- [x] On Section node, click "Auto-assign all" — requests suggestions and populates faculty/room assignments with status indicators.
+- [x] Switch to Check tab — displays missing mandatory fields with "Go fix" jump links and pool warnings.
+- [x] Click "Copy Settings..." in header menu — opens modal, selects parts, and copies settings from another node.
+- [x] Select multiple nodes on canvas — sidebar switches to `BulkPanel` for shared fields editing.
+
+Merged via `feat/sidebar-client`, tag `feat-sidebar-client-merged`.
+
+
 
 
 

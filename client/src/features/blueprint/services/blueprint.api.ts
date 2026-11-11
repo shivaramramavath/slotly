@@ -3,6 +3,8 @@ import { apiClient } from '@/lib/api-client';
 import type {
   ApplyOperationsDto,
   ApplyTemplateDto,
+  AssignmentSuggestRequestDto,
+  AssignmentSuggestResponseDto,
   BatchOperationResult,
   BlueprintAiChatRequestDto,
   BlueprintAiChatResponseDto,
@@ -13,10 +15,16 @@ import type {
   BlueprintReadinessDto,
   BlueprintRecommendationDto,
   BlueprintSnapshotDto,
+  CopyNodeSettingsDto,
+  CopyNodeSettingsResponseDto,
   CreateBlueprintCommentDto,
   CreateBlueprintSnapshotDto,
   CreateGraphTemplateDto,
   GraphTemplateDto,
+  LibraryPeekDto,
+  NodeCheckResponseDto,
+  PoolCandidatesQueryDto,
+  PoolCandidatesResponseDto,
   PoolOpPayload,
   ResolvedPool,
   ValidateProjectDto,
@@ -90,8 +98,9 @@ export const blueprintApi = {
   },
 
   // History & Snapshots
-  async getHistory(projectId: string): Promise<BlueprintHistoryEntryDto[]> {
-    return apiClient<BlueprintHistoryEntryDto[]>(`/projects/${projectId}/blueprint/history`);
+  async getHistory(projectId: string, nodeId?: string): Promise<BlueprintHistoryEntryDto[]> {
+    const qs = nodeId ? `?nodeId=${encodeURIComponent(nodeId)}` : '';
+    return apiClient<BlueprintHistoryEntryDto[]>(`/projects/${projectId}/blueprint/history${qs}`);
   },
 
   async listSnapshots(projectId: string): Promise<BlueprintSnapshotDto[]> {
@@ -245,6 +254,65 @@ export const blueprintApi = {
       {
         method: 'POST',
         body: JSON.stringify(payload),
+      },
+    );
+  },
+
+  // Pool Candidates
+  async getPoolCandidates(
+    projectId: string,
+    nodeId: string,
+    params: PoolCandidatesQueryDto,
+  ): Promise<PoolCandidatesResponseDto> {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') {
+        qs.set(k, String(v));
+      }
+    });
+    return apiClient<PoolCandidatesResponseDto>(
+      `/projects/${projectId}/blueprint/nodes/${nodeId}/pool/candidates?${qs.toString()}`,
+    );
+  },
+
+  // Library Hover Peek
+  async getLibraryPeek(type: 'faculty' | 'subjects' | 'rooms', id: string): Promise<LibraryPeekDto> {
+    return apiClient<LibraryPeekDto>(`/library/${type}/${id}/peek`);
+  },
+
+  // Node Check
+  async checkNode(projectId: string, nodeId: string): Promise<NodeCheckResponseDto> {
+    return apiClient<NodeCheckResponseDto>(
+      `/projects/${projectId}/blueprint/nodes/${nodeId}/check`,
+    );
+  },
+
+  // Assignment Suggestion
+  async suggestAssignments(
+    projectId: string,
+    nodeId: string,
+    dto: AssignmentSuggestRequestDto = { mode: 'all' },
+  ): Promise<AssignmentSuggestResponseDto> {
+    return apiClient<AssignmentSuggestResponseDto>(
+      `/projects/${projectId}/blueprint/nodes/${nodeId}/assignments/suggest`,
+      {
+        method: 'POST',
+        body: JSON.stringify(dto),
+      },
+    );
+  },
+
+  // Copy Node Settings
+  async copyNodeSettings(
+    projectId: string,
+    nodeId: string,
+    dto: CopyNodeSettingsDto,
+  ): Promise<CopyNodeSettingsResponseDto> {
+    return apiClient<CopyNodeSettingsResponseDto>(
+      `/projects/${projectId}/blueprint/nodes/${nodeId}/copy-settings`,
+      {
+        method: 'POST',
+        body: JSON.stringify(dto),
       },
     );
   },

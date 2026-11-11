@@ -12,10 +12,12 @@ export interface SidePanelTabsProps {
 /** React component rendering underlined text tabs matching the reference spec */
 export function SidePanelTabs({ activeTab, onTabChange }: SidePanelTabsProps) {
   const tabs: Array<{ id: SidebarTab; label: string }> = [
-    { id: 'config', label: 'Config' },
-    { id: 'constraints', label: 'Constraints' },
-    { id: 'ai', label: 'Slotly AI' },
+    { id: 'node', label: 'Node' },
+    { id: 'check', label: 'Check' },
+    { id: 'ai', label: 'AI' },
   ];
+
+  const currentTab = activeTab === 'config' ? 'node' : activeTab === 'constraints' ? 'node' : activeTab;
 
   return (
     <div
@@ -24,7 +26,7 @@ export function SidePanelTabs({ activeTab, onTabChange }: SidePanelTabsProps) {
       className="h-11 border-b border-[#232323] px-4 flex items-center gap-6 bg-[#0A0A0A] shrink-0"
     >
       {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
+        const isActive = currentTab === tab.id;
         return (
           <button
             key={tab.id}

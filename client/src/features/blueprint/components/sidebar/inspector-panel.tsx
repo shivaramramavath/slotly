@@ -1,4 +1,4 @@
-// Inspector sidebar panel providing docked, drawer, and bottom sheet modes with tab navigation.
+// Inspector sidebar panel providing docked, drawer, and bottom sheet modes with tab navigation, resizing, and headers.
 'use client';
 
 import * as React from 'react';
@@ -13,8 +13,11 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBlueprintStore } from '../../store/blueprint.store';
 import { BlueprintOverview } from './blueprint-overview';
+import { SidebarHeader } from './sidebar-header';
 import { NodeConfigForm } from './node-config-form';
-import { BlueprintConstraintsTab } from './tabs/blueprint-constraints-tab';
+import { NodeCheckTab } from './tabs/node-check-tab';
+import { BulkPanel } from './bulk-panel';
+import { CopySettingsDialog } from '../dialogs/copy-settings-dialog';
 import { AiChatPanel } from './ai-chat-panel';
 import { blueprintApi } from '../../services/blueprint.api';
 import type { SidebarTab } from '../../types/canvas.types';
@@ -29,9 +32,9 @@ export interface InspectorPanelProps {
 }
 
 const TABS: Array<{ value: SidebarTab; label: string }> = [
-  { value: 'config', label: 'Config' },
-  { value: 'constraints', label: 'Constraints' },
-  { value: 'ai', label: 'Slotly AI' },
+  { value: 'node', label: 'Node' },
+  { value: 'check', label: 'Check' },
+  { value: 'ai', label: 'AI' },
 ];
 
 /** React component rendering responsive inspector sidebar with collapsible state. */
@@ -41,9 +44,11 @@ export function InspectorPanel({
   className = '',
 }: InspectorPanelProps) {
   const selectedNodeId = useBlueprintStore((s) => s.selectedNodeId);
+  const selectedNodeIds = useBlueprintStore((s) => s.selectedNodeIds);
   const nodes = useBlueprintStore((s) => s.nodes);
   const activeTab = useBlueprintStore((s) => s.activeTab);
   const setActiveTab = useBlueprintStore((s) => s.setActiveTab);
+  const autosaveStatus = useBlueprintStore((s) => s.autosaveStatus);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
@@ -56,6 +61,21 @@ export function InspectorPanel({
     }
   });
 
+  // Local storage width state (320 to 480 px, default 360 px)
+  const [panelWidth, setPanelWidth] = React.useState<number>(() => {
+    try {
+      const stored = localStorage.getItem('slotly:blueprint:inspector-width');
+      if (stored) {
+        const num = parseInt(stored, 10);
+        if (!isNaN(num) && num >= 320 && num <= 480) return num;
+      }
+    } catch {
+      // fallback
+    }
+    return 360;
+  });
+
+  const [isCopySettingsOpen, setIsCopySettingsOpen] = React.useState(false);
   const [recommendations, setRecommendations] = React.useState<BlueprintRecommendationDto[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -84,6 +104,32 @@ export function InspectorPanel({
       }
       return next;
     });
+  };
+
+  // Resize handling via left drag border
+  const handleMouseDownResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = panelWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = startX - moveEvent.clientX;
+      const nextWidth = Math.min(480, Math.max(320, startWidth + deltaX));
+      setPanelWidth(nextWidth);
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      try {
+        localStorage.setItem('slotly:blueprint:inspector-width', String(panelWidth));
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
   };
 
   // Fetch recommendations for selected node
@@ -127,6 +173,17 @@ export function InspectorPanel({
     return () => clearTimeout(timer);
   }, [isLoading]);
 
+  // Compute canonical active tab
+  const currentTab: SidebarTab =
+    activeTab === 'config' ? 'node' : activeTab === 'constraints' ? 'node' : activeTab;
+
+  // Compute required counts for header
+  const requiredCompletedCount = React.useMemo(() => {
+    if (!selectedNode) return 0;
+    const missingCount = selectedNode.data.missing?.length || 0;
+    return Math.max(0, 4 - missingCount);
+  }, [selectedNode]);
+
   // If collapsed on desktop, render 32px floating "Open inspector" trigger button
   if (isCollapsed && !isTablet && !isMobile) {
     return (
@@ -142,41 +199,74 @@ export function InspectorPanel({
     );
   }
 
+  // Multi-select bulk edit view
+  const isMultiSelect = selectedNodeIds.length > 1;
+
   const panelContent = (
     <div className="flex flex-col h-full bg-[#0A0A0A] select-none text-xs">
-      {/* Tab Row & Collapse Header */}
-      <div className="h-12 px-3 border-b border-[#232323] flex items-center justify-between gap-2 shrink-0 bg-[#0A0A0A]">
-        {/* 36px SegmentedControl with real role="tablist" semantics */}
-        <SegmentedControl<SidebarTab>
-          options={TABS}
-          value={activeTab}
-          onChange={(tab) => {
-            setActiveTab(tab);
-            try {
-              localStorage.setItem('slotly:inspector:tab', tab);
-            } catch {
-              // ignore
-            }
-          }}
-          ariaLabel="Inspector sections"
-          className="h-9 py-0.5"
+      {/* Top Header & Actions */}
+      {isMultiSelect ? (
+        <div className="h-12 px-3 border-b border-[#232323] flex items-center justify-between gap-2 shrink-0 bg-[#0A0A0A]">
+          <span className="font-semibold text-xs text-[#FAFAFA]">Bulk Edit</span>
+          <button
+            type="button"
+            onClick={toggleCollapse}
+            aria-label="Collapse inspector"
+            className="h-8 w-8 rounded-[8px] text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#181818] flex items-center justify-center transition-colors shrink-0"
+          >
+            <PanelRightClose className="h-4 w-4" />
+          </button>
+        </div>
+      ) : selectedNode ? (
+        <SidebarHeader
+          node={selectedNode}
+          autosaveStatus={autosaveStatus}
+          requiredCompletedCount={requiredCompletedCount}
+          totalRequiredCount={4}
+          onOpenCopySettings={() => setIsCopySettingsOpen(true)}
         />
+      ) : null}
 
-        {/* 32px Collapse Button */}
-        <button
-          type="button"
-          onClick={toggleCollapse}
-          title={isCollapsed ? 'Expand inspector' : 'Collapse inspector'}
-          aria-label={isCollapsed ? 'Expand inspector' : 'Collapse inspector'}
-          className="h-8 w-8 rounded-[8px] text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#181818] border border-transparent hover:border-[#232323] flex items-center justify-center transition-colors shrink-0"
-        >
-          <PanelRightClose className="h-4 w-4" />
-        </button>
-      </div>
+      {/* Tab Row & Collapse Header */}
+      {!isMultiSelect && (
+        <div className="h-11 px-3 border-b border-[#232323] flex items-center justify-between gap-2 shrink-0 bg-[#0A0A0A]">
+          <SegmentedControl<SidebarTab>
+            options={TABS}
+            value={currentTab}
+            onChange={(tab) => {
+              setActiveTab(tab);
+              try {
+                localStorage.setItem('slotly:inspector:tab', tab);
+              } catch {
+                // ignore
+              }
+            }}
+            ariaLabel="Inspector sections"
+            className="h-8 py-0.5"
+          />
+
+          <button
+            type="button"
+            onClick={toggleCollapse}
+            title={isCollapsed ? 'Expand inspector' : 'Collapse inspector'}
+            aria-label={isCollapsed ? 'Expand inspector' : 'Collapse inspector'}
+            className="h-8 w-8 rounded-[8px] text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#181818] border border-transparent hover:border-[#232323] flex items-center justify-center transition-colors shrink-0"
+          >
+            <PanelRightClose className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Main Tab View Area */}
-      <div className="flex-1 overflow-hidden relative flex flex-col">
-        {showSkeleton ? (
+      <div className="flex-1 overflow-y-auto relative flex flex-col">
+        {isMultiSelect ? (
+          <BulkPanel
+            projectId={projectId}
+            onUpdateNodes={async (nodeIds, patch) => {
+              nodeIds.forEach((id) => onUpdateConfig(id, patch));
+            }}
+          />
+        ) : showSkeleton ? (
           <div className="p-4 space-y-4">
             <div className="flex items-center gap-3">
               <Skeleton className="h-10 w-10 rounded-[10px]" />
@@ -206,7 +296,7 @@ export function InspectorPanel({
           </div>
         ) : (
           <>
-            {activeTab === 'config' && (
+            {currentTab === 'node' && (
               selectedNode ? (
                 <NodeConfigForm
                   key={selectedNode.id}
@@ -221,18 +311,36 @@ export function InspectorPanel({
               )
             )}
 
-            {activeTab === 'constraints' && (
-              <div className="flex-1 overflow-y-auto p-4">
-                <BlueprintConstraintsTab projectId={projectId} />
-              </div>
+            {currentTab === 'check' && (
+              selectedNode ? (
+                <NodeCheckTab
+                  key={selectedNode.id}
+                  projectId={projectId}
+                  node={selectedNode}
+                />
+              ) : (
+                <div className="p-8 text-center text-[#8A8A8A] font-mono text-xs">
+                  Select a node to review its checklist.
+                </div>
+              )
             )}
 
-            {activeTab === 'ai' && (
+            {currentTab === 'ai' && (
               <AiChatPanel projectId={projectId} />
             )}
           </>
         )}
       </div>
+
+      {/* Copy Settings Modal */}
+      {selectedNode && (
+        <CopySettingsDialog
+          isOpen={isCopySettingsOpen}
+          onClose={() => setIsCopySettingsOpen(false)}
+          projectId={projectId}
+          targetNodeId={selectedNode.id}
+        />
+      )}
     </div>
   );
 
@@ -312,14 +420,22 @@ export function InspectorPanel({
     );
   }
 
-  // Desktop Docked Sidebar (>= 1024px)
+  // Desktop Docked Sidebar (>= 1024px) with Resizing Edge
   return (
     <aside
+      style={{ width: `${panelWidth}px` }}
       className={cn(
-        'w-[var(--inspector-width,360px)] h-full border-l border-[#232323] bg-[#0A0A0A] z-20 shrink-0 transition-[width] duration-200',
+        'relative h-full border-l border-[#232323] bg-[#0A0A0A] z-20 shrink-0 transition-[width] duration-75',
         className,
       )}
     >
+      {/* Left resize handle */}
+      <div
+        onMouseDown={handleMouseDownResize}
+        title="Drag to resize inspector"
+        className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-[#FAFAFA]/20 active:bg-[#FAFAFA]/40 transition-colors z-30 -translate-x-1/2"
+      />
+
       {panelContent}
     </aside>
   );

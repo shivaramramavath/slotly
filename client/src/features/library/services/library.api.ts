@@ -20,6 +20,7 @@ import type {
   FacultyQualificationResult,
   ImportEntity,
   ImportValidationReport,
+  LibraryPeekDto,
 } from '@slotly/contracts';
 
 /** Constant representing library api. */
@@ -241,6 +242,13 @@ export const libraryApi = {
     return apiClient<{ success: boolean }>(`/library/rooms/${id}`, {
       method: 'DELETE',
     });
+  },
+
+  // ==========================================
+  // HOVER PEEK
+  // ==========================================
+  async getPeek(type: 'faculty' | 'subjects' | 'rooms', id: string): Promise<LibraryPeekDto> {
+    return apiClient<LibraryPeekDto>(`/library/${type}/${id}/peek`);
   },
 
   // ==========================================

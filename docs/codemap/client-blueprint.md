@@ -126,6 +126,18 @@
 
 - **Component** `BulkAddDialog({ onAddBatchNodes }: BulkAddDialogProps)` - React component rendering bulk add dialog.
 
+### `client/src/features/blueprint/components/dialogs/copy-settings-dialog.tsx`
+*Dialog allowing users to selectively copy configuration, pool, assignments, and rules from another node.*
+
+- **Interface** `CopySettingsDialogProps` - Props for CopySettingsDialog component.
+- **Component** `CopySettingsDialog({
+  isOpen,
+  onClose,
+  projectId,
+  targetNodeId,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/dialogs/copy-settings-dialog").CopySettingsDialogProps)` - React component rendering Copy Settings modal dialog.
+
 ### `client/src/features/blueprint/components/dialogs/export-dialog.tsx`
 *React component for export-dialog.*
 
@@ -248,6 +260,18 @@
 - **Interface** `AiChatPanelProps` - Props for AiChatPanel component.
 - **Component** `AiChatPanel({ projectId, className = '' }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/ai-chat-panel").AiChatPanelProps)` - React component rendering whole-blueprint AI chat assistant.
 
+### `client/src/features/blueprint/components/sidebar/assignments-block.tsx`
+*Assignments block for Section and Batch nodes managing Subject -> Faculty -> Room mappings.*
+
+- **Interface** `AssignmentRowItem` - Interface defining local section/batch assignment row.
+- **Interface** `AssignmentsBlockProps` - Props for AssignmentsBlock component.
+- **Component** `AssignmentsBlock({
+  node,
+  projectId,
+  onUpdateAssignments,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/assignments-block").AssignmentsBlockProps)` - React component rendering subject assignments with Auto-assign all recommendations.
+
 ### `client/src/features/blueprint/components/sidebar/blueprint-overview.tsx`
 *Overview component rendered in inspector when no canvas node or multiple nodes are selected.*
 
@@ -263,8 +287,17 @@
   className,
 }: BlueprintSidebarProps)` - React component rendering redesigned blueprint inspector sidebar.
 
+### `client/src/features/blueprint/components/sidebar/bulk-panel.tsx`
+*BulkPanel component rendering shared fields and batch actions when multiple nodes are selected.*
+
+- **Interface** `BulkPanelProps` - Props for BulkPanel component.
+- **Component** `BulkPanel({
+  onUpdateNodes,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/bulk-panel").BulkPanelProps)` - React component rendering multi-select bulk editing panel.
+
 ### `client/src/features/blueprint/components/sidebar/inspector-panel.tsx`
-*Inspector sidebar panel providing docked, drawer, and bottom sheet modes with tab navigation.*
+*Inspector sidebar panel providing docked, drawer, and bottom sheet modes with tab navigation, resizing, and headers.*
 
 - **Interface** `InspectorPanelProps` - Props for InspectorPanel component.
 - **Component** `InspectorPanel({
@@ -303,15 +336,62 @@
 }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/issues-summary").IssuesSummaryProps)` - React component rendering issues banner with 2px yellow left indicator and jump-to-field rows.
 
 ### `client/src/features/blueprint/components/sidebar/node-config-form.tsx`
-*Form component managing draft configuration, resource sections, and sticky apply actions for selected node.*
+*Schema-driven node configuration form supporting autosave, field validation, resource blocks, assignments, and rules.*
 
 - **Interface** `NodeConfigFormProps` - Props for NodeConfigForm component.
 - **Component** `NodeConfigForm({
   node,
   onUpdateConfig,
-  recommendations = [],
   className = '',
-}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/node-config-form").NodeConfigFormProps)` - React component rendering node inspector configuration tab.
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/node-config-form").NodeConfigFormProps)` - React component rendering schema-driven node configuration form.
+
+### `client/src/features/blueprint/components/sidebar/node-form-registry.ts`
+*Open/Closed registry mapping blueprint node types to their form schemas, metadata, and field specifications.*
+
+- **Interface** `NodeFormConfig` - Interface defining node form configuration.
+- **Function** `getNodeFormConfig(type: "institution" | "department" | "program" | "academicYear" | "semester" | "section" | "batch" | "subjectAssignment" | "electiveGroup" | "faculty" | "room")`: `import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/node-form-registry").NodeFormConfig` - Helper to retrieve form config for a given node type.
+- **Const** `NodeFormRegistry`: `Partial<Record<"institution" | "department" | "...` - Registry mapping BlueprintNodeType to its form schema and metadata.
+
+### `client/src/features/blueprint/components/sidebar/pool-picker.tsx`
+*Popover modal for server-side searchable, paginated pool candidate selection.*
+
+- **Interface** `PoolPickerProps` - Props for PoolPicker component.
+- **Component** `PoolPicker({
+  isOpen,
+  onClose,
+  projectId,
+  nodeId,
+  resourceType,
+  title,
+  onAddCandidates,
+  onCopyPoolFromAnotherNode,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/pool-picker").PoolPickerProps)` - React component rendering server-side paginated candidate picker with multi-select.
+
+### `client/src/features/blueprint/components/sidebar/resource-block.tsx`
+*ResourceBlock managing inherited, own, and excluded faculty, subjects, and rooms with live views and peek.*
+
+- **Interface** `PoolResourceEntry` - Interface defining a displayable pool resource entry.
+- **Interface** `ResourceBlockProps` - Props for ResourceBlock component.
+- **Component** `ResourceBlock({
+  node,
+  projectId,
+  resourceType,
+  title,
+  onUpdatePool,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/resource-block").ResourceBlockProps)` - React component rendering ResourceBlock with tabs, search, and row operations.
+
+### `client/src/features/blueprint/components/sidebar/resource-peek-card.tsx`
+*Hover peek summary card displaying lightweight details for library resources.*
+
+- **Interface** `ResourcePeekCardProps` - Props for ResourcePeekCard component.
+- **Component** `ResourcePeekCard({
+  type,
+  resourceId,
+  children,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/resource-peek-card").ResourcePeekCardProps)` - React component rendering hover peek popover for faculty, subjects, and rooms.
 
 ### `client/src/features/blueprint/components/sidebar/resource-picker.tsx`
 *Combobox popover picker allowing multi-select assignment of library resources.*
@@ -349,10 +429,37 @@
 - **Interface** `SidePanelTabsProps`
 - **Component** `SidePanelTabs({ activeTab, onTabChange }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/side-panel-tabs").SidePanelTabsProps)` - React component rendering underlined text tabs matching the reference spec
 
+### `client/src/features/blueprint/components/sidebar/sidebar-header.tsx`
+*Header component for the blueprint sidebar with ancestor breadcrumbs, status, save indicator, presence, and action menu.*
+
+- **Interface** `SidebarHeaderProps` - Props for SidebarHeader component.
+- **Component** `SidebarHeader({
+  node,
+  autosaveStatus,
+  requiredCompletedCount,
+  totalRequiredCount,
+  onOpenCopySettings,
+  onDuplicateNode,
+  onToggleLock,
+  isReadOnly = false,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/sidebar-header").SidebarHeaderProps)` - React component rendering rich sidebar header with status indicators and action menu.
+
 ### `client/src/features/blueprint/components/sidebar/tabs/blueprint-constraints-tab.tsx`
 *React component for blueprint-constraints-tab.*
 
 - **Component** `BlueprintConstraintsTab({ projectId }: BlueprintConstraintsTabProps)` - React component rendering blueprint constraints tab.
+
+### `client/src/features/blueprint/components/sidebar/tabs/node-check-tab.tsx`
+*Check tab rendering node-level requirements checklist, pool warnings, children summary, and Go-fix links.*
+
+- **Interface** `NodeCheckTabProps` - Props for NodeCheckTab component.
+- **Component** `NodeCheckTab({
+  projectId,
+  node,
+  onGoFixField,
+  className = '',
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/sidebar/tabs/node-check-tab").NodeCheckTabProps)` - React component rendering checklist from GET /nodes/:id/check with fix links.
 
 ### `client/src/features/blueprint/components/sidebar/times-editor.tsx`
 *Times editor component configuring working days, period lengths, and break slots.*
