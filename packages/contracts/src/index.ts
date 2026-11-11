@@ -1620,6 +1620,8 @@ export const BlueprintNodeDtoSchema = z.object({
   pool: NodePoolSchema.optional(),
   assignments: z.array(AssignmentSchema).optional(),
   autoFill: AutoFillModeSchema.optional(),
+  lastChangedBy: z.string().optional(),
+  lastChangedAt: z.string().optional(),
 });
 /** TypeScript type inferred from blueprint node dto Zod schema. */
 export type BlueprintNodeDto = z.infer<typeof BlueprintNodeDtoSchema>;
@@ -1827,11 +1829,21 @@ export type ApplyTemplateDto = z.infer<typeof ApplyTemplateDtoSchema>;
 export const BlueprintHistoryEntryDtoSchema = z.object({
   id: z.string(),
   projectId: z.string(),
+  nodeId: z.string().optional(),
   revision: z.number().int(),
   operationType: z.string(),
   description: z.string(),
   userId: z.string(),
   timestamp: z.string(),
+  changelog: z
+    .array(
+      z.object({
+        field: z.string(),
+        oldValue: z.unknown().optional(),
+        newValue: z.unknown().optional(),
+      }),
+    )
+    .optional(),
 });
 /** TypeScript type inferred from blueprint history entry dto Zod schema. */
 export type BlueprintHistoryEntryDto = z.infer<typeof BlueprintHistoryEntryDtoSchema>;
@@ -3343,4 +3355,349 @@ export const BlueprintAiChatResponseDtoSchema = z.object({
 });
 /** TypeScript type inferred from blueprint AI chat response DTO schema. */
 export type BlueprintAiChatResponseDto = z.infer<typeof BlueprintAiChatResponseDtoSchema>;
+
+// ==========================================
+// BLUEPRINT NODE FORM SCHEMAS & FIELD METADATA
+// ==========================================
+
+/** Field kind enum defining the input widget type. */
+export type FieldKind =
+  | 'text'
+  | 'number'
+  | 'select'
+  | 'combobox'
+  | 'dayChips'
+  | 'timeInput'
+  | 'breakList'
+  | 'dateRange';
+
+/** Interface defining metadata for a node form field. */
+export interface FieldMeta {
+  label: string;
+  hint?: string;
+  required: boolean;
+  kind: FieldKind;
+  constraints?: Record<string, unknown>;
+}
+
+/** Break configuration schema for institution timings. */
+export const BreakSlotSchema = z.object({
+  name: z.string().min(1),
+  afterPeriod: z.coerce.number().int().min(1).max(16),
+  durationMinutes: z.coerce.number().int().min(5).max(120),
+});
+export type BreakSlot = z.infer<typeof BreakSlotSchema>;
+
+/** Zod schema validating institution node configuration form. */
+export const InstitutionFormSchema = z.object({
+  name: z.string().min(1, 'Institution name is required'),
+  code: z.string().min(1, 'Institution code is required'),
+  address: z.string().optional().default(''),
+  workingDays: z
+    .array(z.coerce.number().int().min(0).max(6))
+    .min(1, 'At least one working day is required'),
+  startTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Start time must be formatted HH:mm'),
+  periodLength: z.coerce.number().int().min(15).max(180),
+  periodsPerDay: z.coerce.number().int().min(1).max(16),
+  breaks: z.array(BreakSlotSchema).default([]),
+  defaultAutoFillMode: z
+    .enum(['off', 'same_department', 'allow_other_departments'])
+    .default('same_department'),
+});
+export type InstitutionForm = z.infer<typeof InstitutionFormSchema>;
+
+/** Zod schema validating department node configuration form. */
+export const DepartmentFormSchema = z.object({
+  name: z.string().min(1, 'Department name is required'),
+  code: z.string().min(1, 'Department code is required'),
+  headOfDepartmentId: z.string().optional().nullable(),
+});
+export type DepartmentForm = z.infer<typeof DepartmentFormSchema>;
+
+/** Zod schema validating program node configuration form. */
+export const ProgramFormSchema = z.object({
+  name: z.string().min(1, 'Program name is required'),
+  code: z.string().min(1, 'Program code is required'),
+  durationYears: z.coerce.number().int().min(1).max(8),
+  degreeLevel: z
+    .enum(['diploma', 'undergraduate', 'postgraduate', 'doctorate'])
+    .optional(),
+  intake: z.coerce.number().int().min(1).optional(),
+});
+export type ProgramForm = z.infer<typeof ProgramFormSchema>;
+
+/** Zod schema validating academic year node configuration form. */
+export const AcademicYearFormSchema = z.object({
+  yearNumber: z.coerce.number().int().min(1).max(8),
+  label: z.string().optional(),
+  expectedStrength: z.coerce.number().int().min(1).optional(),
+});
+export type AcademicYearForm = z.infer<typeof AcademicYearFormSchema>;
+
+/** Zod schema validating semester node configuration form. */
+export const SemesterFormSchema = z.object({
+  number: z.coerce.number().int().min(1).max(16),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+export type SemesterForm = z.infer<typeof SemesterFormSchema>;
+
+/** Zod schema validating section node configuration form. */
+export const SectionFormSchema = z.object({
+  name: z.string().min(1, 'Section name is required'),
+  strength: z.coerce.number().int().min(1).max(500),
+  classTeacherId: z.string().optional().nullable(),
+  homeRoomId: z.string().optional().nullable(),
+});
+export type SectionForm = z.infer<typeof SectionFormSchema>;
+
+/** Zod schema validating batch node configuration form. */
+export const BatchFormSchema = z.object({
+  name: z.string().min(1, 'Batch name is required'),
+  size: z.coerce.number().int().min(1).max(500),
+  labSubjectIds: z.array(z.string()).default([]),
+});
+export type BatchForm = z.infer<typeof BatchFormSchema>;
+
+/** Registry of node form schemas per node type. */
+export const NodeFormSchemas = {
+  institution: InstitutionFormSchema,
+  department: DepartmentFormSchema,
+  program: ProgramFormSchema,
+  academicYear: AcademicYearFormSchema,
+  semester: SemesterFormSchema,
+  section: SectionFormSchema,
+  batch: BatchFormSchema,
+} as const;
+
+/** Canonical field metadata dictionary per node type. */
+export const NodeFormFieldMeta: Record<string, Record<string, FieldMeta>> = {
+  institution: {
+    name: { label: 'Institution Name', hint: 'Full registered name', required: true, kind: 'text' },
+    code: { label: 'Code', hint: 'Short identifier e.g. MIT', required: true, kind: 'text' },
+    address: { label: 'Campus Address', hint: 'Physical location or campus', required: false, kind: 'text' },
+    workingDays: { label: 'Working Days', hint: 'Weekly instructional days', required: true, kind: 'dayChips' },
+    startTime: { label: 'Start Time', hint: 'First period start HH:mm', required: true, kind: 'timeInput' },
+    periodLength: { label: 'Period Length (min)', hint: 'Duration in minutes', required: true, kind: 'number' },
+    periodsPerDay: { label: 'Periods Per Day', hint: 'Total instructional slots', required: true, kind: 'number' },
+    breaks: { label: 'Breaks', hint: 'Scheduled lunch/tea pauses', required: false, kind: 'breakList' },
+    defaultAutoFillMode: { label: 'Default Auto-Fill Mode', hint: 'Resource borrow policy on build', required: false, kind: 'select' },
+  },
+  department: {
+    name: { label: 'Department Name', hint: 'Academic department', required: true, kind: 'text' },
+    code: { label: 'Department Code', hint: 'e.g. CSE, EEE, MECH', required: true, kind: 'text' },
+    headOfDepartmentId: { label: 'Head of Department', hint: 'Faculty lead from library', required: false, kind: 'combobox' },
+  },
+  program: {
+    name: { label: 'Program Name', hint: 'e.g. B.Tech Computer Science', required: true, kind: 'text' },
+    code: { label: 'Program Code', hint: 'e.g. CS-UG', required: true, kind: 'text' },
+    durationYears: { label: 'Duration (Years)', hint: 'Standard course duration', required: true, kind: 'number' },
+    degreeLevel: { label: 'Degree Level', hint: 'Level of study', required: false, kind: 'select' },
+    intake: { label: 'Approved Intake', hint: 'Maximum student capacity', required: false, kind: 'number' },
+  },
+  academicYear: {
+    yearNumber: { label: 'Year Number', hint: '1 for 1st Year, 2 for 2nd Year', required: true, kind: 'number' },
+    label: { label: 'Display Label', hint: 'Custom display e.g. Year 1', required: false, kind: 'text' },
+    expectedStrength: { label: 'Expected Total Strength', hint: 'Aggregated student headcount', required: false, kind: 'number' },
+  },
+  semester: {
+    number: { label: 'Semester Number', hint: 'e.g. 1, 2, 3... 8', required: true, kind: 'number' },
+    startDate: { label: 'Start Date', hint: 'Term instructional start', required: false, kind: 'dateRange' },
+    endDate: { label: 'End Date', hint: 'Term instructional end', required: false, kind: 'dateRange' },
+  },
+  section: {
+    name: { label: 'Section Name', hint: 'e.g. Section A', required: true, kind: 'text' },
+    strength: { label: 'Class Strength', hint: 'Number of enrolled students', required: true, kind: 'number' },
+    classTeacherId: { label: 'Class Teacher', hint: 'Must belong to effective pool', required: false, kind: 'combobox' },
+    homeRoomId: { label: 'Home Room', hint: 'Default classroom from pool', required: false, kind: 'combobox' },
+  },
+  batch: {
+    name: { label: 'Batch Name', hint: 'e.g. Batch A1 (Lab group)', required: true, kind: 'text' },
+    size: { label: 'Batch Size', hint: 'Sub-cohort count within section strength', required: true, kind: 'number' },
+    labSubjectIds: { label: 'Lab Subjects', hint: 'Subjects assigned for practicals', required: false, kind: 'combobox' },
+  },
+};
+
+// ==========================================
+// POOL CANDIDATES CONTRACT
+// ==========================================
+
+/** Zod schema validating pool candidates search query. */
+export const PoolCandidatesQueryDtoSchema = z.object({
+  type: z.enum(['faculty', 'subject', 'room']),
+  q: z.string().optional(),
+  department: z.string().optional(),
+  subjectType: z.string().optional(),
+  roomType: z.string().optional(),
+  qualifiedFor: z.string().optional(),
+  available: z.string().optional(),
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+export type PoolCandidatesQueryDto = z.infer<typeof PoolCandidatesQueryDtoSchema>;
+
+/** Zod schema validating an individual pool candidate item. */
+export const PoolCandidateItemDtoSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  code: z.string().optional(),
+  type: z.enum(['faculty', 'subject', 'room']),
+  departmentId: z.string().optional().nullable(),
+  departmentName: z.string().optional().nullable(),
+  alreadyInPool: z.boolean(),
+  excluded: z.boolean(),
+  archived: z.boolean(),
+  doNotLend: z.boolean(),
+  details: z.record(z.unknown()).optional(),
+});
+export type PoolCandidateItemDto = z.infer<typeof PoolCandidateItemDtoSchema>;
+
+/** Zod schema validating pool candidates paginated response. */
+export const PoolCandidatesResponseDtoSchema = z.object({
+  items: z.array(PoolCandidateItemDtoSchema),
+  nextCursor: z.string().nullable().optional(),
+  total: z.number(),
+});
+export type PoolCandidatesResponseDto = z.infer<typeof PoolCandidatesResponseDtoSchema>;
+
+// ==========================================
+// LIBRARY HOVER PEEK CONTRACT
+// ==========================================
+
+export const FacultyPeekDtoSchema = z.object({
+  type: z.literal('faculty'),
+  id: z.string(),
+  name: z.string(),
+  code: z.string().optional(),
+  departmentId: z.string().optional().nullable(),
+  departmentName: z.string().optional().nullable(),
+  designation: z.string().optional(),
+  workloadUsed: z.number(),
+  maxWorkload: z.number(),
+  availability: z.array(
+    z.object({
+      day: z.number(),
+      periods: z.array(z.boolean()),
+    }),
+  ),
+});
+export type FacultyPeekDto = z.infer<typeof FacultyPeekDtoSchema>;
+
+export const SubjectPeekDtoSchema = z.object({
+  type: z.literal('subject'),
+  id: z.string(),
+  name: z.string(),
+  code: z.string(),
+  subjectType: z.string(),
+  weeklyHours: z.number(),
+  credits: z.number(),
+  qualifiedFacultyCount: z.number(),
+});
+export type SubjectPeekDto = z.infer<typeof SubjectPeekDtoSchema>;
+
+export const RoomPeekDtoSchema = z.object({
+  type: z.literal('room'),
+  id: z.string(),
+  name: z.string(),
+  code: z.string().optional(),
+  roomType: z.string(),
+  capacity: z.number(),
+  building: z.string().optional(),
+  equipment: z.array(z.string()),
+});
+export type RoomPeekDto = z.infer<typeof RoomPeekDtoSchema>;
+
+export const LibraryPeekDtoSchema = z.discriminatedUnion('type', [
+  FacultyPeekDtoSchema,
+  SubjectPeekDtoSchema,
+  RoomPeekDtoSchema,
+]);
+export type LibraryPeekDto = z.infer<typeof LibraryPeekDtoSchema>;
+
+// ==========================================
+// NODE CHECK CONTRACT
+// ==========================================
+
+export const NodeCheckWarningSchema = z.object({
+  code: z.string(),
+  message: z.string(),
+  severity: z.enum(['error', 'warning', 'info']),
+  targetField: z.string().optional(),
+  fixHint: z.string().optional(),
+});
+export type NodeCheckWarning = z.infer<typeof NodeCheckWarningSchema>;
+
+export const NodeCheckResponseDtoSchema = z.object({
+  nodeId: z.string(),
+  isReady: z.boolean(),
+  missingFields: z.array(z.string()),
+  warnings: z.array(NodeCheckWarningSchema),
+  childrenSummary: z.object({
+    total: z.number(),
+    ready: z.number(),
+    incomplete: z.number(),
+  }),
+  fixHints: z.array(z.string()),
+});
+export type NodeCheckResponseDto = z.infer<typeof NodeCheckResponseDtoSchema>;
+
+// ==========================================
+// ASSIGNMENT SUGGESTION CONTRACT
+// ==========================================
+
+export const AssignmentSuggestRequestDtoSchema = z.object({
+  subjectId: z.string().optional(),
+  mode: z.enum(['single', 'all']).default('single'),
+});
+export type AssignmentSuggestRequestDto = z.infer<typeof AssignmentSuggestRequestDtoSchema>;
+
+export const RankedSuggestionItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  score: z.number(),
+  reasons: z.array(z.string()),
+});
+export type RankedSuggestionItem = z.infer<typeof RankedSuggestionItemSchema>;
+
+export const AssignmentSuggestionSchema = z.object({
+  subjectId: z.string(),
+  subjectName: z.string(),
+  faculty: z.array(RankedSuggestionItemSchema),
+  rooms: z.array(RankedSuggestionItemSchema),
+});
+export type AssignmentSuggestion = z.infer<typeof AssignmentSuggestionSchema>;
+
+export const AssignmentSuggestResponseDtoSchema = z.object({
+  suggestions: z.array(AssignmentSuggestionSchema),
+});
+export type AssignmentSuggestResponseDto = z.infer<typeof AssignmentSuggestResponseDtoSchema>;
+
+// ==========================================
+// COPY NODE SETTINGS CONTRACT
+// ==========================================
+
+export const CopyNodeSettingsPartSchema = z.enum(['fields', 'pool', 'assignments', 'rules']);
+export type CopyNodeSettingsPart = z.infer<typeof CopyNodeSettingsPartSchema>;
+
+export const CopyNodeSettingsDtoSchema = z.object({
+  sourceNodeId: z.string().min(1, 'Source node ID is required'),
+  parts: z.array(CopyNodeSettingsPartSchema).min(1, 'Select at least one settings part to copy'),
+});
+export type CopyNodeSettingsDto = z.infer<typeof CopyNodeSettingsDtoSchema>;
+
+export const CopyNodeSettingsResponseDtoSchema = z.object({
+  appliedParts: z.array(CopyNodeSettingsPartSchema),
+  skippedParts: z.array(
+    z.object({
+      part: CopyNodeSettingsPartSchema,
+      reasonCode: z.string(),
+      message: z.string(),
+    }),
+  ),
+  appliedOperations: z.number(),
+});
+export type CopyNodeSettingsResponseDto = z.infer<typeof CopyNodeSettingsResponseDtoSchema>;
+
 
