@@ -30,6 +30,16 @@ export class BlueprintHistory {
   @Prop({ type: String, required: true })
   description!: string;
 
+  @Prop({ type: String, required: false, index: true, default: null })
+  nodeId?: string | null;
+
+  @Prop({ type: [Object], default: [] })
+  changelog?: Array<{
+    field: string;
+    oldValue?: unknown;
+    newValue?: unknown;
+  }>;
+
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   userId!: string;
 
@@ -41,3 +51,4 @@ export class BlueprintHistory {
 export const BlueprintHistorySchema =
   SchemaFactory.createForClass(BlueprintHistory);
 BlueprintHistorySchema.index({ projectId: 1, revision: -1 });
+BlueprintHistorySchema.index({ projectId: 1, nodeId: 1, revision: -1 });

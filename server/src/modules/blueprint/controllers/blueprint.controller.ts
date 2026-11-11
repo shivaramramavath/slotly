@@ -15,8 +15,11 @@ import { PermissionsGuard } from '../../../common/rbac/permissions.guard';
 import { RequirePermissions } from '../../../common/rbac/roles.decorator';
 import { BlueprintService } from '../services/blueprint.service';
 import { BlueprintAiService } from '../services/blueprint-ai.service';
+import { BlueprintSidebarService } from '../services/blueprint-sidebar.service';
 import type {
   ApplyOperationsDto,
+  AssignmentSuggestRequestDto,
+  AssignmentSuggestResponseDto,
   BatchOperationResult,
   BlueprintAiChatRequestDto,
   BlueprintAiChatResponseDto,
@@ -27,8 +30,13 @@ import type {
   BlueprintReadinessDto,
   BlueprintRecommendationDto,
   BlueprintSnapshotDto,
+  CopyNodeSettingsDto,
+  CopyNodeSettingsResponseDto,
   CreateBlueprintCommentDto,
   CreateBlueprintSnapshotDto,
+  NodeCheckResponseDto,
+  PoolCandidatesQueryDto,
+  PoolCandidatesResponseDto,
   PoolItemType,
   PoolOpPayload,
   ResolvedPool,
@@ -41,6 +49,7 @@ export class BlueprintController {
   constructor(
     private readonly blueprintService: BlueprintService,
     private readonly blueprintAiService: BlueprintAiService,
+    private readonly sidebarService: BlueprintSidebarService,
   ) {}
 
   @Post('ai/chat')
@@ -109,6 +118,51 @@ export class BlueprintController {
     return this.blueprintService.getWhereUsed(projectId, refType, refId);
   }
 
+  @Get('nodes/:nodeId/pool/candidates')
+  @RequirePermissions('BLUEPRINT_READ')
+  async getPoolCandidates(
+    @Param('projectId') projectId: string,
+    @Param('nodeId') nodeId: string,
+    @Query() query: PoolCandidatesQueryDto,
+  ): Promise<PoolCandidatesResponseDto> {
+    return this.sidebarService.getCandidates(projectId, nodeId, query);
+  }
+
+  @Get('nodes/:nodeId/check')
+  @RequirePermissions('BLUEPRINT_READ')
+  async checkNode(
+    @Param('projectId') projectId: string,
+    @Param('nodeId') nodeId: string,
+  ): Promise<NodeCheckResponseDto> {
+    return this.sidebarService.checkNode(projectId, nodeId);
+  }
+
+  @Post('nodes/:nodeId/assignments/suggest')
+  @RequirePermissions('BLUEPRINT_READ')
+  async suggestAssignments(
+    @Param('projectId') projectId: string,
+    @Param('nodeId') nodeId: string,
+    @Body() dto: AssignmentSuggestRequestDto,
+  ): Promise<AssignmentSuggestResponseDto> {
+    return this.sidebarService.suggestAssignments(projectId, nodeId, dto);
+  }
+
+  @Post('nodes/:nodeId/copy-settings')
+  @RequirePermissions('BLUEPRINT_EDIT')
+  async copySettings(
+    @Param('projectId') projectId: string,
+    @Param('nodeId') nodeId: string,
+    @Body() dto: CopyNodeSettingsDto,
+    @Request() req: { user: RequestUser },
+  ): Promise<CopyNodeSettingsResponseDto> {
+    return this.sidebarService.copySettings(
+      projectId,
+      nodeId,
+      dto,
+      req.user.id,
+    );
+  }
+
   @Post('operations')
   @RequirePermissions('BLUEPRINT_EDIT')
   async applyOperations(
@@ -127,8 +181,9 @@ export class BlueprintController {
   @RequirePermissions('BLUEPRINT_READ')
   async getHistory(
     @Param('projectId') projectId: string,
+    @Query('nodeId') nodeId?: string,
   ): Promise<BlueprintHistoryEntryDto[]> {
-    return this.blueprintService.getHistory(projectId);
+    return this.blueprintService.getHistory(projectId, nodeId);
   }
 
   @Get('recommendations')

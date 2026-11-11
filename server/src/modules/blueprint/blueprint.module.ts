@@ -45,8 +45,10 @@ import { ProjectsModule } from '../projects/projects.module';
 import { CacheModule } from '../../common/cache/cache.module';
 import { UsersModule } from '../users/users.module';
 import { LibraryModule } from '../library/library.module';
+import { InstitutionsModule } from '../institutions/institutions.module';
 import { PoolResolverService } from './services/pool-resolver.service';
 import { BlueprintAiService } from './services/blueprint-ai.service';
+import { BlueprintSidebarService } from './services/blueprint-sidebar.service';
 
 /** Class implementing blueprint module. */
 @Module({
@@ -62,6 +64,7 @@ import { BlueprintAiService } from './services/blueprint-ai.service';
     forwardRef(() => ProjectsModule),
     forwardRef(() => UsersModule),
     forwardRef(() => LibraryModule),
+    forwardRef(() => InstitutionsModule),
   ],
   controllers: [BlueprintController, TemplateController],
   providers: [
@@ -83,6 +86,7 @@ import { BlueprintAiService } from './services/blueprint-ai.service';
     TemplateService,
     PoolResolverService,
     BlueprintAiService,
+    BlueprintSidebarService,
     BlueprintService,
     BlueprintGateway,
     BlueprintWriteProcessor,
@@ -98,10 +102,8 @@ import { BlueprintAiService } from './services/blueprint-ai.service';
     ReadinessService,
     RecommendationsService,
     GraphFromInstitutionBuilder,
-    TemplateService,
     PoolResolverService,
-    BlueprintAiService,
-    BlueprintService,
+    BlueprintSidebarService,
   ],
 })
 export class BlueprintModule {}

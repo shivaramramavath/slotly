@@ -127,6 +127,12 @@ export class BlueprintNodeSchemaClass {
     default: 'off',
   })
   autoFill?: AutoFillMode;
+
+  @Prop({ type: String, default: null })
+  lastChangedBy?: string | null;
+
+  @Prop({ type: String, default: null })
+  lastChangedAt?: string | null;
 }
 
 /** Class implementing blueprint edge schema class. */

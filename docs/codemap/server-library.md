@@ -33,6 +33,7 @@
   - `POST /library/import/:entity` -> `executeImport()` [perm: 'STRUCTURE_MANAGE']
   - `GET /library/export/:entity` -> `exportLibrary()` [perm: 'TIMETABLE_EXPORT']
   - `GET /library/:type/:id/usage` -> `getItemUsage()` [perm: 'FACULTY_READ']
+  - `GET /library/:type/:id/peek` -> `getItemPeek()` [perm: 'FACULTY_READ']
 
 ### `server/src/modules/library/library.module.ts`
 *Core implementation for library.module in server/src/modules/library.*
@@ -115,7 +116,7 @@
 ### `server/src/modules/library/services/library.service.ts`
 *Domain service orchestrating library.service business logic.*
 
-- **Injectable** `LibraryService` (deps: @Inject(FACULTY_REPOSITORY), @Inject(SUBJECT_REPOSITORY), @Inject(ELECTIVE_GROUP_REPOSITORY), @Inject(ROOM_REPOSITORY), @Inject(ROOM_MATCHER), @Inject(FACULTY_QUALIFIER), FacultyWorkloadService, LibraryImportService, EventBus, AuditService) - Injectable service providing library service logic.
+- **Injectable** `LibraryService` (deps: @Inject(FACULTY_REPOSITORY), @Inject(SUBJECT_REPOSITORY), @Inject(ELECTIVE_GROUP_REPOSITORY), @Inject(ROOM_REPOSITORY), @Inject(ROOM_MATCHER), @Inject(FACULTY_QUALIFIER), FacultyWorkloadService, LibraryImportService, EventBus, AuditService, @Inject(CACHE_SERVICE)) - Injectable service providing library service logic.
 
 ### `server/src/modules/library/strategies/faculty-qualifier.strategy.ts`
 *Strategy implementation for faculty-qualifier.strategy.*

@@ -93,6 +93,7 @@ export class OperationService {
       isDeleted?: boolean;
     },
     user?: { id: string; role: string; permissions?: string[] },
+    options?: { dryRun?: boolean },
   ): Promise<ApplyBatchResult> {
     const sortedOps = this.topologicalSort(ops);
     const nodes = currentNodes.map((n) => ({ ...n }));
@@ -162,7 +163,7 @@ export class OperationService {
       }
 
       // Apply operation in-memory
-      this.applyOpToMemory(op, nodes, edges);
+      this.applyOpToMemory(op, nodes, edges, user?.id);
       applied.push({
         opId: op.opId,
         type: op.type,
@@ -173,6 +174,15 @@ export class OperationService {
       const { updatedNodes } = this.completionService.recomputeGraph(nodes);
       nodes.length = 0;
       nodes.push(...updatedNodes);
+    }
+
+    if (options?.dryRun) {
+      return {
+        applied,
+        skipped,
+        nodes: currentNodes,
+        edges: currentEdges,
+      };
     }
 
     return {
@@ -187,6 +197,7 @@ export class OperationService {
     op: BlueprintOp,
     nodes: BlueprintNodeDto[],
     edges: BlueprintEdgeDto[],
+    userId?: string,
   ): void {
     switch (op.type) {
       case 'add_node': {
@@ -206,6 +217,8 @@ export class OperationService {
           missing: [],
           effectiveStatus: 'incomplete',
           constraints: op.node?.constraints,
+          lastChangedBy: userId,
+          lastChangedAt: new Date().toISOString(),
         };
         nodes.push(node);
         break;
@@ -225,6 +238,10 @@ export class OperationService {
           if (typeof op.parentId !== 'undefined') {
             existing.parentId = op.parentId;
           }
+          if (userId) {
+            existing.lastChangedBy = userId;
+          }
+          existing.lastChangedAt = new Date().toISOString();
         }
         break;
       }

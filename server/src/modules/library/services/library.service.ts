@@ -2,6 +2,7 @@
 import {
   Injectable,
   Inject,
+  Optional,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -21,8 +22,11 @@ import type {
   FacultyWorkloadDto,
   ImportEntity,
   ImportValidationReport,
+  LibraryPeekDto,
 } from '@slotly/contracts';
 import { normalizeAvailabilityMatrix } from '@slotly/contracts';
+import { CACHE_SERVICE } from '../../../common/cache';
+import type { CacheService } from '../../../common/cache/cache.interface';
 import { EventBus } from '../../../common/events/event-bus.service';
 import { AuditService } from '../../../common/audit/audit.service';
 import { FACULTY_REPOSITORY } from '../repositories/faculty.repository';
@@ -84,7 +88,89 @@ export class LibraryService {
     private readonly importService: LibraryImportService,
     private readonly eventBus: EventBus,
     private readonly auditService: AuditService,
+    @Optional()
+    @Inject(CACHE_SERVICE)
+    private readonly cacheService?: CacheService,
   ) {}
+
+  // ==========================================
+  // HOVER PEEK
+  // ==========================================
+  async getPeek(
+    type: 'faculty' | 'subjects' | 'rooms',
+    id: string,
+  ): Promise<LibraryPeekDto> {
+    const cacheKey = `slotly:library:peek:${type}:${id}`;
+    if (this.cacheService) {
+      const cached = await this.cacheService.get<LibraryPeekDto>(cacheKey);
+      if (cached) return cached;
+    }
+
+    let result: LibraryPeekDto;
+    if (type === 'faculty') {
+      const f = await this.getFacultyById(id);
+      let workloadUsed = 0;
+      try {
+        const wl = await this.getFacultyWorkload(id);
+        workloadUsed = wl.assignedHours || 0;
+      } catch {
+        workloadUsed = 0;
+      }
+      result = {
+        type: 'faculty',
+        id: f.id || id,
+        name: f.name,
+        code: f.code,
+        departmentId: f.departmentId,
+        designation: f.designation,
+        workloadUsed,
+        maxWorkload: f.maxHoursPerWeek || 20,
+        availability: (f.availability || []).map((periods, day) => ({
+          day,
+          periods,
+        })),
+      };
+    } else if (type === 'subjects') {
+      const s = await this.getSubjectById(id);
+      const res = await this.facultyRepo.findByInstitution(s.institutionId);
+      const allFaculty = res?.items || [];
+      const qualified = allFaculty.filter(
+        (f) =>
+          !f.archived &&
+          !f.isDeleted &&
+          (f.subjectIds || []).includes(s.id || id),
+      );
+      result = {
+        type: 'subject',
+        id: s.id || id,
+        name: s.name,
+        code: s.code,
+        subjectType: s.type,
+        weeklyHours: s.weeklyHours,
+        credits: s.credits,
+        qualifiedFacultyCount: qualified.length,
+      };
+    } else if (type === 'rooms') {
+      const r = await this.getRoomById(id);
+      result = {
+        type: 'room',
+        id: r.id || id,
+        name: r.name,
+        code: r.code,
+        roomType: r.type,
+        capacity: r.capacity,
+        building: r.building,
+        equipment: r.equipment || [],
+      };
+    } else {
+      throw new BadRequestException(`Unsupported peek type: ${type}`);
+    }
+
+    if (this.cacheService) {
+      await this.cacheService.set(cacheKey, result, 300);
+    }
+    return result;
+  }
 
   // ==========================================
   // FACULTY
