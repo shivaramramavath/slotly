@@ -1,4 +1,4 @@
-// React component for blueprint-canvas.
+// React component for blueprint-canvas with gated add and connect-end creation.
 'use client';
 
 import React, { useCallback, useRef, useEffect, useState, useMemo } from 'react';
@@ -15,6 +15,7 @@ import {
   EdgeChange,
   OnSelectionChangeParams,
   useReactFlow,
+  FinalConnectionState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -25,11 +26,14 @@ import { BlueprintFloatingAlignBar } from './blueprint-floating-align-bar';
 import { FloatingToolbar } from '../toolbar/floating-toolbar';
 import { NodeLibraryPanel } from '../palette/node-library-panel';
 import { NodeIssuesCard } from './node-issues-card';
+import { ConnectEndMenu } from './connect-end-menu';
 import { FirstRunHint } from '../hint/first-run-hint';
 import { useBlueprintStore } from '../../store/blueprint.store';
 import { useGateValidation } from '../../hooks/use-gate-validation';
 import { useBlueprintCommands } from '../../hooks/use-blueprint-commands';
 import { useGuidedMode } from '../../hooks/use-guided-mode';
+import { canAddChild, ALLOWED_PARENTS } from '../../can-add-child';
+import { createChildNode } from '../../create-child-node';
 import { toast } from '@/components/ui/toast';
 import type { BlueprintCanvasNode, BlueprintCanvasEdge } from '../../types/canvas.types';
 import type { BlueprintNodeType } from '@slotly/contracts';
@@ -42,7 +46,12 @@ const edgeTypes = {
 interface BlueprintCanvasProps {
   onMoveNode: (nodeId: string, position: { x: number; y: number }) => void;
   onAddEdge: (source: string, target: string) => Promise<{ success: boolean }>;
-  onAddNode: (type: BlueprintNodeType, parentId?: string, position?: { x: number; y: number }) => Promise<{ success: boolean }>;
+  onAddNode: (
+    type: BlueprintNodeType,
+    parentId?: string,
+    position?: { x: number; y: number },
+    data?: Record<string, unknown>,
+  ) => Promise<{ success: boolean; reasonCode?: string; message?: string }>;
   onCursorMove: (x: number, y: number) => void;
 }
 
@@ -55,6 +64,7 @@ export function BlueprintCanvas({
 }: BlueprintCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
+  const projectId = useBlueprintStore((s) => s.projectId);
   const nodes = useBlueprintStore((s) => s.nodes);
   const edges = useBlueprintStore((s) => s.edges);
   const setNodes = useBlueprintStore((s) => s.setNodes);
@@ -78,10 +88,11 @@ export function BlueprintCanvas({
   const isMinimapOpen = useBlueprintStore((s) => s.isMinimapOpen);
   const selectedNodeId = useBlueprintStore((s) => s.selectedNodeId);
   const setActiveTab = useBlueprintStore((s) => s.setActiveTab);
+  const pushCommand = useBlueprintStore((s) => s.pushCommand);
 
   const { screenToFlowPosition } = useReactFlow();
 
-  const { isValidConnection, canAddNodeType, getNodeById } = useGateValidation(nodes, edges);
+  const { isValidConnection } = useGateValidation(nodes, edges);
   const { undo, redo, canUndo, canRedo } = useBlueprintCommands();
   const { goToNextStep } = useGuidedMode();
   const incompleteCount = nodes.filter((n) => n.data.effectiveStatus === 'incomplete').length;
@@ -89,7 +100,77 @@ export function BlueprintCanvas({
   // Drag and drop state from library
   const [activeDragType, setActiveDragType] = useState<BlueprintNodeType | null>(null);
   const [isCanvasDragOver, setIsCanvasDragOver] = useState(false);
-  const [dragReason, setDragReason] = useState<{ text: string; x: number; y: number } | null>(null);
+  const [dragReason, setDragReason] = useState<{
+    text: string;
+    x: number;
+    y: number;
+    targetNodeId?: string | undefined;
+    showConfigButton?: boolean | undefined;
+  } | null>(null);
+  const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Connect-end menu state
+  const [connectEndState, setConnectEndState] = useState<{
+    isOpen: boolean;
+    sourceNode: BlueprintCanvasNode | null;
+    screenPosition: { x: number; y: number } | null;
+    flowPosition: { x: number; y: number } | null;
+  }>({
+    isOpen: false,
+    sourceNode: null,
+    screenPosition: null,
+    flowPosition: null,
+  });
+
+  // Unified child node creation orchestrator
+  const handleCreateChild = useCallback(
+    async (
+      type: BlueprintNodeType,
+      parentId?: string | null,
+      position?: { x: number; y: number },
+    ) => {
+      const res = await createChildNode({
+        parentId,
+        type,
+        position,
+        nodes,
+        edges,
+        isCanvasLocked,
+        projectId,
+        onAddNodeSocket: onAddNode,
+        onAddEdgeSocket: onAddEdge,
+        onDeleteNodeSocket: async () => ({ success: true }),
+        setNodes,
+        setEdges,
+        selectNode,
+        setActiveTab,
+        pushCommand,
+      });
+
+      if (!res.success) {
+        toast.error('Cannot add node', res.validation.reason || 'Operation rejected');
+        if (res.validation.fix?.targetNodeId) {
+          selectNode(res.validation.fix.targetNodeId);
+          setActiveTab('config');
+        }
+      }
+
+      return res;
+    },
+    [
+      nodes,
+      edges,
+      isCanvasLocked,
+      projectId,
+      onAddNode,
+      onAddEdge,
+      setNodes,
+      setEdges,
+      selectNode,
+      setActiveTab,
+      pushCommand,
+    ],
+  );
 
   useEffect(() => {
     const handleDragStart = (e: Event) => {
@@ -104,11 +185,32 @@ export function BlueprintCanvas({
     };
 
     const handleDragReason = (e: Event) => {
-      const { reason, clientX, clientY } = (e as CustomEvent<{ reason: string; clientX: number; clientY: number }>).detail;
-      setDragReason({ text: reason, x: clientX, y: clientY });
+      const detail = (e as CustomEvent<{
+        reason: string;
+        clientX: number;
+        clientY: number;
+        targetNodeId?: string | undefined;
+        showConfigButton?: boolean | undefined;
+      }>).detail;
+
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+
+      setDragReason({
+        text: detail.reason,
+        x: detail.clientX,
+        y: detail.clientY,
+        targetNodeId: detail.targetNodeId,
+        showConfigButton: detail.showConfigButton,
+      });
+
+      // Auto-hide chip after 4 seconds
+      autoHideTimerRef.current = setTimeout(() => {
+        setDragReason(null);
+      }, 4000);
     };
 
     const handleDragReasonClear = () => {
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
       setDragReason(null);
     };
 
@@ -122,6 +224,7 @@ export function BlueprintCanvas({
       window.removeEventListener('slotly:drag-node-end', handleDragEnd);
       window.removeEventListener('slotly:drag-reason', handleDragReason);
       window.removeEventListener('slotly:drag-reason-clear', handleDragReasonClear);
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
     };
   }, []);
 
@@ -214,15 +317,12 @@ export function BlueprintCanvas({
         ? { x: parentNode.position.x + 20, y: parentNode.position.y + 160 }
         : { x: 200, y: 200 };
 
-      const res = await onAddNode(childType, parentId, position);
-      if (res.success) {
-        setActiveTab('config');
-      }
+      await handleCreateChild(childType, parentId, position);
     };
 
     window.addEventListener('slotly:add-child', handleAddChild);
     return () => window.removeEventListener('slotly:add-child', handleAddChild);
-  }, [nodes, onAddNode, setActiveTab]);
+  }, [nodes, handleCreateChild]);
 
   // Handle drag stop (non-critical write-behind update)
   const handleNodeDragStop = useCallback(
@@ -247,106 +347,135 @@ export function BlueprintCanvas({
     [isCanvasLocked, isValidConnection, onAddEdge],
   );
 
+  // Connect-end handler: when connection is released on empty canvas
+  const handleConnectEnd = useCallback(
+    (event: MouseEvent | TouchEvent, connectionState: FinalConnectionState) => {
+      if (isCanvasLocked) return;
+      // If it connected to a valid handle/node, connectionState.isValid is true
+      if (connectionState.isValid) return;
+
+      const sourceId = connectionState.fromNode?.id;
+      if (!sourceId) return;
+
+      const source = nodes.find((n) => n.id === sourceId);
+      if (!source) return;
+
+      const clientX = 'clientX' in event ? event.clientX : event.touches?.[0]?.clientX ?? 0;
+      const clientY = 'clientY' in event ? event.clientY : event.touches?.[0]?.clientY ?? 0;
+
+      const flowPos = screenToFlowPosition({
+        x: clientX,
+        y: clientY,
+      });
+
+      setConnectEndState({
+        isOpen: true,
+        sourceNode: source,
+        screenPosition: { x: clientX, y: clientY },
+        flowPosition: flowPos,
+      });
+    },
+    [isCanvasLocked, nodes, screenToFlowPosition],
+  );
+
   // Node and edge change handlers
   const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      if (isCanvasLocked) {
-        // filter out position changes when canvas is locked
-        const nonPositionChanges = changes.filter((c) => c.type !== 'position');
-        setNodes((nds) => applyNodeChanges(nonPositionChanges, nds) as BlueprintCanvasNode[]);
-        return;
-      }
-      setNodes((nds) => applyNodeChanges(changes, nds) as BlueprintCanvasNode[]);
+    (changes: NodeChange<BlueprintCanvasNode>[]) => {
+      setNodes((nds) => applyNodeChanges(changes, nds));
     },
-    [isCanvasLocked, setNodes],
+    [setNodes],
   );
 
   const handleEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      if (isCanvasLocked) return;
-      setEdges((eds) => applyEdgeChanges(changes, eds) as BlueprintCanvasEdge[]);
+    (changes: EdgeChange<BlueprintCanvasEdge>[]) => {
+      setEdges((eds) => applyEdgeChanges(changes, eds));
     },
-    [isCanvasLocked, setEdges],
+    [setEdges],
   );
 
-  // Selection change
   const handleSelectionChange = useCallback(
-    ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
-      const ids = selectedNodes.map((n) => n.id);
-      setSelectedNodeIds(ids);
+    (params: OnSelectionChangeParams) => {
+      const selectedNodes = params.nodes as BlueprintCanvasNode[];
+      const selectedEdges = params.edges as BlueprintCanvasEdge[];
+
+      if (selectedNodes.length === 1) {
+        selectNode(selectedNodes[0]!.id);
+        setSelectedNodeIds([selectedNodes[0]!.id]);
+      } else if (selectedNodes.length > 1) {
+        setSelectedNodeIds(selectedNodes.map((n) => n.id));
+        selectNode(null);
+      } else {
+        setSelectedNodeIds([]);
+        selectNode(null);
+      }
+
+      if (selectedEdges.length === 1) {
+        selectEdge(selectedEdges[0]!.id);
+      } else {
+        selectEdge(null);
+      }
     },
-    [setSelectedNodeIds],
+    [selectNode, selectEdge, setSelectedNodeIds],
   );
 
-  // Copy subtree
   const handleCopy = useCallback(
     (node: BlueprintCanvasNode) => {
-      const getDescendantIds = (parentId: string): string[] => {
-        const children = nodes.filter((n) => n.data.parentId === parentId);
-        return [...children.map((c) => c.id), ...children.flatMap((c) => getDescendantIds(c.id))];
-      };
+      const descendantIds = new Set<string>([node.id]);
+      const queue = [node.id];
+      while (queue.length > 0) {
+        const curr = queue.shift()!;
+        edges
+          .filter((e) => e.source === curr)
+          .forEach((e) => {
+            if (!descendantIds.has(e.target)) {
+              descendantIds.add(e.target);
+              queue.push(e.target);
+            }
+          });
+      }
 
-      const subtreeIds = [node.id, ...getDescendantIds(node.id)];
-      const subtreeNodes = nodes.filter((n) => subtreeIds.includes(n.id));
+      const subtreeNodes = nodes.filter((n) => descendantIds.has(n.id));
       const subtreeEdges = edges.filter(
-        (e) => subtreeIds.includes(e.source) && subtreeIds.includes(e.target),
+        (e) => descendantIds.has(e.source) && descendantIds.has(e.target),
       );
 
       setClipboard({ nodes: subtreeNodes, edges: subtreeEdges });
-      toast.info('Subtree copied', `Copied '${node.data.label}' (${subtreeNodes.length} nodes).`);
+      toast.success('Copied to clipboard', `Copied ${node.data.label} and its children.`);
     },
     [nodes, edges, setClipboard],
   );
 
-  // Paste subtree under complete target parent
   const handlePaste = useCallback(
     async (targetParentId?: string) => {
-      if (!clipboard || clipboard.nodes.length === 0) {
-        toast.info('Clipboard empty', 'Copy a node or subtree first.');
+      if (!clipboard || clipboard.nodes.length === 0) return;
+      if (isCanvasLocked) {
+        toast.info('Canvas locked', 'Canvas is locked.');
         return;
       }
 
-      const rootToPaste = clipboard.nodes[0]!;
-      const parentNode = getNodeById(targetParentId);
-
-      // G1 Creation Gate check
-      const check = canAddNodeType(rootToPaste.data.nodeType, parentNode);
-      if (!check.allowed) {
-        toast.error('Cannot paste here', check.reason || 'Gate condition failed (G1).');
+      const rootNode = clipboard.nodes[0]!;
+      const check = canAddChild(nodes, targetParentId, rootNode.data.nodeType, isCanvasLocked);
+      if (!check.ok) {
+        toast.error('Cannot paste here', check.reason || 'Hierarchy gate failed');
         return;
       }
 
-      const offsetX = parentNode ? parentNode.position.x + 30 : 250;
-      const offsetY = parentNode ? parentNode.position.y + 160 : 250;
-      const baseOldX = rootToPaste.position.x;
-      const baseOldY = rootToPaste.position.y;
-
-      // Create nodes with new IDs
       const idMap = new Map<string, string>();
-      for (const oldNode of clipboard.nodes) {
-        const newId = crypto.randomUUID();
-        idMap.set(oldNode.id, newId);
-        const relX = oldNode.position.x - baseOldX;
-        const relY = oldNode.position.y - baseOldY;
+      clipboard.nodes.forEach((n) => idMap.set(n.id, crypto.randomUUID()));
 
-        const effectiveParent =
-          oldNode.id === rootToPaste.id
-            ? targetParentId
-            : idMap.get(oldNode.data.parentId || '') || targetParentId;
+      for (const origNode of clipboard.nodes) {
+        const isSubtreeRoot = origNode.id === rootNode.id;
+        const newParentId = isSubtreeRoot ? targetParentId : idMap.get(origNode.data.parentId || '');
+        const newPos = { x: origNode.position.x + 40, y: origNode.position.y + 40 };
 
-        await onAddNode(
-          oldNode.data.nodeType,
-          effectiveParent,
-          { x: offsetX + relX, y: offsetY + relY },
-        );
+        await handleCreateChild(origNode.data.nodeType, newParentId, newPos);
       }
 
-      toast.success('Pasted subtree', `Created ${clipboard.nodes.length} nodes under '${parentNode?.data.label || 'Root'}'.`);
+      toast.success('Pasted subtree', `Created duplicate of ${rootNode.data.label}.`);
     },
-    [clipboard, getNodeById, canAddNodeType, onAddNode],
+    [clipboard, isCanvasLocked, nodes, handleCreateChild],
   );
 
-  // Duplicate node + subtree
   const handleDuplicate = useCallback(
     async (node: BlueprintCanvasNode) => {
       handleCopy(node);
@@ -444,23 +573,50 @@ export function BlueprintCanvas({
         return;
       }
 
-      const check = canAddNodeType(activeDragType, undefined);
-      if (check.allowed) {
+      // Root Institution on empty canvas
+      if (activeDragType === 'institution') {
+        const check = canAddChild(nodes, null, 'institution', isCanvasLocked);
+        if (check.ok) {
+          event.dataTransfer.dropEffect = 'copy';
+          setIsCanvasDragOver(true);
+          setDragReason(null);
+          return;
+        }
+      }
+
+      // Check complete valid parents
+      const allowedParents = ALLOWED_PARENTS[activeDragType] || [];
+      const validParents = nodes.filter((n) => allowedParents.includes(n.data.nodeType));
+      const completeParents = validParents.filter(
+        (n) => (n.data.effectiveStatus || n.data.status) === 'complete',
+      );
+
+      if (completeParents.length === 1) {
         event.dataTransfer.dropEffect = 'copy';
         setIsCanvasDragOver(true);
         setDragReason(null);
-      } else {
+      } else if (completeParents.length > 1) {
         event.dataTransfer.dropEffect = 'none';
         setIsCanvasDragOver(false);
-        const reasonText = check.reason || 'Requires selecting a parent node.';
         setDragReason({
-          text: `Drop onto a valid parent node. ${reasonText}`,
+          text: 'Drop onto the parent you want',
           x: event.clientX,
           y: event.clientY,
         });
+      } else {
+        event.dataTransfer.dropEffect = 'none';
+        setIsCanvasDragOver(false);
+        const check = canAddChild(nodes, null, activeDragType, isCanvasLocked);
+        setDragReason({
+          text: check.reason || 'No valid parent available',
+          x: event.clientX,
+          y: event.clientY,
+          showConfigButton: check.code === 'parent-incomplete',
+          targetNodeId: check.fix?.targetNodeId,
+        });
       }
     },
-    [activeDragType, isCanvasLocked, canAddNodeType],
+    [activeDragType, isCanvasLocked, nodes],
   );
 
   // Drop node from palette onto empty canvas
@@ -477,13 +633,7 @@ export function BlueprintCanvas({
       if (!nodeType) return;
 
       if (isCanvasLocked) {
-        toast.info('Canvas locked', 'Canvas is locked. Unlock canvas to add or modify nodes.');
-        return;
-      }
-
-      const check = canAddNodeType(nodeType, undefined);
-      if (!check.allowed) {
-        toast.error('Cannot add node here', `Drop onto a valid parent node. ${check.reason || ''}`);
+        toast.info('Canvas locked', 'Canvas is locked.');
         return;
       }
 
@@ -492,12 +642,36 @@ export function BlueprintCanvas({
         y: event.clientY - 32,
       });
 
-      const res = await onAddNode(nodeType, undefined, position);
-      if (res.success) {
-        setActiveTab('config');
+      // 1. Root Institution drop
+      if (nodeType === 'institution') {
+        await handleCreateChild('institution', null, position);
+        return;
+      }
+
+      // 2. Child types drop onto empty canvas
+      const allowedParents = ALLOWED_PARENTS[nodeType] || [];
+      const validParents = nodes.filter((n) => allowedParents.includes(n.data.nodeType));
+      const completeParents = validParents.filter(
+        (n) => (n.data.effectiveStatus || n.data.status) === 'complete',
+      );
+
+      if (completeParents.length === 1) {
+        const parent = completeParents[0]!;
+        const res = await handleCreateChild(nodeType, parent.id, position);
+        if (res.success) {
+          toast.success(
+            `Added ${nodeType} under ${parent.data.label}`,
+            'Click Undo in the toolbar to revert.',
+          );
+        }
+      } else if (completeParents.length > 1) {
+        toast.info('Multiple parents exist', 'Drop onto the parent you want.');
+      } else {
+        const check = canAddChild(nodes, null, nodeType, isCanvasLocked);
+        toast.error('Cannot add node', check.reason || 'No valid complete parent exists.');
       }
     },
-    [activeDragType, isCanvasLocked, canAddNodeType, screenToFlowPosition, onAddNode, setActiveTab],
+    [activeDragType, isCanvasLocked, screenToFlowPosition, handleCreateChild, nodes],
   );
 
   // Mouse move for multiplayer cursor sharing
@@ -532,6 +706,7 @@ export function BlueprintCanvas({
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
+        onConnectEnd={handleConnectEnd}
         onNodeDragStart={handleNodeDragStart}
         onNodeDragStop={handleNodeDragStop}
         onMoveStart={handleMoveStart}
@@ -584,16 +759,31 @@ export function BlueprintCanvas({
       {dragReason && (
         <div
           data-testid="canvas-drag-reason"
-          className="pointer-events-none fixed z-50 px-2.5 py-1.5 rounded-[8px] bg-[#111111]/95 border border-[#383838] text-[12px] font-mono text-[#FAFAFA] shadow-2xl flex items-center gap-1.5 animate-in fade-in-0 duration-75"
+          className="pointer-events-auto fixed z-50 px-2.5 py-1.5 rounded-[8px] bg-[#111111]/95 border border-[#383838] text-[12px] font-mono text-[#FAFAFA] shadow-2xl flex items-center gap-2 animate-in fade-in-0 duration-75"
           style={{ left: `${dragReason.x + 16}px`, top: `${dragReason.y + 16}px` }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
           <span>{dragReason.text}</span>
+          {dragReason.showConfigButton && dragReason.targetNodeId && (
+            <button
+              type="button"
+              onClick={() => {
+                selectNode(dragReason.targetNodeId!);
+                setActiveTab('config');
+                setDragReason(null);
+              }}
+              className="px-2 py-0.5 rounded bg-[#1C1C1C] hover:bg-[#282828] text-[11px] font-mono text-[#FAFAFA] border border-[#383838] transition-colors"
+            >
+              Open config
+            </button>
+          )}
         </div>
       )}
 
       {/* Floating Vertical Node Library on Left */}
-      <NodeLibraryPanel onAddNode={onAddNode} />
+      <NodeLibraryPanel
+        onAddNode={(type, parentId) => handleCreateChild(type, parentId)}
+      />
 
       {/* Guided Mode ("Next step") Ghost Button positioned next to Library Rail */}
       {incompleteCount > 0 && (
@@ -625,6 +815,36 @@ export function BlueprintCanvas({
         }}
       />
 
+      {/* Connect-End Menu for Adding Nodes on empty canvas drop */}
+      <ConnectEndMenu
+        isOpen={connectEndState.isOpen}
+        sourceNode={connectEndState.sourceNode}
+        position={connectEndState.screenPosition}
+        onSelectType={async (childType) => {
+          const parentId = connectEndState.sourceNode?.id;
+          const pos = connectEndState.flowPosition || undefined;
+          setConnectEndState({
+            isOpen: false,
+            sourceNode: null,
+            screenPosition: null,
+            flowPosition: null,
+          });
+          await handleCreateChild(childType, parentId, pos);
+        }}
+        onClose={() =>
+          setConnectEndState({
+            isOpen: false,
+            sourceNode: null,
+            screenPosition: null,
+            flowPosition: null,
+          })
+        }
+        onOpenConfig={(nodeId) => {
+          selectNode(nodeId);
+          setActiveTab('config');
+        }}
+      />
+
       {/* First-Run Onboarding Hint for Empty Canvas */}
       <FirstRunHint />
 
@@ -651,7 +871,7 @@ export function BlueprintCanvas({
           const position = parent
             ? { x: parent.position.x + 20, y: parent.position.y + 160 }
             : { x: 200, y: 200 };
-          void onAddNode(childType, parentId, position);
+          void handleCreateChild(childType, parentId, position);
         }}
         onCopy={handleCopy}
         onPaste={handlePaste}

@@ -1,12 +1,37 @@
 # Client Blueprint Feature Code Map
 
+### `client/src/features/blueprint/can-add-child.ts`
+*Pure validation functions and selectors for Blueprint node addition and gating.*
+
+- **Interface** `CanAddChildFix` - Fix action descriptor indicating next step in the UI.
+- **Interface** `CanAddChildResult` - Result returned by canAddChild.
+- **Interface** `LibraryTypeState` - Per-type library state info
+- **Type** `CanAddChildCode` - Error codes returned by canAddChild.
+- **Function** `canAddChild(nodes: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/types/canvas.types").BlueprintCanvasNode[], parentId: string | null | undefined, type: "institution" | "department" | "program" | "academicYear" | "semester" | "section" | "batch" | "subjectAssignment" | "electiveGroup" | "faculty" | "room", isCanvasLocked: boolean)`: `import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/can-add-child").CanAddChildResult` - Pure function: Evaluates whether a child node of `type` can be added under `parentId`.
+- **Function** `getLibraryTypesState(nodes: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/types/canvas.types").BlueprintCanvasNode[], selectedNodeId: string | null | undefined, isCanvasLocked: boolean)`: `Record<"institution" | "department" | "program" | "academicYear" | "semester" | "section" | "batch" | "subjectAssignment" | "electiveGroup" | "faculty" | "room", import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/can-add-child").LibraryTypeState>` - Selector: Computes library state for every node type given current graph and selected node.
+- **Const** `ALLOWED_PARENTS`: `Record<"institution" | "department" | "program"...` - Hierarchy map: node type -> allowed parent types in order
+- **Const** `ALLOWED_CHILDREN`: `Record<"institution" | "department" | "program"...` - Allowed child types: node type -> valid child types
+- **Const** `NODE_TYPE_DISPLAY_NAMES`: `Record<"institution" | "department" | "program"...` - Friendly labels for node types.
+
 ### `client/src/features/blueprint/components/blueprint-workspace.tsx`
 *React component for blueprint-workspace.*
 
 - **Component** `BlueprintWorkspace({ projectId }: BlueprintWorkspaceProps)` - React component rendering blueprint workspace.
 
+### `client/src/features/blueprint/components/canvas/add-under-menu.tsx`
+*Floating picker menu opened when click-to-add matches multiple valid complete parents.*
+
+- **Interface** `AddUnderMenuProps`
+- **Component** `AddUnderMenu({
+  isOpen,
+  childType,
+  parents,
+  onSelectParent,
+  onClose,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/add-under-menu").AddUnderMenuProps)` - Floating menu for selecting parent when multiple valid complete parents qualify.
+
 ### `client/src/features/blueprint/components/canvas/blueprint-canvas.tsx`
-*React component for blueprint-canvas.*
+*React component for blueprint-canvas with gated add and connect-end creation.*
 
 - **Component** `BlueprintCanvas({
   onMoveNode,
@@ -29,6 +54,19 @@
 *React component for blueprint-floating-align-bar.*
 
 - **Component** `BlueprintFloatingAlignBar()` - React component rendering blueprint floating align bar.
+
+### `client/src/features/blueprint/components/canvas/connect-end-menu.tsx`
+*Floating context menu displayed on connect-end drag release on empty canvas.*
+
+- **Interface** `ConnectEndMenuProps`
+- **Component** `ConnectEndMenu({
+  isOpen,
+  sourceNode,
+  position,
+  onSelectType,
+  onClose,
+  onOpenConfig,
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/canvas/connect-end-menu").ConnectEndMenuProps)` - Floating ConnectEndMenu rendered at drop position when a connection is dragged to empty canvas.
 
 ### `client/src/features/blueprint/components/canvas/dotted-edge.tsx`
 *React component for dotted-edge.*
@@ -179,22 +217,26 @@
 - **Const** `PALETTE_ITEMS`: `import("E:/Shiva Ram/Projects/slotly/client/src...`
 
 ### `client/src/features/blueprint/components/palette/node-library-item.tsx`
-*React component for node-library-item.*
+*Presentation component rendering an individual node library item with gated states.*
 
 - **Interface** `NodeLibraryItemProps`
 - **Component** `NodeLibraryItem({
   item,
   isExpanded,
   isAllowed,
+  code,
   reason,
+  fix,
   isFocused,
+  validParentCount = 0,
   onSelect,
+  onFixAction,
   onKeyDown,
   itemRef,
-}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/palette/node-library-item").NodeLibraryItemProps)` - React component rendering an individual node library item
+}: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/palette/node-library-item").NodeLibraryItemProps)` - React component rendering an individual node library item with gated states
 
 ### `client/src/features/blueprint/components/palette/node-library-panel.tsx`
-*React component for node-library-panel.*
+*React component for node-library-panel with live gated state and actionable fixes.*
 
 - **Interface** `NodeLibraryPanelProps`
 - **Component** `NodeLibraryPanel({ onAddNode }: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/components/palette/node-library-panel").NodeLibraryPanelProps)` - React component rendering floating vertical node library panel
@@ -355,6 +397,13 @@
   className = '',
 }: ConflictCardProps)` - React component rendering conflict card.
 
+### `client/src/features/blueprint/create-child-node.ts`
+*Core node and edge creation orchestrator with validation, inheritance, and single undo command.*
+
+- **Interface** `CreateChildNodeParams`
+- **Interface** `CreateChildNodeResult`
+- **Function** `createChildNode(params: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/create-child-node").CreateChildNodeParams)`: `Promise<import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/create-child-node").CreateChildNodeResult>` - Single creation function: validates through canAddChild, computes inheritance snapshot,
+
 ### `client/src/features/blueprint/hooks/use-blueprint-commands.ts`
 *Custom React hook for use-blueprint-commands.*
 
@@ -379,6 +428,12 @@
 *Custom React hook for use-guided-mode.*
 
 - **Hook** `useGuidedMode()`: `{ goToNextStep: () => void; }` - Custom React hook for use guided mode.
+
+### `client/src/features/blueprint/inheritance.ts`
+*Core inheritance mapping and resolution helpers for blueprint hierarchy nodes.*
+
+- **Function** `getInheritedDataSnapshot(parent: import("E:/Shiva Ram/Projects/slotly/client/src/features/blueprint/types/canvas.types").BlueprintCanvasNode, childType: "institution" | "department" | "program" | "academicYear" | "semester" | "section" | "batch" | "subjectAssignment" | "electiveGroup" | "faculty" | "room")`: `Record<string, unknown>` - Computes snapshot of inherited data from a parent node for a new child node.
+- **Const** `INHERITED_FIELDS_BY_TYPE`: `Record<"institution" | "department" | "program"...` - Fields that are inherited from parent nodes across the hierarchy. Identity fields (id, name, code, label) are NEVER inherited.
 
 ### `client/src/features/blueprint/services/blueprint-socket.service.ts`
 *Domain service orchestrating blueprint-socket.service business logic.*

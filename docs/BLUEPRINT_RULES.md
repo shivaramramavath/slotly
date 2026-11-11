@@ -40,9 +40,14 @@ Every node can define a resource pool (`data.pool`) with additions and exclusion
 
 RULES
 G1 Creation gate: a node can be created only under a COMPLETE parent. Applies to
-   palette drop, "Add child" button, context menu, paste, duplicate, template
-   apply, import, and AI operations. Exceptions: the Institution root and
-   independent resource nodes.
+   palette drop, "Add child" button, context menu, connect-end creation, paste,
+   duplicate, template apply, import, and AI operations. Exceptions: the
+   Institution root and independent resource nodes. All addition paths evaluate
+   `canAddChild(nodes, parentId, type)` and execute via `createChildNode`.
+   Inheritance snapshot: child nodes copy parent inheritable fields (`workingDays`,
+   `startTime`, `periodDurationMinutes`, `periodsPerDay`, `departmentId`, `pool`),
+   never identity fields (`name`, `label`, `code`, `id`). Inspector displays
+   "Inherited from <Parent>" with "Reset to inherited" on override.
 G2 Connection gate: an edge is allowed only if the type pair is allowed AND both
    endpoints are complete (and, for Faculty->Subject, the faculty is qualified).
 G3 Parent regression: if an edit makes a parent incomplete, children are NOT

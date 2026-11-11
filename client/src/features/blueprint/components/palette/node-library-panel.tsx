@@ -1,7 +1,7 @@
-// React component for node-library-panel.
+// React component for node-library-panel with live gated state and actionable fixes.
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,8 +13,10 @@ import type { BlueprintNodeType } from '@slotly/contracts';
 import { PALETTE_ITEMS } from './blueprint-palette';
 import { NodeLibraryItem } from './node-library-item';
 import { useBlueprintStore } from '../../store/blueprint.store';
-import { useGateValidation } from '../../hooks/use-gate-validation';
+import { getLibraryTypesState, type CanAddChildFix } from '../../can-add-child';
+import { AddUnderMenu } from '../canvas/add-under-menu';
 import { cn } from '@/lib/utils';
+import type { BlueprintCanvasNode } from '../../types/canvas.types';
 
 export interface NodeLibraryPanelProps {
   onAddNode: (type: BlueprintNodeType, parentId?: string) => Promise<{ success: boolean }>;
@@ -25,11 +27,16 @@ const STORAGE_KEY = 'slotly:blueprint:node-library-expanded';
 /** React component rendering floating vertical node library panel */
 export function NodeLibraryPanel({ onAddNode }: NodeLibraryPanelProps) {
   const nodes = useBlueprintStore((s) => s.nodes);
-  const edges = useBlueprintStore((s) => s.edges);
   const selectedNodeId = useBlueprintStore((s) => s.selectedNodeId);
+  const isCanvasLocked = useBlueprintStore((s) => s.isCanvasLocked);
+  const selectNode = useBlueprintStore((s) => s.selectNode);
+  const setActiveTab = useBlueprintStore((s) => s.setActiveTab);
 
-  const { canAddNodeType, getNodeById } = useGateValidation(nodes, edges);
-  const selectedParent = getNodeById(selectedNodeId);
+  // Memoized selector: updates only when nodes or locked state change
+  const libraryState = useMemo(
+    () => getLibraryTypesState(nodes, selectedNodeId, isCanvasLocked),
+    [nodes, selectedNodeId, isCanvasLocked],
+  );
 
   // Responsive and collapse state
   const [isMobile, setIsMobile] = useState(false);
@@ -45,6 +52,17 @@ export function NodeLibraryPanel({ onAddNode }: NodeLibraryPanelProps) {
     } catch {
       return window.innerWidth >= 1280;
     }
+  });
+
+  // Multi-parent picker menu state
+  const [multiParentMenu, setMultiParentMenu] = useState<{
+    isOpen: boolean;
+    childType: BlueprintNodeType | null;
+    parents: BlueprintCanvasNode[];
+  }>({
+    isOpen: false,
+    childType: null,
+    parents: [],
   });
 
   // Track viewport width for mobile breakpoint
@@ -103,17 +121,73 @@ export function NodeLibraryPanel({ onAddNode }: NodeLibraryPanelProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [focusedIndex]);
 
+  // Handle helpful fix actions on clicking blocked item
+  const handleFixAction = useCallback(
+    (fix: CanAddChildFix) => {
+      if (fix.action === 'open-config' && fix.targetNodeId) {
+        selectNode(fix.targetNodeId);
+        setActiveTab('config');
+        if (fix.targetField) {
+          setTimeout(() => {
+            const el = document.getElementById(`field-${fix.targetField}`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el?.focus();
+          }, 100);
+        }
+      } else if (fix.action === 'focus-library' && fix.targetType) {
+        // Focus and highlight missing type in library
+        const idx = PALETTE_ITEMS.findIndex((i) => i.type === fix.targetType);
+        if (idx !== -1) {
+          setIsExpanded(true);
+          setFocusedIndex(idx);
+          itemRefs.current[idx]?.focus();
+        }
+      }
+    },
+    [selectNode, setActiveTab],
+  );
+
   const handleItemSelect = useCallback(
     async (type: BlueprintNodeType) => {
-      await onAddNode(type, selectedParent?.id);
+      const state = libraryState[type];
+      if (!state || !state.enabled) return;
+
+      const completeParents = state.completeParents || [];
+
+      // Check if selected node is already a complete valid parent
+      const selectedParent = selectedNodeId
+        ? completeParents.find((p) => p.id === selectedNodeId)
+        : null;
+
+      if (selectedParent) {
+        await onAddNode(type, selectedParent.id);
+      } else if (type === 'institution') {
+        await onAddNode(type, undefined);
+      } else if (completeParents.length === 1) {
+        await onAddNode(type, completeParents[0]!.id);
+      } else if (completeParents.length > 1) {
+        // Multiple complete valid parents and none selected: show AddUnderMenu
+        setMultiParentMenu({
+          isOpen: true,
+          childType: type,
+          parents: completeParents,
+        });
+        return;
+      }
+
       if (isMobileSheetOpen) {
         setIsMobileSheetOpen(false);
       }
     },
-    [onAddNode, selectedParent?.id, isMobileSheetOpen],
+    [libraryState, onAddNode, selectedNodeId, isMobileSheetOpen],
   );
 
-  const handleItemKeyDown = (e: React.KeyboardEvent, index: number, type: BlueprintNodeType, isAllowed: boolean) => {
+  const handleItemKeyDown = (
+    e: React.KeyboardEvent,
+    index: number,
+    type: BlueprintNodeType,
+    isAllowed: boolean,
+  ) => {
     const totalItems = PALETTE_ITEMS.length;
 
     switch (e.key) {
@@ -152,12 +226,14 @@ export function NodeLibraryPanel({ onAddNode }: NodeLibraryPanelProps) {
         e.preventDefault();
         if (isAllowed) {
           void handleItemSelect(type);
+        } else {
+          const fix = libraryState[type]?.fix;
+          if (fix) handleFixAction(fix);
         }
         break;
 
       case 'Escape':
         e.preventDefault();
-        // Return focus to canvas
         panelRef.current?.blur();
         document.querySelector<HTMLElement>('.react-flow__pane')?.focus();
         break;
@@ -167,7 +243,6 @@ export function NodeLibraryPanel({ onAddNode }: NodeLibraryPanelProps) {
     }
   };
 
-  // Structure and resource items
   const structureItems = PALETTE_ITEMS.filter((i) => i.category === 'structure');
   const resourceItems = PALETTE_ITEMS.filter((i) => i.category === 'resource');
 
@@ -186,13 +261,9 @@ export function NodeLibraryPanel({ onAddNode }: NodeLibraryPanelProps) {
           </button>
         </div>
 
-        {/* Mobile Bottom Sheet */}
         {isMobileSheetOpen && (
           <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/80 backdrop-blur-xs animate-in fade-in-0 duration-200">
-            <div
-              className="fixed inset-0"
-              onClick={() => setIsMobileSheetOpen(false)}
-            />
+            <div className="fixed inset-0" onClick={() => setIsMobileSheetOpen(false)} />
             <div
               role="dialog"
               aria-modal="true"
@@ -221,17 +292,22 @@ export function NodeLibraryPanel({ onAddNode }: NodeLibraryPanelProps) {
                   </div>
                   <div className="space-y-1.5 mt-1">
                     {structureItems.map((item, idx) => {
-                      const validation = canAddNodeType(item.type, selectedParent);
-                      const isAllowed = validation.allowed;
+                      const itemState = libraryState[item.type];
+                      const isAllowed = itemState?.enabled ?? false;
+
                       return (
                         <NodeLibraryItem
                           key={item.type}
                           item={item}
                           isExpanded
                           isAllowed={isAllowed}
-                          reason={validation.reason}
+                          code={itemState?.code}
+                          reason={itemState?.reason}
+                          fix={itemState?.fix}
+                          validParentCount={itemState?.completeParents?.length || 0}
                           isFocused={focusedIndex === idx}
                           onSelect={() => handleItemSelect(item.type)}
+                          onFixAction={handleFixAction}
                           onKeyDown={(e) => handleItemKeyDown(e, idx, item.type, isAllowed)}
                         />
                       );
@@ -246,17 +322,22 @@ export function NodeLibraryPanel({ onAddNode }: NodeLibraryPanelProps) {
                   <div className="space-y-1.5 mt-1">
                     {resourceItems.map((item, idx) => {
                       const globalIdx = structureItems.length + idx;
-                      const validation = canAddNodeType(item.type, selectedParent);
-                      const isAllowed = validation.allowed;
+                      const itemState = libraryState[item.type];
+                      const isAllowed = itemState?.enabled ?? false;
+
                       return (
                         <NodeLibraryItem
                           key={item.type}
                           item={item}
                           isExpanded
                           isAllowed={isAllowed}
-                          reason={validation.reason}
+                          code={itemState?.code}
+                          reason={itemState?.reason}
+                          fix={itemState?.fix}
+                          validParentCount={itemState?.completeParents?.length || 0}
                           isFocused={focusedIndex === globalIdx}
                           onSelect={() => handleItemSelect(item.type)}
+                          onFixAction={handleFixAction}
                           onKeyDown={(e) => handleItemKeyDown(e, globalIdx, item.type, isAllowed)}
                         />
                       );
@@ -267,115 +348,148 @@ export function NodeLibraryPanel({ onAddNode }: NodeLibraryPanelProps) {
             </div>
           </div>
         )}
+
+        <AddUnderMenu
+          isOpen={multiParentMenu.isOpen}
+          childType={multiParentMenu.childType}
+          parents={multiParentMenu.parents}
+          onSelectParent={async (parentId) => {
+            if (multiParentMenu.childType) {
+              await onAddNode(multiParentMenu.childType, parentId);
+            }
+            setMultiParentMenu({ isOpen: false, childType: null, parents: [] });
+          }}
+          onClose={() => setMultiParentMenu({ isOpen: false, childType: null, parents: [] })}
+        />
       </>
     );
   }
 
   // Desktop / Tablet Floating Panel (>= 768px)
   return (
-    <div
-      ref={panelRef}
-      role="toolbar"
-      aria-label="Node library"
-      data-testid="node-library-panel"
-      className={cn(
-        'absolute top-4 left-4 z-30 pointer-events-auto flex flex-col',
-        'max-h-[calc(100%-32px)] rounded-[20px] border border-[#232323] bg-[#111111]/95 backdrop-blur-md shadow-2xl p-2 select-none',
-        'transition-[width] duration-200 ease-out',
-        isExpanded ? 'w-[264px]' : 'w-14 items-center',
-      )}
-    >
-      {/* Panel Top Bar / Collapse Toggle */}
+    <>
       <div
+        ref={panelRef}
+        role="toolbar"
+        aria-label="Node library"
+        data-testid="node-library-panel"
         className={cn(
-          'flex items-center pb-2 mb-1 border-b border-[#232323]',
-          isExpanded ? 'justify-between px-2' : 'justify-center w-full',
+          'absolute top-4 left-4 z-30 pointer-events-auto flex flex-col',
+          'max-h-[calc(100%-32px)] rounded-[20px] border border-[#232323] bg-[#111111]/95 backdrop-blur-md shadow-2xl p-2 select-none',
+          'transition-[width] duration-200 ease-out',
+          isExpanded ? 'w-[264px]' : 'w-14 items-center',
         )}
       >
-        {isExpanded && (
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] font-medium text-[#FAFAFA]">Library</span>
-            {selectedParent && (
-              <span className="text-[10px] font-mono text-[#8A8A8A] truncate max-w-[100px]">
-                under {selectedParent.data.label}
-              </span>
-            )}
-          </div>
-        )}
-
-        <button
-          type="button"
-          aria-label={isExpanded ? 'Collapse node library' : 'Expand node library'}
-          onClick={toggleExpanded}
-          className="h-7 w-7 rounded-[8px] flex items-center justify-center text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        {/* Panel Top Bar / Collapse Toggle */}
+        <div
+          className={cn(
+            'flex items-center pb-2 mb-1 border-b border-[#232323]',
+            isExpanded ? 'justify-between px-2' : 'justify-center w-full',
+          )}
         >
-          {isExpanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </button>
-      </div>
-
-      {/* Internal Scroll Container with hidden scrollbar and edge fade */}
-      <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden space-y-3 py-1">
-        {/* Section 1: Hierarchy Structure */}
-        <div>
           {isExpanded && (
-            <div className="px-2 py-1 text-[12px] font-mono text-[#8A8A8A] uppercase tracking-wider">
-              Hierarchy structure
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-medium text-[#FAFAFA]">Library</span>
             </div>
           )}
-          <div className="space-y-1 mt-0.5">
-            {structureItems.map((item, idx) => {
-              const validation = canAddNodeType(item.type, selectedParent);
-              const isAllowed = validation.allowed;
-              return (
-                <NodeLibraryItem
-                  key={item.type}
-                  item={item}
-                  isExpanded={isExpanded}
-                  isAllowed={isAllowed}
-                  reason={validation.reason}
-                  isFocused={focusedIndex === idx}
-                  itemRef={(el) => {
-                    itemRefs.current[idx] = el;
-                  }}
-                  onSelect={() => handleItemSelect(item.type)}
-                  onKeyDown={(e) => handleItemKeyDown(e, idx, item.type, isAllowed)}
-                />
-              );
-            })}
-          </div>
+
+          <button
+            type="button"
+            aria-label={isExpanded ? 'Collapse node library' : 'Expand node library'}
+            onClick={toggleExpanded}
+            className="h-7 w-7 rounded-[8px] flex items-center justify-center text-[#8A8A8A] hover:text-[#FAFAFA] hover:bg-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            {isExpanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
         </div>
 
-        {/* Section 2: Scheduling Resources */}
-        <div>
-          {isExpanded && (
-            <div className="px-2 py-1 text-[12px] font-mono text-[#8A8A8A] uppercase tracking-wider">
-              Resources
+        {/* Internal Scroll Container */}
+        <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden space-y-3 py-1">
+          {/* Section 1: Hierarchy Structure */}
+          <div>
+            {isExpanded && (
+              <div className="px-2 py-1 text-[12px] font-mono text-[#8A8A8A] uppercase tracking-wider">
+                Hierarchy structure
+              </div>
+            )}
+            <div className="space-y-1 mt-0.5">
+              {structureItems.map((item, idx) => {
+                const itemState = libraryState[item.type];
+                const isAllowed = itemState?.enabled ?? false;
+
+                return (
+                  <NodeLibraryItem
+                    key={item.type}
+                    item={item}
+                    isExpanded={isExpanded}
+                    isAllowed={isAllowed}
+                    code={itemState?.code}
+                    reason={itemState?.reason}
+                    fix={itemState?.fix}
+                    validParentCount={itemState?.completeParents?.length || 0}
+                    isFocused={focusedIndex === idx}
+                    itemRef={(el) => {
+                      itemRefs.current[idx] = el;
+                    }}
+                    onSelect={() => handleItemSelect(item.type)}
+                    onFixAction={handleFixAction}
+                    onKeyDown={(e) => handleItemKeyDown(e, idx, item.type, isAllowed)}
+                  />
+                );
+              })}
             </div>
-          )}
-          <div className="space-y-1 mt-0.5">
-            {resourceItems.map((item, idx) => {
-              const globalIdx = structureItems.length + idx;
-              const validation = canAddNodeType(item.type, selectedParent);
-              const isAllowed = validation.allowed;
-              return (
-                <NodeLibraryItem
-                  key={item.type}
-                  item={item}
-                  isExpanded={isExpanded}
-                  isAllowed={isAllowed}
-                  reason={validation.reason}
-                  isFocused={focusedIndex === globalIdx}
-                  itemRef={(el) => {
-                    itemRefs.current[globalIdx] = el;
-                  }}
-                  onSelect={() => handleItemSelect(item.type)}
-                  onKeyDown={(e) => handleItemKeyDown(e, globalIdx, item.type, isAllowed)}
-                />
-              );
-            })}
+          </div>
+
+          {/* Section 2: Scheduling Resources */}
+          <div>
+            {isExpanded && (
+              <div className="px-2 py-1 text-[12px] font-mono text-[#8A8A8A] uppercase tracking-wider">
+                Resources
+              </div>
+            )}
+            <div className="space-y-1 mt-0.5">
+              {resourceItems.map((item, idx) => {
+                const globalIdx = structureItems.length + idx;
+                const itemState = libraryState[item.type];
+                const isAllowed = itemState?.enabled ?? false;
+
+                return (
+                  <NodeLibraryItem
+                    key={item.type}
+                    item={item}
+                    isExpanded={isExpanded}
+                    isAllowed={isAllowed}
+                    code={itemState?.code}
+                    reason={itemState?.reason}
+                    fix={itemState?.fix}
+                    validParentCount={itemState?.completeParents?.length || 0}
+                    isFocused={focusedIndex === globalIdx}
+                    itemRef={(el) => {
+                      itemRefs.current[globalIdx] = el;
+                    }}
+                    onSelect={() => handleItemSelect(item.type)}
+                    onFixAction={handleFixAction}
+                    onKeyDown={(e) => handleItemKeyDown(e, globalIdx, item.type, isAllowed)}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <AddUnderMenu
+        isOpen={multiParentMenu.isOpen}
+        childType={multiParentMenu.childType}
+        parents={multiParentMenu.parents}
+        onSelectParent={async (parentId) => {
+          if (multiParentMenu.childType) {
+            await onAddNode(multiParentMenu.childType, parentId);
+          }
+          setMultiParentMenu({ isOpen: false, childType: null, parents: [] });
+        }}
+        onClose={() => setMultiParentMenu({ isOpen: false, childType: null, parents: [] })}
+      />
+    </>
   );
 }
