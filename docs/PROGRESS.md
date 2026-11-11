@@ -2797,6 +2797,57 @@ Merged via `ux/13-blueprint-gated-add`, tag `ux-13-blueprint-gated-add-merged`.
 
 Merged via `feat/sidebar-client`, tag `feat-sidebar-client-merged`.
 
+---
+
+## Refactor: Reusable SOLID Cache Layer & Write-Behind Infrastructure
+
+### Branch: `refactor/cache-layer`
+
+### What Was Built
+
+1. **Base Cache Classes (`server/src/common/cache/base/`):**
+   - `BaseCache`: Single responsibility base validating prefix, id, and TTL; standardized key building via `ICacheKeyFactory` with format `slotly:{env}:{entity}:v{schemaVersion}`; TTL jitter up to 10%; unified fail-open error handling; namespace version counter via Redis `INCR` (no `KEYS` or `SCAN`).
+   - `BaseCacheList<T>`: Atomic list operations using Redis Lua scripts (preventing concurrent lost updates); corrupted JSON resilience (treated as miss and key purged); single-flight loading.
+   - `BaseCacheObject`: Hash/Object storage with date revivers; atomic `updateFields` and `setField` guarded by `EXISTS` (preventing partial/incomplete object cache hits); single-flight deduplication.
+   - `CacheRepository<T, TId>`: Entity cache-aside with negative caching (short-lived `__SLOTLY_NULL_SENTINEL__`, default 30s), single-flight loader deduplication, 256 KB payload size capping with warn log, and fail-open resilience.
+
+2. **Interfaces, Strategy, and Dependency Injection Tokens (`server/src/common/cache/interfaces/`):**
+   - Defined narrow interfaces: `ICacheReader<T>`, `ICacheWriter<T>`, `IListCache<T>`, `ICacheSerializer`, `ICacheKeyFactory`, `ICacheMetrics`.
+   - Dependency injection tokens: `REDIS_CLIENT`, `CACHE_SERIALIZER`, `CACHE_METRICS`, `CACHE_KEY_FACTORY` provided and exported in `CacheModule`.
+   - `JsonCacheSerializer`: Revives ISO timestamp strings to real `Date` instances for declared date fields, rejects circular or unserializable types.
+   - `CacheKeyFactory`: Standardized key prefix and namespace version generator.
+   - `CacheMetricsService`: Telemetry service recording hit, miss, error, negative hit, and write-behind lifecycle counters.
+
+3. **Write-Behind Infrastructure with BullMQ (`server/src/common/queue/write-behind/`):**
+   - `WriteBehindPublisher`: Abstract publisher enforcing durable enqueue-or-fail cache rollback contract; generates deterministic `jobId` `${entity}:${id}:${revision}`; caches pending state; rolls back cache on enqueue failure and throws immediately.
+   - `WriteBehindProcessor`: Abstract worker processor dispatching by job name; checks revision ordering via `RevisionHelper` to skip stale jobs; marks persisted and emits `${entity}.persisted` event on success; on final failure, marks failed, purges cache, writes audit log, and emits `${entity}.persistence_failed` event.
+
+4. **Module Cache Integrations:**
+   - Migrated 4 existing cached repositories (`CachedUserRepository`, `CachedProjectRepository`, `CachedBlueprintRepository`, `CachedScheduleVersionRepository`).
+   - `projects`: Cached user project list (`slotly:user:{userId}:projects:list`) with invalidation on pin/unpin/mutations.
+   - `library`: Cached faculty, subjects, and rooms lists (`slotly:institution:{instId}:{entity}:list`) with invalidation on `notifyLibraryChanged`.
+   - `institutions`: Cached structure tree (`slotly:institution:{instId}:tree`).
+   - `blueprint`: Blueprint readiness cache and templates list (`slotly:blueprint-templates:{instId || 'global'}`).
+   - `analytics`: Cached overview counts and aggregate metrics with short TTL and single-flight.
+   - `notifications`: Cached unread count (`slotly:notifications:unread:{userId}`) with invalidation on markAsRead and dispatch.
+
+5. **Unit Tests & Verification:**
+   - `base.cache.spec.ts`: Validates prefix, id, TTL validation, key format, and jitter bounds.
+   - `base-cache-object.spec.ts`: Validates object storage, field updates on missing key guards, date round-trips, and single-flight loading.
+   - `base-cache-list.spec.ts`: Validates atomic concurrent list updates without lost updates, corrupted payload handling, and single-flight.
+   - `cache-repository.spec.ts`: Validates negative caching, fail-open semantics, single-flight loading, and payload size bounds.
+   - `json-cache.serializer.spec.ts`: Validates serialization, Date revivals, and type rejections.
+   - `write-behind.spec.ts`: Validates enqueue rollback, revision ordering, and failure lifecycle events.
+   - `cached-modules.spec.ts`: Validates hit, miss, and invalidation across migrated and new module caches.
+   - `config-factories.spec.ts`: Validates new cache configuration variables.
+
+### Decisions Made
+
+- **Atomic Redis Lua Scripts for List and Field Mutations:** Used Lua scripts for atomic list additions (`cjson.decode`/`cjson.encode`) and object field updates (`EXISTS` check). This completely eliminates read-modify-write lost updates under concurrency without distributed locks.
+- **Fail-Open Cache-Aside Policy:** In cache-aside read and write operations, Redis errors are caught and logged with metric emission, allowing requests to fail open and fall back to MongoDB. For write-behind, enqueue failure rolls back the cache and throws immediately to ensure durable persistence guarantees.
+- **Negative Caching with Short TTL:** When loaders return null, a sentinel marker (`__SLOTLY_NULL_SENTINEL__`) is stored for 30s to shield the database from repeated lookups of non-existent entities.
+
+
 
 
 

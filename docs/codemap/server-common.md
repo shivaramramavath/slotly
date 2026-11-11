@@ -41,6 +41,31 @@
 - **Injectable** `AuditService` (deps: ConnectionOptions> | undefined, ObjectId; }> & { __v: number; }> | undefined) - Injectable service providing audit service logic.
 - **Interface** `AuditPayload` - Interface defining structure for audit payload.
 
+### `server/src/common/cache/base/base-cache-list.ts`
+*Base list cache implementation supporting atomic updates, single-flight loading, and corruption resilience.*
+
+- **Class** `BaseCacheList` implements `IListCache<T>` - Base cache class managing list-based collections.
+
+### `server/src/common/cache/base/base-cache-object.ts`
+*Base object cache implementation supporting partial field updates, date revival, and single-flight loading.*
+
+- **Class** `BaseCacheObject` - Base cache class managing structured object storage with corruption resilience.
+
+### `server/src/common/cache/base/base.cache.ts`
+*Abstract base cache class providing key construction, TTL jitter, and unified error handling.*
+
+- **Class** `BaseCache` - Abstract base cache class providing key construction, TTL jitter, and unified error handling.
+
+### `server/src/common/cache/base/cache-repository.ts`
+*Abstract entity cache-aside repository with negative caching, size capping, and single-flight protection.*
+
+- **Class** `CacheRepository` implements `ICacheReader<T, TId>, ICacheWriter<T, TId>` - Abstract entity cache-aside repository with negative caching, size capping, and single-flight protection.
+
+### `server/src/common/cache/base/index.ts`
+*Public exports for base cache classes.*
+
+*(No public exports)*
+
 ### `server/src/common/cache/cache.interface.ts`
 *Core implementation for cache.interface in server/src/common/cache.*
 
@@ -50,7 +75,12 @@
 ### `server/src/common/cache/cache.module.ts`
 *Core implementation for cache.module in server/src/common/cache.*
 
-- **Class** `CacheModule` - Class implementing cache module.
+- **Class** `CacheModule` - Global cache module exporting CacheService, Redis client, serializers, factories, and metrics.
+
+### `server/src/common/cache/factories/cache-key.factory.ts`
+*Factory creating standardized cache key prefixes, tenant-scoped keys, and namespace counters.*
+
+- **Injectable** `CacheKeyFactory` implements `ICacheKeyFactory` (deps: @Inject(cacheConfig.KEY)) - Factory generating scoped keys and versioned namespace keys.
 
 ### `server/src/common/cache/in-memory-cache.service.ts`
 *Domain service orchestrating in-memory-cache.service business logic.*
@@ -58,14 +88,68 @@
 - **Injectable** `InMemoryCacheService` implements `CacheService` - Injectable service providing in memory cache service logic.
 
 ### `server/src/common/cache/index.ts`
-*Core implementation for index in server/src/common/cache.*
+*Public exports for server cache module, interfaces, base classes, and serializers.*
 
 *(No public exports)*
+
+### `server/src/common/cache/interfaces/cache-key-factory.interface.ts`
+*Interface defining standard key generation and namespace versioning strategy.*
+
+- **Interface** `ICacheKeyFactory` - Interface defining standard key generation and namespace versioning strategy.
+
+### `server/src/common/cache/interfaces/cache-metrics.interface.ts`
+*Interface defining telemetry and metrics tracking for cache hits, misses, and errors.*
+
+- **Interface** `ICacheMetrics` - Interface defining telemetry and metrics tracking for cache hits, misses, and errors.
+
+### `server/src/common/cache/interfaces/cache-reader.interface.ts`
+*Interface defining contract for cache reading and cache-aside loading.*
+
+- **Interface** `ICacheReader` - Interface defining contract for cache reading and cache-aside loading.
+
+### `server/src/common/cache/interfaces/cache-serializer.interface.ts`
+*Interface defining serialization strategy for cached values and reviving dates.*
+
+- **Interface** `ICacheSerializer` - Interface defining serialization strategy for cached values and reviving dates.
+
+### `server/src/common/cache/interfaces/cache-writer.interface.ts`
+*Interface defining contract for cache writing, updating, and invalidation.*
+
+- **Interface** `ICacheWriter` - Interface defining contract for cache writing, updating, and invalidation.
+
+### `server/src/common/cache/interfaces/index.ts`
+*Public exports for cache interfaces and injection tokens.*
+
+*(No public exports)*
+
+### `server/src/common/cache/interfaces/list-cache.interface.ts`
+*Interface defining contract for managing list-based cached collections.*
+
+- **Interface** `IListCache` - Interface defining contract for managing list-based cached collections.
+
+### `server/src/common/cache/interfaces/tokens.ts`
+*Injection tokens for cache layer infrastructure and swappable strategies.*
+
+- **Const** `REDIS_CLIENT`: `typeof import("E:/Shiva Ram/Projects/slotly/ser...` - Injection token for Redis client instance.
+- **Const** `CACHE_SERIALIZER`: `typeof import("E:/Shiva Ram/Projects/slotly/ser...` - Injection token for cache serializer implementation.
+- **Const** `CACHE_METRICS`: `typeof import("E:/Shiva Ram/Projects/slotly/ser...` - Injection token for cache metrics reporter.
+- **Const** `CACHE_KEY_FACTORY`: `typeof import("E:/Shiva Ram/Projects/slotly/ser...` - Injection token for cache key and namespace builder factory.
+
+### `server/src/common/cache/metrics/cache-metrics.service.ts`
+*Telemetry service recording hit, miss, negative-hit, error, and write-behind metrics.*
+
+- **Injectable** `CacheMetricsService` implements `ICacheMetrics` (deps: PrometheusMetricsService | undefined) - In-memory and Prometheus telemetry service tracking cache efficiency and errors.
 
 ### `server/src/common/cache/redis-cache.service.ts`
 *Domain service orchestrating redis-cache.service business logic.*
 
 - **Injectable** `RedisCacheService` implements `CacheService, OnModuleDestroy` (deps: @Inject(redisConfig.KEY), @Inject(cacheConfig.KEY)) - Injectable service providing redis cache service logic.
+
+### `server/src/common/cache/serializers/json-cache.serializer.ts`
+*JSON serializer implementation reviving Date objects and rejecting invalid types.*
+
+- **Class** `DeserializationException` - Custom exception thrown when cache data cannot be deserialized cleanly.
+- **Injectable** `JsonCacheSerializer` implements `ICacheSerializer` - JSON serializer reviving ISO timestamp strings to Date instances.
 
 ### `server/src/common/concurrency/revision.helper.ts`
 *Core implementation for revision.helper in server/src/common/concurrency.*
@@ -203,6 +287,32 @@
 - **Interface** `WriteBehindJob` - Interface defining structure for write behind job.
 - **Const** `WRITE_BEHIND_QUEUE`: `"write-behind"` - Constant representing write behind queue.
 
+### `server/src/common/queue/write-behind/index.ts`
+*Public exports for write-behind queue publisher, processor, and defaults.*
+
+*(No public exports)*
+
+### `server/src/common/queue/write-behind/write-behind.defaults.ts`
+*Default retry, backoff, and dead-letter retention policies for write-behind jobs.*
+
+- **Const** `WRITE_BEHIND_JOB_DEFAULTS`: `{ attempts: number; backoff: { type: "exponenti...` - Standard defaults for BullMQ write-behind job options.
+
+### `server/src/common/queue/write-behind/write-behind.processor.ts`
+*Abstract BullMQ worker processor for write-behind jobs with revision checking, audit logging, and event dispatch.*
+
+- **Class** `WriteBehindProcessor` - Abstract queue processor dispatching write-behind jobs by name and maintaining audit and event states.
+
+### `server/src/common/queue/write-behind/write-behind.publisher.ts`
+*Abstract publisher for write-behind persistence jobs with durable cache write and rollback contract.*
+
+- **Class** `WriteBehindPublisher` - Abstract write-behind publisher enforcing durable enqueue-or-fail cache rollback contracts.
+
+### `server/src/common/queue/write-behind/write-behind.types.ts`
+*Type definitions for write-behind persistence payloads and statuses.*
+
+- **Interface** `WriteBehindJobPayload` - Interface defining structure for typed write-behind job data.
+- **Type** `PersistenceStatus` - Persistence lifecycle status for write-behind updates.
+
 ### `server/src/common/rbac/access-policy.interface.ts`
 *Core implementation for access-policy.interface in server/src/common/rbac.*
 
@@ -251,10 +361,10 @@
 - **Const** `blueprintConfig`: `(() => { v2Enabled: boolean; }) & import("E:/Sh...` - Blueprint namespace configuration factory.
 
 ### `server/src/config/cache.config.ts`
-*Configuration factory for cache TTLs and eviction policies.*
+*Configuration factory for cache TTLs, eviction policies, and size thresholds.*
 
 - **Type** `CacheConfig` - Inferred TypeScript type for cache namespace configuration.
-- **Const** `cacheConfig`: `(() => { defaultTtl: number; blueprintTtl: numb...` - Cache namespace configuration factory.
+- **Const** `cacheConfig`: `(() => { defaultTtl: number; negativeTtl: numbe...` - Cache namespace configuration factory.
 
 ### `server/src/config/config.module.ts`
 *Core configuration module wrapping NestJS ConfigModule with all namespaces and validation schema.*

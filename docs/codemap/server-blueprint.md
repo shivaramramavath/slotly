@@ -262,5 +262,5 @@
 ### `server/src/modules/blueprint/services/template.service.ts`
 *Domain service orchestrating template.service business logic.*
 
-- **Injectable** `TemplateService` implements `OnModuleInit` (deps: BlueprintTemplateRepository, CachedBlueprintRepository, CachedProjectRepository, OperationService) - Injectable service providing template service logic.
+- **Injectable** `TemplateService` implements `OnModuleInit` (deps: BlueprintTemplateRepository, CachedBlueprintRepository, CachedProjectRepository, OperationService, @Inject(CACHE_SERVICE)) - Injectable service providing template service logic.
 
