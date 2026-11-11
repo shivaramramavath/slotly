@@ -10,6 +10,7 @@
 - **Interface** `ProgramNode` extends `ProgramDto` - Interface defining structure for program node.
 - **Interface** `DepartmentNode` extends `DepartmentDto` - Interface defining structure for department node.
 - **Interface** `InstitutionStructureDto` - Interface defining structure for institution structure dto.
+- **Interface** `FieldMeta` - Interface defining metadata for a node form field.
 - **Type** `ApiErrorResponse` - TypeScript type inferred from api error response Zod schema.
 - **Type** `PaginationQuery` - TypeScript type inferred from pagination query Zod schema.
 - **Type** `RevisionConflict` - TypeScript type inferred from revision conflict Zod schema.
@@ -273,6 +274,31 @@
 - **Type** `BlueprintAiChatMessage` - TypeScript type inferred from blueprint AI chat message schema.
 - **Type** `BlueprintAiChatRequestDto` - TypeScript type inferred from blueprint AI chat request DTO schema.
 - **Type** `BlueprintAiChatResponseDto` - TypeScript type inferred from blueprint AI chat response DTO schema.
+- **Type** `FieldKind` - Field kind enum defining the input widget type.
+- **Type** `BreakSlot`
+- **Type** `InstitutionForm`
+- **Type** `DepartmentForm`
+- **Type** `ProgramForm`
+- **Type** `AcademicYearForm`
+- **Type** `SemesterForm`
+- **Type** `SectionForm`
+- **Type** `BatchForm`
+- **Type** `PoolCandidatesQueryDto`
+- **Type** `PoolCandidateItemDto`
+- **Type** `PoolCandidatesResponseDto`
+- **Type** `FacultyPeekDto`
+- **Type** `SubjectPeekDto`
+- **Type** `RoomPeekDto`
+- **Type** `LibraryPeekDto`
+- **Type** `NodeCheckWarning`
+- **Type** `NodeCheckResponseDto`
+- **Type** `AssignmentSuggestRequestDto`
+- **Type** `RankedSuggestionItem`
+- **Type** `AssignmentSuggestion`
+- **Type** `AssignmentSuggestResponseDto`
+- **Type** `CopyNodeSettingsPart`
+- **Type** `CopyNodeSettingsDto`
+- **Type** `CopyNodeSettingsResponseDto`
 - **Function** `normalizeReasonCode(code: string)`: `"REVISION_CONFLICT" | "PARENT_MISSING" | "PARENT_INCOMPLETE" | "PARENT_TYPE_NOT_ALLOWED" | "DUPLICATE_NAME" | "CAPACITY_EXCEEDED" | "CYCLE" | "ENDPOINT_INCOMPLETE" | "NOT_QUALIFIED" | "PROJECT_LOCKED" | "PERMISSION_DENIED" | "SINGLE_PARENT_VIOLATION" | "INVALID_OPERATION" | "INSUFFICIENT_LAB_CAPACITY" | "MISSING_ALLOCATION" | "FACULTY_OVERLOAD" | "INVALID_GRAPH" | "POOL_ITEM_NOT_FOUND" | "POOL_ITEM_ARCHIVED" | "POOL_ITEM_REQUIRED" | "POOL_ITEM_IN_USE" | "POOL_DEPARTMENT_FORBIDDEN" | "POOL_DUPLICATE" | "ASSIGNMENT_NOT_IN_POOL"` - Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation.
 - **Function** `normalizeAvailabilityMatrix(matrix: boolean[][] | null | undefined, daysCount: number, periodsCount: number)`: `boolean[][]` - Function normalizing availability matrix dimensions according to days and periods per day.
 - **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse` - Zod schema validating api error response.
@@ -547,4 +573,30 @@
 - **Zod Schema** `BlueprintAiChatMessageSchema` -> `BlueprintAiChatMessage` - Zod schema validating chat message history entry in AI assistant requests.
 - **Zod Schema** `BlueprintAiChatRequestDtoSchema` -> `BlueprintAiChatRequestDto` - Zod schema validating blueprint AI chat request payload.
 - **Zod Schema** `BlueprintAiChatResponseDtoSchema` -> `BlueprintAiChatResponseDto` - Zod schema validating blueprint AI chat response payload.
+- **Zod Schema** `BreakSlotSchema` -> `BreakSlot` - Break configuration schema for institution timings.
+- **Zod Schema** `InstitutionFormSchema` -> `InstitutionForm` - Zod schema validating institution node configuration form.
+- **Zod Schema** `DepartmentFormSchema` -> `DepartmentForm` - Zod schema validating department node configuration form.
+- **Zod Schema** `ProgramFormSchema` -> `ProgramForm` - Zod schema validating program node configuration form.
+- **Zod Schema** `AcademicYearFormSchema` -> `AcademicYearForm` - Zod schema validating academic year node configuration form.
+- **Zod Schema** `SemesterFormSchema` -> `SemesterForm` - Zod schema validating semester node configuration form.
+- **Zod Schema** `SectionFormSchema` -> `SectionForm` - Zod schema validating section node configuration form.
+- **Zod Schema** `BatchFormSchema` -> `BatchForm` - Zod schema validating batch node configuration form.
+- **Const** `NodeFormSchemas`: `{ readonly institution: import("E:/Shiva Ram/Pr...` - Registry of node form schemas per node type.
+- **Const** `NodeFormFieldMeta`: `Record<string, Record<string, import("E:/Shiva ...` - Canonical field metadata dictionary per node type.
+- **Zod Schema** `PoolCandidatesQueryDtoSchema` -> `PoolCandidatesQueryDto` - Zod schema validating pool candidates search query.
+- **Zod Schema** `PoolCandidateItemDtoSchema` -> `PoolCandidateItemDto` - Zod schema validating an individual pool candidate item.
+- **Zod Schema** `PoolCandidatesResponseDtoSchema` -> `PoolCandidatesResponseDto` - Zod schema validating pool candidates paginated response.
+- **Zod Schema** `FacultyPeekDtoSchema` -> `FacultyPeekDto`
+- **Zod Schema** `SubjectPeekDtoSchema` -> `SubjectPeekDto`
+- **Zod Schema** `RoomPeekDtoSchema` -> `RoomPeekDto`
+- **Zod Schema** `LibraryPeekDtoSchema` -> `LibraryPeekDto`
+- **Zod Schema** `NodeCheckWarningSchema` -> `NodeCheckWarning`
+- **Zod Schema** `NodeCheckResponseDtoSchema` -> `NodeCheckResponseDto`
+- **Zod Schema** `AssignmentSuggestRequestDtoSchema` -> `AssignmentSuggestRequestDto`
+- **Zod Schema** `RankedSuggestionItemSchema` -> `RankedSuggestionItem`
+- **Zod Schema** `AssignmentSuggestionSchema` -> `AssignmentSuggestion`
+- **Zod Schema** `AssignmentSuggestResponseDtoSchema` -> `AssignmentSuggestResponseDto`
+- **Zod Schema** `CopyNodeSettingsPartSchema` -> `CopyNodeSettingsPart`
+- **Zod Schema** `CopyNodeSettingsDtoSchema` -> `CopyNodeSettingsDto`
+- **Zod Schema** `CopyNodeSettingsResponseDtoSchema` -> `CopyNodeSettingsResponseDto`
 

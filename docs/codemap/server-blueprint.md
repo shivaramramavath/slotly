@@ -16,6 +16,10 @@
   - `GET /projects/:projectId/blueprint/nodes/:nodeId/pool` -> `getNodePool()` [perm: 'BLUEPRINT_READ']
   - `POST /projects/:projectId/blueprint/nodes/:nodeId/pool` -> `mutatePool()` [perm: 'BLUEPRINT_EDIT']
   - `GET /projects/:projectId/blueprint/where-used` -> `getWhereUsed()` [perm: 'BLUEPRINT_READ']
+  - `GET /projects/:projectId/blueprint/nodes/:nodeId/pool/candidates` -> `getPoolCandidates()` [perm: 'BLUEPRINT_READ']
+  - `GET /projects/:projectId/blueprint/nodes/:nodeId/check` -> `checkNode()` [perm: 'BLUEPRINT_READ']
+  - `POST /projects/:projectId/blueprint/nodes/:nodeId/assignments/suggest` -> `suggestAssignments()` [perm: 'BLUEPRINT_READ']
+  - `POST /projects/:projectId/blueprint/nodes/:nodeId/copy-settings` -> `copySettings()` [perm: 'BLUEPRINT_EDIT']
   - `POST /projects/:projectId/blueprint/operations` -> `applyOperations()` [perm: 'BLUEPRINT_EDIT']
   - `GET /projects/:projectId/blueprint/history` -> `getHistory()` [perm: 'BLUEPRINT_READ']
   - `GET /projects/:projectId/blueprint/recommendations` -> `getRecommendations()` [perm: 'BLUEPRINT_READ']
@@ -164,7 +168,7 @@
 ### `server/src/modules/blueprint/schemas/blueprint-history.schema.ts`
 *Data schema and persistence model for blueprint-history.schema.*
 
-- **Mongoose Schema** `BlueprintHistory` (collection: `blueprint_history` (indexes: projectId)) - Class implementing blueprint history.
+- **Mongoose Schema** `BlueprintHistory` (collection: `blueprint_history` (indexes: projectId, nodeId)) - Class implementing blueprint history.
 - **Type** `BlueprintHistoryDocument` - Type alias for blueprint history document.
 - **Zod Schema** `BlueprintHistorySchema` -> `BlueprintHistory` - Zod schema validating blueprint history.
 
@@ -195,6 +199,11 @@
 *Service generating intelligent read-only whole-blueprint AI assistance.*
 
 - **Injectable** `BlueprintAiService` (deps: BlueprintService) - Service providing whole-blueprint AI assistant chat with compact context summarization.
+
+### `server/src/modules/blueprint/services/blueprint-sidebar.service.ts`
+*Domain service providing sidebar operations: pool candidates, node checklist, assignment suggestions, and settings copy.*
+
+- **Injectable** `BlueprintSidebarService` (deps: CachedBlueprintRepository, PoolResolverService, BlueprintService, @Inject(FACULTY_REPOSITORY), @Inject(SUBJECT_REPOSITORY), @Inject(ROOM_REPOSITORY), CachedProjectRepository, @Inject(CACHE_SERVICE)) - Service providing backend support for the Blueprint right inspector sidebar.
 
 ### `server/src/modules/blueprint/services/blueprint.service.ts`
 *Domain service orchestrating blueprint.service business logic.*

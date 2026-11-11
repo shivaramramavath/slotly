@@ -2572,6 +2572,86 @@ Merged via `ux/10-blueprint-dnd-compact`, tag `ux-10-blueprint-dnd-compact-merge
 
 Merged via `ux/12-blueprint-inspector`, tag `ux-12-blueprint-inspector-merged`.
 
+---
+
+## Pass A: Server Support for the Sidebar (`feat/sidebar-server`)
+
+### What Was Built
+
+1. **Contracts & Zod Schemas (`packages/contracts`):**
+   - Node form schemas per node type: `InstitutionFormSchema`, `DepartmentFormSchema`, `ProgramFormSchema`, `AcademicYearFormSchema`, `SemesterFormSchema`, `SectionFormSchema`, `BatchFormSchema` under `NodeFormSchemas`.
+   - Field metadata dictionary `NodeFormFieldMeta` with `label`, `hint`, `required`, `kind`, and `constraints`.
+   - Added `classTeacherId` and `homeRoomId` to `SectionFormSchema` (validated to belong to the effective pool).
+   - Added `lastChangedBy` and `lastChangedAt` to `BlueprintNodeDtoSchema` and `BlueprintNodeSchema`.
+   - Added `nodeId` and `changelog` array to `BlueprintHistoryEntryDtoSchema` and `BlueprintHistorySchema`.
+   - Pool candidates contracts: `PoolCandidatesQueryDtoSchema`, `PoolCandidateItemDtoSchema`, `PoolCandidatesResponseDtoSchema`.
+   - Library hover peek contracts: `FacultyPeekDtoSchema`, `SubjectPeekDtoSchema`, `RoomPeekDtoSchema`, `LibraryPeekDtoSchema`.
+   - Node checklist contracts: `NodeCheckWarningSchema`, `NodeCheckResponseDtoSchema`.
+   - Assignment suggestion contracts: `AssignmentSuggestRequestDtoSchema`, `AssignmentSuggestionSchema`, `AssignmentSuggestResponseDtoSchema`.
+   - Settings copy contracts: `CopyNodeSettingsDtoSchema`, `CopyNodeSettingsResponseDtoSchema`.
+
+2. **Pool Candidates Endpoint (`GET /projects/:projectId/blueprint/nodes/:nodeId/pool/candidates`):**
+   - Cursor-paginated candidate search over Library items (faculty, subject, room) that the user may add to a node pool.
+   - Filters: search query `q`, `department`, `subjectType`, `roomType`, `qualifiedFor`, and `available`.
+   - Computes live pool flags: `alreadyInPool`, `excluded`, `archived`, and `doNotLend` (enforcing department boundaries and non-shared room flags).
+   - Redis-cached by query hash with key `slotly:blueprint:{projectId}:node:{nodeId}:candidates:{hash}`, TTL 60 seconds.
+
+3. **Library Hover Peek Endpoint (`GET /library/:type/:id/peek`):**
+   - Provides small read-only hover peeks for library entities.
+   - `faculty`: department, designation, assigned workload hours, max workload hours, and 7-day availability matrix.
+   - `subject`: code, type, weekly hours, credits, and qualified faculty headcount.
+   - `room`: type, capacity, building, and equipment array.
+   - Redis-cached with key `slotly:library:peek:{type}:{id}`, TTL 300 seconds.
+
+4. **Node Checklist Endpoint (`GET /projects/:projectId/blueprint/nodes/:nodeId/check`):**
+   - Validates node data against its `NodeFormSchemas` entry and reports missing fields.
+   - Checks effective pool consistency:
+     - `NO_QUALIFIED_FACULTY`: Flags subjects in pool with zero qualified faculty.
+     - `LAB_ROOM_MISSING`: Flags lab subjects when no lab room is present in effective pool.
+     - `ROOM_CAPACITY_DEFICIT`: Flags when all rooms in pool have capacity below section strength.
+     - `CLASS_TEACHER_NOT_IN_POOL`: Enforces that section class teacher belongs to effective pool.
+     - `HOME_ROOM_NOT_IN_POOL`: Enforces that section home room belongs to effective pool.
+     - `ARCHIVED_RESOURCE`: Flags any archived library resources present in the pool.
+   - Computes children status summary (total, ready, incomplete) and generates actionable plain-language `fixHints`.
+   - Redis-cached with key `slotly:blueprint:{projectId}:node:{nodeId}:check`, TTL 30 seconds.
+
+5. **Assignment Suggestion Endpoint (`POST /projects/:projectId/blueprint/nodes/:nodeId/assignments/suggest`):**
+   - Ranks qualified faculty from the effective pool for a subject (scored by subject qualification, available workload capacity, and timetable availability).
+   - Ranks rooms from the effective pool (scored by room type match and capacity $\ge$ section strength).
+   - Mode `all` generates ranked recommendations for all unassigned subjects in the section/batch.
+
+6. **Copy Settings Endpoint (`POST /projects/:projectId/blueprint/nodes/:nodeId/copy-settings`):**
+   - Atomically copies selected parts (`fields`, `pool`, `assignments`, `rules`) from a source node to a target node.
+   - Applies operations through the gate chain atomically, returning `appliedParts`, `skippedParts` with reason codes, and count of applied operations.
+
+7. **History Filter & Changelog (`GET /projects/:projectId/blueprint/history?nodeId=`):**
+   - Filters history entries by `nodeId`.
+   - Records field-level changelog diffs (`field`, `oldValue`, `newValue`) and tracks `lastChangedBy` and `lastChangedAt` per node on update operations.
+
+8. **Tests & Verification:**
+   - Added unit test suite in `server/src/modules/blueprint/tests/blueprint-sidebar.spec.ts` testing schema validation for all 7 types, candidates pagination and flags, check output with pool warnings, assignment ranking, and copy-settings partial skips.
+   - Added unit test suite in `server/src/modules/library/tests/library-peek.spec.ts` testing hover peeks for faculty, subject, and room.
+
+### Decisions Made
+
+- **Exact Optional Property Compatibility:** Sanitized Mongoose `id` vs `_id` resolution in `getItemId` helper to cleanly comply with strict TypeScript `exactOptionalPropertyTypes: true`.
+- **Do-Not-Lend Resolution:** Resolved node department by inspecting local `departmentId` or traversing ancestors up to the nearest `department` node, enforcing that non-shared rooms and unshared cross-department resources are flagged `doNotLend: true`.
+
+### Manual Test Checklist
+
+- [x] Run candidate search on section node (`GET .../pool/candidates?type=faculty&q=Turing`) — returns faculty candidate with `alreadyInPool` and `doNotLend` flags.
+- [x] Query candidate rooms (`GET .../pool/candidates?type=room`) — unshared rooms from other departments show `doNotLend: true`.
+- [x] Query hover peek for faculty (`GET /library/faculty/:id/peek`) — returns designation, workload used, max workload, and availability grid.
+- [x] Query hover peek for subject (`GET /library/subjects/:id/peek`) — returns weekly hours, credits, and qualified faculty count.
+- [x] Query hover peek for room (`GET /library/rooms/:id/peek`) — returns capacity, type, and equipment list.
+- [x] Run node check (`GET .../nodes/:nodeId/check`) — returns missing fields, pool warnings, children status summary, and fix hints.
+- [x] Request assignment suggestions (`POST .../nodes/:nodeId/assignments/suggest`) — returns ranked faculty and rooms with scores and human reasons.
+- [x] Copy settings between nodes (`POST .../nodes/:nodeId/copy-settings`) — applies fields and pool additions atomically; skips incompatible parts with reason codes.
+- [x] Query history with node filter (`GET .../history?nodeId=`) — returns only entries affecting the specified node with field-level changelogs.
+
+Merged via `feat/sidebar-server`, tag `feat-sidebar-server-merged`.
+
+
 
 
 

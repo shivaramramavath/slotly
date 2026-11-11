@@ -89,7 +89,11 @@ GET /projects/:projectId/blueprint
 GET /projects/:projectId/blueprint/readiness
 GET /projects/:projectId/blueprint/nodes/:nodeId/impact
 POST /projects/:projectId/blueprint/operations batch ops, topological, per-op results
-GET /projects/:projectId/blueprint/history
+GET /projects/:projectId/blueprint/history?nodeId= get history optionally filtered by node
+GET /projects/:projectId/blueprint/nodes/:nodeId/pool/candidates search library items to add to pool (cursor-paginated, department permissions, flags)
+GET /projects/:projectId/blueprint/nodes/:nodeId/check node-level checklist (missing fields, pool warnings, children status, fix hints)
+POST /projects/:projectId/blueprint/nodes/:nodeId/assignments/suggest ranked faculty & room suggestions for unassigned subjects (single or mode all)
+POST /projects/:projectId/blueprint/nodes/:nodeId/copy-settings copy settings between nodes atomically with gate validation
 GET /projects/:projectId/blueprint/recommendations?nodeId=
 GET /projects/:projectId/blueprint/export?format=json|svg|png
 POST /projects/:projectId/blueprint/import
@@ -99,6 +103,7 @@ POST /projects/:projectId/blueprint/ai/chat whole-blueprint AI assistant chat (r
 GET /projects/:projectId/blueprint/nodes/:nodeId/pool effective resource pool with origins, required, pinned, exclusions (cached with project tags)
 GET /projects/:projectId/blueprint/where-used?refType=&refId= nodes whose effective pool contains the specified library item
 GET /library/:type/:id/usage usage count and referencing projects/nodes for a library item
+GET /library/:type/:id/peek small read-only hover summary (type: faculty|subjects|rooms)
 POST /projects/:projectId/blueprint/autofill/preview preview auto-fill resource allocation proposals per node
 POST /projects/:projectId/blueprint/autofill/accept write accepted auto-fill proposals as blueprint pool entries
 GET /blueprint-templates
