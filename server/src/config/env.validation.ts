@@ -162,12 +162,28 @@ export const envValidationSchema = Joi.object({
 
   // Cache
   CACHE_DEFAULT_TTL: Joi.number().default(DEFAULT_CONFIG.cache.defaultTtl),
+  CACHE_NEGATIVE_TTL: Joi.number().default(DEFAULT_CONFIG.cache.negativeTtl),
+  CACHE_MAX_BYTES: Joi.number().default(DEFAULT_CONFIG.cache.maxBytes),
+  CACHE_KEY_PREFIX_ENV: Joi.string().default(DEFAULT_CONFIG.cache.keyPrefixEnv),
+  CACHE_SCHEMA_VERSION: Joi.number().default(
+    DEFAULT_CONFIG.cache.schemaVersion,
+  ),
   CACHE_BLUEPRINT_TTL: Joi.number().default(DEFAULT_CONFIG.cache.blueprintTtl),
   CACHE_READINESS_TTL: Joi.number().default(DEFAULT_CONFIG.cache.readinessTtl),
   CACHE_TREE_TTL: Joi.number().default(DEFAULT_CONFIG.cache.treeTtl),
   CACHE_SLOTS_TTL: Joi.number().default(DEFAULT_CONFIG.cache.slotsTtl),
   CACHE_USER_PROFILE_TTL: Joi.number().default(
     DEFAULT_CONFIG.cache.userProfileTtl,
+  ),
+  CACHE_PROJECT_LIST_TTL: Joi.number().default(
+    DEFAULT_CONFIG.cache.projectListTtl,
+  ),
+  CACHE_LIBRARY_LIST_TTL: Joi.number().default(
+    DEFAULT_CONFIG.cache.libraryListTtl,
+  ),
+  CACHE_ANALYTICS_TTL: Joi.number().default(DEFAULT_CONFIG.cache.analyticsTtl),
+  CACHE_NOTIFICATIONS_TTL: Joi.number().default(
+    DEFAULT_CONFIG.cache.notificationsTtl,
   ),
 
   // Queue

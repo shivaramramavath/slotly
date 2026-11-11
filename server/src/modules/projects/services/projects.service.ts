@@ -221,76 +221,97 @@ export class ProjectsService {
     limit: number;
     totalPages: number;
   }> {
-    const skip = (page - 1) * limit;
-    const filter = {
-      institutionId: institutionId || undefined,
-      ownerId: ownerId || undefined,
-      status: status || undefined,
-      search: search || undefined,
-    };
-    const { items, total } = await this.projectRepo.findProjects(
-      filter,
-      skip,
-      limit,
-    );
+    const isDefaultQuery =
+      Boolean(requestingUserId) &&
+      page === 1 &&
+      !search &&
+      !status &&
+      !institutionId;
+    const cacheKey = `slotly:user:${requestingUserId}:projects:list`;
 
-    const userPins = requestingUserId
-      ? await this.projectRepo.getUserPins(requestingUserId)
-      : [];
-    const pinMap = new Map(
-      userPins.map((pin) => [pin.projectId, pin.pinnedAt]),
-    );
+    const fetcher = async () => {
+      const skip = (page - 1) * limit;
+      const filter = {
+        institutionId: institutionId || undefined,
+        ownerId: ownerId || undefined,
+        status: status || undefined,
+        search: search || undefined,
+      };
+      const { items, total } = await this.projectRepo.findProjects(
+        filter,
+        skip,
+        limit,
+      );
 
-    const dtos = await Promise.all(
-      items.map(async (p) => {
-        const pId = getId(p);
-        let progress: number | null = null;
-        if (this.cache && pId) {
-          try {
-            const cachedReadiness = await this.cache.get<{
-              percentComplete?: number;
-            }>(`slotly:blueprint:${pId}:readiness`);
-            if (
-              cachedReadiness &&
-              typeof cachedReadiness.percentComplete === 'number'
-            ) {
-              progress = cachedReadiness.percentComplete;
-            } else {
-              const cachedBlueprint = await this.cache.get<{
-                nodes?: Array<{ status?: string }>;
-              }>(`slotly:blueprint:${pId}`);
+      const userPins = requestingUserId
+        ? await this.projectRepo.getUserPins(requestingUserId)
+        : [];
+      const pinMap = new Map(
+        userPins.map((pin) => [pin.projectId, pin.pinnedAt]),
+      );
+
+      const dtos = await Promise.all(
+        items.map(async (p) => {
+          const pId = getId(p);
+          let progress: number | null = null;
+          if (this.cache && pId) {
+            try {
+              const cachedReadiness = await this.cache.get<{
+                percentComplete?: number;
+              }>(`slotly:blueprint:${pId}:readiness`);
               if (
-                cachedBlueprint?.nodes &&
-                Array.isArray(cachedBlueprint.nodes)
+                cachedReadiness &&
+                typeof cachedReadiness.percentComplete === 'number'
               ) {
-                const totalNodes = cachedBlueprint.nodes.length;
-                if (totalNodes > 0) {
-                  const completed = cachedBlueprint.nodes.filter(
-                    (n) => n.status === 'complete',
-                  ).length;
-                  progress = Math.round((completed / totalNodes) * 100);
-                } else {
-                  progress = 0;
+                progress = cachedReadiness.percentComplete;
+              } else {
+                const cachedBlueprint = await this.cache.get<{
+                  nodes?: Array<{ status?: string }>;
+                }>(`slotly:blueprint:${pId}`);
+                if (
+                  cachedBlueprint?.nodes &&
+                  Array.isArray(cachedBlueprint.nodes)
+                ) {
+                  const totalNodes = cachedBlueprint.nodes.length;
+                  if (totalNodes > 0) {
+                    const completed = cachedBlueprint.nodes.filter(
+                      (n) => n.status === 'complete',
+                    ).length;
+                    progress = Math.round((completed / totalNodes) * 100);
+                  } else {
+                    progress = 0;
+                  }
                 }
               }
+            } catch {
+              // cache read failure is non-fatal
             }
-          } catch {
-            // cache read failure is non-fatal
           }
-        }
-        const pinnedDate = pinMap.get(pId);
-        const pinned = Boolean(pinnedDate);
-        const pinnedAt = pinnedDate ? new Date(pinnedDate).toISOString() : null;
-        return this.toDto(p, progress, pinned, pinnedAt);
-      }),
-    );
-    return {
-      items: dtos,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit) || 1,
+          const pinnedDate = pinMap.get(pId);
+          const pinned = Boolean(pinnedDate);
+          const pinnedAt = pinnedDate
+            ? new Date(pinnedDate).toISOString()
+            : null;
+          return this.toDto(p, progress, pinned, pinnedAt);
+        }),
+      );
+      return {
+        items: dtos,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 1,
+      };
     };
+
+    if (
+      isDefaultQuery &&
+      this.cache &&
+      typeof this.cache.remember === 'function'
+    ) {
+      return this.cache.remember(cacheKey, 3600, fetcher);
+    }
+    return fetcher();
   }
 
   async findById(
@@ -338,6 +359,9 @@ export class ProjectsService {
     }
 
     await this.projectRepo.pinProject(userId, projectId);
+    if (this.cache && typeof this.cache.del === 'function') {
+      await this.cache.del(`slotly:user:${userId}:projects:list`);
+    }
     return { success: true, pinned: true };
   }
 
@@ -346,6 +370,9 @@ export class ProjectsService {
     userId: string,
   ): Promise<{ success: boolean; pinned: boolean }> {
     await this.projectRepo.unpinProject(userId, projectId);
+    if (this.cache && typeof this.cache.del === 'function') {
+      await this.cache.del(`slotly:user:${userId}:projects:list`);
+    }
     return { success: true, pinned: false };
   }
 

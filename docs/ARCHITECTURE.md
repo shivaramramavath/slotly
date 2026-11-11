@@ -466,6 +466,33 @@ Auth limits (built): access token 15 minutes, session inactivity 7 days, maximum
 
 Queue names follow the code; `ROUTES.md` was aligned in AUD-009 (verify). Rules: idempotent jobs, retries with exponential backoff, dead-letter handling, graceful shutdown drain, and a consistency barrier before builds.
 
+### 8.3 Cache layer and write-behind contract (refactor/cache-layer)
+
+#### Architecture
+The NestJS server uses a SOLID cache infrastructure located in `src/common/cache/`:
+- `BaseCache`: Validates prefix, id, and TTL; builds keys via `ICacheKeyFactory` with format `slotly:{env}:{entity}:v{schemaVersion}`; jitter up to 10%; unified fail-open error handling; namespace version counter via Redis `INCR` (no `KEYS` or `SCAN`).
+- `BaseCacheList<T>`: List storage with atomic mutations via Redis Lua scripts (preventing concurrent lost updates); corrupted JSON resilience (treated as miss and key purged); single-flight loading.
+- `BaseCacheObject`: Hash/Object storage with date revivers; atomic `updateFields` and `setField` guarded by `EXISTS` (preventing partial/incomplete object cache hits); single-flight deduplication.
+- `CacheRepository<T, TId>`: Entity cache-aside with negative caching (short-lived `__SLOTLY_NULL_SENTINEL__`, default 30s), single-flight loader deduplication, 256 KB payload size capping with warn log, and fail-open resilience.
+
+#### Write-behind contract
+Write-behind updates use generic `WriteBehindPublisher` and `WriteBehindProcessor` located in `src/common/queue/write-behind/`:
+1. Validate input and assert revision match via `RevisionHelper`.
+2. Write state to cache with `_persistence: 'pending'`.
+3. Enqueue BullMQ job with deterministic ID `${entity}:${id}:${revision}` and exponential backoff defaults.
+4. **Enqueue failure contract**: On enqueue error, rollback cache entry to previous state (or delete) and fail the HTTP request immediately. A request never reports success unless the job is durably enqueued.
+5. **Processor success**: Persist to MongoDB, update cache `_persistence: 'persisted'`, and emit `${entity}.persisted` event via `EventBus`.
+6. **Processor failure**: Retries with backoff. On final failure: update cache `_persistence: 'failed'`, purge cache entry, write audit log, and emit `${entity}.persistence_failed` event. Stale revision jobs (`job.revision < stored.revision`) are safely skipped.
+
+#### How to add a new cache in 5 lines
+```ts
+class MyEntityCache extends CacheRepository<MyEntity> {
+  constructor(@Inject(REDIS_CLIENT) redis: Redis, @Inject(CACHE_KEY_FACTORY) kf: ICacheKeyFactory, @Inject(CACHE_SERIALIZER) s: ICacheSerializer, @Optional() @Inject(CACHE_METRICS) m?: ICacheMetrics) {
+    super(redis, 'my_entity', 3600, kf, s, m);
+  }
+}
+```
+
 ---
 
 ## 9. Server configuration architecture (built, C1)

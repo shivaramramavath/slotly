@@ -96,9 +96,13 @@ describe('Config Factories', () => {
   it('cacheConfig maps all individual TTL values', () => {
     process.env['CACHE_DEFAULT_TTL'] = '1800';
     process.env['CACHE_READINESS_TTL'] = '900';
+    process.env['CACHE_NEGATIVE_TTL'] = '45';
+    process.env['CACHE_MAX_BYTES'] = '131072';
     const cfg = cacheConfig();
     expect(cfg.defaultTtl).toBe(1800);
     expect(cfg.readinessTtl).toBe(900);
+    expect(cfg.negativeTtl).toBe(45);
+    expect(cfg.maxBytes).toBe(131072);
   });
 
   it('queueConfig maps retry attempts and worker concurrency', () => {
