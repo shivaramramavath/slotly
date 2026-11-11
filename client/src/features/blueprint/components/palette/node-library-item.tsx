@@ -1,30 +1,39 @@
-// React component for node-library-item.
+// Presentation component rendering an individual node library item with gated states.
 'use client';
 
 import { useState, useEffect, type KeyboardEvent, type MouseEvent, type DragEvent } from 'react';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Lock } from 'lucide-react';
 import type { PaletteItem } from './blueprint-palette';
 import { cn } from '@/lib/utils';
+import type { CanAddChildCode, CanAddChildFix } from '../../can-add-child';
 
 export interface NodeLibraryItemProps {
   item: PaletteItem;
   isExpanded: boolean;
   isAllowed: boolean;
+  code?: CanAddChildCode | undefined;
   reason?: string | undefined;
+  fix?: CanAddChildFix | undefined;
   isFocused: boolean;
+  validParentCount?: number | undefined;
   onSelect: () => void;
+  onFixAction?: ((fix: CanAddChildFix) => void) | undefined;
   onKeyDown: (e: KeyboardEvent) => void;
   itemRef?: ((el: HTMLButtonElement | null) => void) | undefined;
 }
 
-/** React component rendering an individual node library item */
+/** React component rendering an individual node library item with gated states */
 export function NodeLibraryItem({
   item,
   isExpanded,
   isAllowed,
+  code,
   reason,
+  fix,
   isFocused,
+  validParentCount = 0,
   onSelect,
+  onFixAction,
   onKeyDown,
   itemRef,
 }: NodeLibraryItemProps) {
@@ -54,7 +63,10 @@ export function NodeLibraryItem({
   const handleClick = (e: MouseEvent) => {
     e.preventDefault();
     if (!isAllowed) {
-      // Small 2px shake on disabled click
+      // Trigger helpful action instead of doing nothing
+      if (fix && onFixAction) {
+        onFixAction(fix);
+      }
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 200);
       return;
@@ -121,6 +133,7 @@ export function NodeLibraryItem({
   return (
     <div
       className="relative flex items-center justify-center w-full"
+      data-testid={`library-item-wrapper-${item.type}`}
       onMouseEnter={() => setIsTooltipVisible(true)}
       onMouseLeave={() => setIsTooltipVisible(false)}
     >
@@ -153,24 +166,36 @@ export function NodeLibraryItem({
       >
         <div
           className={cn(
-            'flex items-center justify-center shrink-0 transition-colors',
+            'relative flex items-center justify-center shrink-0 transition-colors',
             isExpanded ? 'w-8 h-8 rounded-[8px] bg-[#161616]' : 'w-full h-full',
             isAllowed ? 'text-[#FAFAFA]' : 'text-[#8A8A8A]',
           )}
         >
           <Icon className={cn(isExpanded ? 'h-5 w-5' : 'h-4 w-4')} />
+          {!isAllowed && code === 'parent-incomplete' && (
+            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#181818] border border-[#383838] flex items-center justify-center text-[#FACC15]">
+              <Lock className="h-2 w-2" />
+            </div>
+          )}
         </div>
 
         {isExpanded && (
           <div className="min-w-0 flex-1 truncate">
-            <div className="text-[14px] font-medium leading-tight truncate text-[#FAFAFA]">
-              {item.label}
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[14px] font-medium leading-tight truncate text-[#FAFAFA]">
+                {item.label}
+              </span>
+              {validParentCount > 1 && isAllowed && (
+                <span className="text-[10px] font-mono text-[#8A8A8A] shrink-0">
+                  {validParentCount} places
+                </span>
+              )}
             </div>
             <div
               id={descriptionId}
               className="text-[12px] text-[#8A8A8A] truncate mt-0.5 font-sans"
             >
-              {item.description}
+              {!isAllowed && reason ? reason : item.description}
             </div>
           </div>
         )}
@@ -193,7 +218,7 @@ export function NodeLibraryItem({
             <span>{item.label}</span>
             {!isAllowed && (
               <span className="text-[10px] font-mono text-[#FACC15] uppercase tracking-wider">
-                Disabled
+                {code === 'parent-incomplete' ? 'Locked' : 'Disabled'}
               </span>
             )}
           </div>
@@ -205,7 +230,14 @@ export function NodeLibraryItem({
           {!isAllowed && reason && (
             <div className="mt-2 pt-2 border-t border-[#1F1F1F] flex items-start gap-1.5 text-[11px] text-[#FAFAFA] bg-[#181818]/60 p-1.5 rounded-[6px]">
               <HelpCircle className="h-3.5 w-3.5 text-[#FACC15] shrink-0 mt-0.5" />
-              <span className="leading-tight text-[#FAFAFA]">{reason}</span>
+              <div className="leading-tight">
+                <span className="text-[#FAFAFA]">{reason}</span>
+                {fix && (
+                  <div className="text-[10px] text-[#FACC15] font-mono mt-1">
+                    Click to {fix.label}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

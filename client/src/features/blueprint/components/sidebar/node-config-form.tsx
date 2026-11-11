@@ -17,6 +17,7 @@ import {
   Trash2,
   Loader2,
   Sliders,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TYPE_ICONS } from '../canvas/node-card';
@@ -50,11 +51,45 @@ export function NodeConfigForm({
   const setActiveCommentsNodeId = useBlueprintStore((s) => s.setActiveCommentsNodeId);
   const setImpactPreviewNode = useBlueprintStore((s) => s.setImpactPreviewNode);
   const setNodes = useBlueprintStore((s) => s.setNodes);
+  const nodes = useBlueprintStore((s) => s.nodes);
+  const selectNode = useBlueprintStore((s) => s.selectNode);
 
   const [formData, setFormData] = React.useState<Record<string, unknown>>(node.data.config || {});
   const [isDirty, setIsDirty] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [copiedId, setCopiedId] = React.useState(false);
+
+  // Provenance / inheritance info
+  const inheritedFrom = (node.data.config?._inheritedFrom as {
+    parentId: string;
+    parentLabel: string;
+    parentType: string;
+  }) || undefined;
+  const parentNode = inheritedFrom?.parentId
+    ? nodes.find((n) => n.id === inheritedFrom.parentId)
+    : undefined;
+  const parentConfig = (parentNode?.data.config || {}) as Record<string, unknown>;
+
+  // Check if a field was inherited and whether it is overridden
+  const getFieldInheritanceState = (fieldKey: string) => {
+    if (!inheritedFrom || !parentNode) return null;
+    const parentVal = parentConfig[fieldKey];
+    if (parentVal === undefined) return null;
+
+    const currentVal = formData[fieldKey];
+    const isOverridden = JSON.stringify(currentVal) !== JSON.stringify(parentVal);
+    return {
+      parentName: inheritedFrom.parentLabel || parentNode.data.label,
+      parentId: inheritedFrom.parentId,
+      isOverridden,
+      parentVal,
+    };
+  };
+
+  const handleResetToInherited = (fieldKey: string, parentVal: unknown) => {
+    handleFieldChange(fieldKey, parentVal);
+    toast.info('Restored to inherited', `Reset ${fieldKey} to parent value.`);
+  };
 
   // Accordion section open states (remembered in session)
   const nodeType = node.data.nodeType;
@@ -752,30 +787,73 @@ export function NodeConfigForm({
           {/* Times Section */}
           {hasTimesSection && (
             <div id="field-times">
-              <InspectorSection
-                id="times"
-                title="Times"
-                icon={Clock}
-                isOpen={Boolean(openSections['times'])}
-                onToggle={() => toggleSection('times')}
-                hasIssues={node.data.missing?.some((m) => {
-                  const f = typeof m === 'string' ? m : m.field;
-                  return f === 'workingDays' || f === 'periodConfig';
-                })}
-              >
-                <TimesEditor
-                  config={{
-                    workingDays: (formData['workingDays'] as string[]) || ['mon', 'tue', 'wed', 'thu', 'fri'],
-                    startTime: (formData['startTime'] as string) || '08:30',
-                    periodDurationMinutes: (formData['periodDurationMinutes'] as number) || 50,
-                    periodsPerDay: (formData['periodsPerDay'] as number) || 6,
-                  }}
-                  onChange={(updated: Partial<TimesConfig>) => {
-                    setFormData((prev) => ({ ...prev, ...updated }));
-                    setIsDirty(true);
-                  }}
-                />
-              </InspectorSection>
+              {(() => {
+                const timesState = getFieldInheritanceState('workingDays');
+                return (
+                  <div>
+                    {timesState && (
+                      <div className="flex items-center justify-between px-1 mb-1 text-[11px] font-mono text-[#8A8A8A]">
+                        <span>
+                          {timesState.isOverridden ? (
+                            <span className="text-[#FACC15]">Overridden</span>
+                          ) : (
+                            <span>
+                              Inherited from{' '}
+                              <button
+                                type="button"
+                                onClick={() => selectNode(timesState.parentId)}
+                                className="underline hover:text-[#FAFAFA]"
+                              >
+                                {timesState.parentName}
+                              </button>
+                            </span>
+                          )}
+                        </span>
+                        {timesState.isOverridden && (
+                          <button
+                            type="button"
+                            title="Reset to inherited"
+                            aria-label="Reset to inherited"
+                            onClick={() => {
+                              handleResetToInherited('workingDays', timesState.parentVal);
+                              if (parentConfig['startTime']) handleFieldChange('startTime', parentConfig['startTime']);
+                              if (parentConfig['periodDurationMinutes']) handleFieldChange('periodDurationMinutes', parentConfig['periodDurationMinutes']);
+                              if (parentConfig['periodsPerDay']) handleFieldChange('periodsPerDay', parentConfig['periodsPerDay']);
+                            }}
+                            className="w-7 h-7 rounded-[6px] border border-[#232323] hover:border-[#383838] flex items-center justify-center text-[#8A8A8A] hover:text-[#FAFAFA] bg-[#141414] transition-colors"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    <InspectorSection
+                      id="times"
+                      title="Times"
+                      icon={Clock}
+                      isOpen={Boolean(openSections['times'])}
+                      onToggle={() => toggleSection('times')}
+                      hasIssues={node.data.missing?.some((m) => {
+                        const f = typeof m === 'string' ? m : m.field;
+                        return f === 'workingDays' || f === 'periodConfig';
+                      })}
+                    >
+                      <TimesEditor
+                        config={{
+                          workingDays: (formData['workingDays'] as string[]) || ['mon', 'tue', 'wed', 'thu', 'fri'],
+                          startTime: (formData['startTime'] as string) || '08:30',
+                          periodDurationMinutes: (formData['periodDurationMinutes'] as number) || 50,
+                          periodsPerDay: (formData['periodsPerDay'] as number) || 6,
+                        }}
+                        onChange={(updated: Partial<TimesConfig>) => {
+                          setFormData((prev) => ({ ...prev, ...updated }));
+                          setIsDirty(true);
+                        }}
+                      />
+                    </InspectorSection>
+                  </div>
+                );
+              })()}
             </div>
           )}
 

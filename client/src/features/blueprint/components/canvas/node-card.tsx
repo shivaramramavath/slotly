@@ -17,15 +17,14 @@ import {
   DoorOpen,
   Lock,
   Plus,
-  AlertTriangle,
   MessageSquare,
-  Check,
 } from 'lucide-react';
 import type { BlueprintCanvasNode } from '../../types/canvas.types';
 import type { BlueprintNodeType } from '@slotly/contracts';
 import { useBlueprintStore } from '../../store/blueprint.store';
 import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
+import { ALLOWED_CHILDREN, canAddChild } from '../../can-add-child';
 
 export const TYPE_ICONS: Record<BlueprintNodeType, React.ElementType> = {
   institution: Building2,
@@ -64,7 +63,6 @@ export function calculateNodeProgress(node: BlueprintCanvasNode): number {
   const missingCount = node.data.missing?.length || 0;
   if (missingCount === 0) return 100;
 
-  // Approximate required fields count per node type
   const requiredCountMap: Record<BlueprintNodeType, number> = {
     institution: 2,
     department: 2,
@@ -86,9 +84,6 @@ export function calculateNodeProgress(node: BlueprintCanvasNode): number {
 
 /** Get single metric line text for subtitle */
 export function getNodeMetricLine(node: BlueprintCanvasNode): string {
-  const { nodeType, config } = node.data;
-
-  // Check if node has pool data
   const pool = (node.data as Record<string, unknown>)['pool'] as { additions?: unknown[] } | undefined;
   if (pool?.additions && pool.additions.length > 0) {
     const adds = pool.additions as Array<{ itemType: string }>;
@@ -100,102 +95,111 @@ export function getNodeMetricLine(node: BlueprintCanvasNode): string {
     }
   }
 
-  switch (nodeType) {
-    case 'section':
-      return typeof config?.strength === 'number' ? `Strength ${config.strength}` : 'Strength not set';
-    case 'batch':
-      return typeof config?.size === 'number' ? `Size ${config.size}` : 'Size not set';
-    case 'program':
-      return typeof config?.durationYears === 'number' ? `${config.durationYears} years` : 'Duration not set';
-    case 'semester':
-      if (config?.startDate && config?.endDate) {
-        return `${String(config.startDate)} to ${String(config.endDate)}`;
-      }
-      return typeof config?.number === 'number' ? `Semester ${config.number}` : 'Term active';
-    case 'academicYear':
-      return typeof config?.yearNumber === 'number' ? `Year ${config.yearNumber}` : 'Cohort active';
-    case 'department':
-      return typeof config?.code === 'string' ? `Code: ${config.code}` : 'Department node';
-    case 'institution':
-      return typeof config?.workingDaysCount === 'number'
-        ? `${config.workingDaysCount} working days`
-        : 'Campus root';
-    case 'subjectAssignment':
-      return `${String(config?.type || 'theory').toUpperCase()} • ${String(config?.weeklyHours || 0)}h/wk`;
-    case 'faculty':
-      return `Max ${String(config?.maxHoursPerWeek || 0)}h/wk`;
-    case 'room':
-      return `Cap ${config?.capacity || 0} (${String(config?.type || 'lecture')})`;
-    default:
-      return 'Active node';
+  const { nodeType, config } = node.data;
+  if (nodeType === 'section') {
+    return `Strength ${config['strength'] || 60}`;
   }
+  if (nodeType === 'batch') {
+    return `Size ${config['size'] || 30}`;
+  }
+  if (nodeType === 'program') {
+    return `${config['durationYears'] || 4} years`;
+  }
+  if (nodeType === 'academicYear') {
+    return `Year ${config['yearNumber'] || 1}`;
+  }
+  if (nodeType === 'semester') {
+    return `Semester ${config['number'] || 1}`;
+  }
+  if (nodeType === 'department') {
+    return String(config['code'] || 'DEP');
+  }
+  if (nodeType === 'institution') {
+    return String(config['code'] || 'CAMPUS');
+  }
+  if (nodeType === 'room') {
+    return `Cap ${config['capacity'] || 30} (${config['type'] || 'general'})`;
+  }
+  if (nodeType === 'faculty') {
+    return `${config['designation'] || 'Faculty'}`;
+  }
+
+  return '';
 }
 
 /** Subcomponent: Progress Bar kept for feature parity */
 export const NodeProgress = memo(function NodeProgress({
-  percent,
-  isComplete,
+  progress,
+  effectiveStatus,
 }: {
-  percent: number;
-  isComplete: boolean;
+  progress: number;
+  effectiveStatus: string;
 }) {
+  const isComplete = effectiveStatus === 'complete';
   return (
-    <div className="flex items-center gap-2 w-full pt-1" data-testid="node-progress-bar">
-      <div className="h-1 flex-1 rounded-[2px] bg-[#222222] overflow-hidden">
-        <div
-          className={cn(
-            'h-full rounded-[2px] transition-all duration-300',
-            isComplete ? 'bg-[#22C55E]' : 'bg-white/85',
-          )}
-          style={{ width: `${Math.min(100, Math.max(4, percent))}%` }}
-        />
-      </div>
-      <span className="font-mono text-[11px] text-[#8A8A8A] min-w-[28px] text-right">
-        {percent}%
-      </span>
+    <div className="w-full bg-[#1C1C1C] h-1 rounded-full overflow-hidden">
+      <div
+        className={cn(
+          'h-full transition-all duration-300',
+          isComplete ? 'bg-[#22C55E]' : 'bg-[#FACC15]',
+        )}
+        style={{ width: `${progress}%` }}
+      />
     </div>
   );
 });
 
 /** Subcomponent: Target Ring Handle at Top Edge */
 export const HandleRing = memo(function HandleRing({
-  position = Position.Top,
-  isVisible = false,
+  nodeType,
+  show,
 }: {
-  position?: Position;
-  isVisible?: boolean;
+  nodeType: BlueprintNodeType;
+  show: boolean;
 }) {
+  if (nodeType === 'institution') return null;
+
   return (
-    <Handle
-      type="target"
-      position={position}
+    <div
       className={cn(
-        '!w-2 !h-2 !rounded-full !border !border-[#383838] !bg-[#111111] hover:!border-[#FAFAFA] hover:!bg-[#FAFAFA] transition-opacity duration-150',
-        isVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+        'absolute -top-[5px] left-1/2 -translate-x-1/2 transition-opacity duration-150 z-20 pointer-events-auto',
+        show ? 'opacity-100' : 'opacity-0 md:opacity-0',
       )}
-      style={{ top: '-4px' }}
-    />
+    >
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="!w-[10px] !h-[10px] !rounded-full !bg-[#0A0A0A] !border-[1.5px] !border-[#8A8A8A] hover:!border-[#FAFAFA] hover:!scale-125 !transition-all"
+        style={{ top: 0, left: '50%', transform: 'translate(-50%, 0)' }}
+      />
+    </div>
   );
 });
 
 /** Subcomponent: Source Pill Handle at Bottom Edge */
 export const HandlePill = memo(function HandlePill({
-  position = Position.Bottom,
-  isVisible = false,
+  nodeType,
+  show,
 }: {
-  position?: Position;
-  isVisible?: boolean;
+  nodeType: BlueprintNodeType;
+  show: boolean;
 }) {
+  if (nodeType === 'batch') return null;
+
   return (
-    <Handle
-      type="source"
-      position={position}
+    <div
       className={cn(
-        '!w-2 !h-2 !rounded-full !border !border-[#383838] !bg-[#111111] hover:!border-[#FAFAFA] hover:!bg-[#FAFAFA] transition-opacity duration-150',
-        isVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+        'absolute -bottom-[5px] left-1/2 -translate-x-1/2 transition-opacity duration-150 z-20 pointer-events-auto',
+        show ? 'opacity-100' : 'opacity-0 md:opacity-0',
       )}
-      style={{ bottom: '-4px' }}
-    />
+    >
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!w-[20px] !h-[6px] !rounded-full !bg-[#232323] hover:!bg-[#FAFAFA] !border !border-[#383838] hover:!border-[#FAFAFA] !transition-all"
+        style={{ bottom: 0, left: '50%', transform: 'translate(-50%, 0)' }}
+      />
+    </div>
   );
 });
 
@@ -298,6 +302,7 @@ export const NodeCard = memo(function NodeCard({
   const [activeDraggedType, setActiveDraggedType] = useState<BlueprintNodeType | null>(null);
 
   const isCanvasLocked = useBlueprintStore((s) => s.isCanvasLocked);
+  const nodes = useBlueprintStore((s) => s.nodes);
 
   const { id, data } = node;
   const nodeType = data.nodeType || 'institution';
@@ -312,10 +317,8 @@ export const NodeCard = memo(function NodeCard({
   const commentsCount = data.commentsCount || 0;
   const missingCount = data.missing?.length || 0;
 
-  // Total issues count (errors + warnings)
   const hasIssues = !isComplete && (isBlocked || isIncomplete || missingCount > 0);
   const issueCount = isBlocked ? 1 : Math.max(1, missingCount);
-
   const metricText = getNodeMetricLine(node);
 
   // Listen to drag-node start/end events across the window
@@ -339,13 +342,28 @@ export const NodeCard = memo(function NodeCard({
     };
   }, []);
 
+  // Compute live drag state highlights when dragging from library
+  const validChildren = ALLOWED_CHILDREN[nodeType] || [];
+  const isTargetForDrag = Boolean(activeDraggedType && validChildren.includes(activeDraggedType));
+  const isDragDimmed = Boolean(activeDraggedType && !isTargetForDrag);
+
   // Card Border Styling
   let cardBorder = 'border-[#232323] hover:border-[#383838]';
   if (isDragOver) {
     if (isDragValid) {
-      cardBorder = 'border-[#FAFAFA] ring-2 ring-[#FAFAFA]/70';
+      cardBorder = 'border-[#FAFAFA] ring-2 ring-[#FAFAFA]';
     } else {
       cardBorder = 'border-[#EF4444] ring-1 ring-[#EF4444]/60 cursor-not-allowed';
+    }
+  } else if (activeDraggedType) {
+    if (isTargetForDrag) {
+      if (isComplete) {
+        cardBorder = 'border-[#FAFAFA] ring-2 ring-[#FAFAFA]/80';
+      } else {
+        cardBorder = 'border-dashed border-[#8A8A8A] ring-1 ring-[#8A8A8A]/50';
+      }
+    } else {
+      cardBorder = 'border-[#1C1C1C] opacity-60';
     }
   } else if (selected) {
     cardBorder = 'border-[#FAFAFA] ring-1 ring-[#FAFAFA] ring-offset-2 ring-offset-[#0A0A0A]';
@@ -379,31 +397,16 @@ export const NodeCard = memo(function NodeCard({
     );
   };
 
-  // Drag over target node
+  // Drag over target node: enforce canAddChild
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!activeDraggedType) return;
 
-    if (isCanvasLocked) {
-      e.dataTransfer.dropEffect = 'none';
-      setIsDragValid(false);
-      setIsDragOver(true);
-      window.dispatchEvent(
-        new CustomEvent('slotly:drag-reason', {
-          detail: {
-            reason: 'Canvas is locked. Unlock canvas to add or modify nodes.',
-            clientX: e.clientX,
-            clientY: e.clientY,
-          },
-        }),
-      );
-      return;
-    }
+    const check = canAddChild(nodes, id, activeDraggedType, isCanvasLocked);
 
-    const isAllowed = allowedChildTypes.includes(activeDraggedType);
-    if (isAllowed && isComplete) {
+    if (check.ok) {
       e.dataTransfer.dropEffect = 'copy';
       setIsDragValid(true);
       setIsDragOver(true);
@@ -412,15 +415,14 @@ export const NodeCard = memo(function NodeCard({
       e.dataTransfer.dropEffect = 'none';
       setIsDragValid(false);
       setIsDragOver(true);
-      const reason = !isComplete
-        ? `Complete '${data.label || 'parent'}' first`
-        : `Cannot add ${activeDraggedType} under ${nodeType}. Needs a valid parent.`;
       window.dispatchEvent(
         new CustomEvent('slotly:drag-reason', {
           detail: {
-            reason,
+            reason: check.reason || 'Cannot add node here',
             clientX: e.clientX,
             clientY: e.clientY,
+            targetNodeId: id,
+            showConfigButton: check.code === 'parent-incomplete',
           },
         }),
       );
@@ -446,17 +448,9 @@ export const NodeCard = memo(function NodeCard({
 
     if (!droppedType) return;
 
-    if (isCanvasLocked) {
-      toast.info('Canvas locked', 'Canvas is locked. Unlock canvas to add or modify nodes.');
-      return;
-    }
-
-    const isAllowed = allowedChildTypes.includes(droppedType);
-    if (!isAllowed || !isComplete) {
-      const reason = !isComplete
-        ? `Complete '${data.label || 'parent'}' first`
-        : `Cannot add ${droppedType} under ${nodeType}.`;
-      toast.error('Cannot add child here', reason);
+    const check = canAddChild(nodes, id, droppedType, isCanvasLocked);
+    if (!check.ok) {
+      toast.error('Cannot add child here', check.reason || 'Parent must be complete');
       return;
     }
 
@@ -499,101 +493,110 @@ export const NodeCard = memo(function NodeCard({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        'relative group w-[232px] min-h-[64px] rounded-[12px] border p-3 select-none cursor-pointer',
-        'bg-[#111111] transition-[border-color,box-shadow] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-white',
+        'relative w-[232px] rounded-[16px] bg-[#111111] p-3 transition-all duration-150 border cursor-pointer select-none outline-none',
         cardBorder,
-        data.hidden && 'opacity-40 border-dashed',
+        isDragDimmed && 'opacity-60',
+        isLocked && 'border-[#EF4444]/40',
       )}
     >
-      {/* Screen Reader Summary of Issues */}
-      <span id={`node-issues-summary-${id}`} className="sr-only">
-        {issuesSummary}
-      </span>
+      {/* Target Ring Handle at Top */}
+      <HandleRing nodeType={nodeType} show={showHandles} />
 
-      {/* Top Handle (Target) */}
-      {nodeType !== 'institution' && <HandleRing isVisible={showHandles} />}
-
-      {/* Main Row: Icon + Title/Subtitle + Status */}
-      <div className="flex items-start justify-between gap-2.5">
-        {/* Left: 20px Icon + Label + Subtitle */}
-        <div className="flex items-start gap-2.5 min-w-0 flex-1">
-          <Icon className="h-5 w-5 text-[#8A8A8A] shrink-0 mt-0.5" />
-          <div className="min-w-0 flex-1">
-            <h3
-              className="text-[14px] leading-snug font-medium text-[#FAFAFA] truncate"
-              title={data.label || 'Untitled'}
-            >
-              {data.label || 'Untitled'}
-            </h3>
+      {/* Card Content Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-6 h-6 rounded-[6px] bg-[#161616] border border-[#232323] flex items-center justify-center text-[#FAFAFA] shrink-0">
+            <Icon className="h-3.5 w-3.5" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[10px] font-mono text-[#8A8A8A] uppercase tracking-wider truncate">
+              {TYPE_LABELS[nodeType] || nodeType}
+            </div>
             <div
-              className="text-[12px] font-mono text-[#8A8A8A] leading-snug truncate mt-0.5"
-              title={metricText}
+              className="text-[13px] font-medium text-[#FAFAFA] truncate max-w-[140px] leading-snug"
+              title={data.label}
             >
-              {metricText}
+              {data.label}
             </div>
           </div>
         </div>
 
-        {/* Right Status Area */}
-        <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-          {hasIssues ? (
-            <div
-              className="flex items-center gap-1 text-[#FACC15]"
-              title={`${issueCount} issues`}
-            >
-              <AlertTriangle className="h-4 w-4 shrink-0 text-[#FACC15]" />
-              <span className="font-mono text-xs font-medium leading-none text-[#FACC15]">
-                {issueCount}
-              </span>
-            </div>
-          ) : isComplete ? (
-            <span title="Ready">
-              <Check className="h-4 w-4 text-[#8A8A8A] shrink-0" />
+        {/* Right Corner Badges: Incomplete Chip or Lock/Status indicator */}
+        <div className="flex items-center gap-1 shrink-0">
+          {activeDraggedType && isTargetForDrag && !isComplete && (
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-[#1C1C1C] text-[#FACC15] border border-[#383838]">
+              Incomplete
             </span>
-          ) : null}
-
-          {/* Locked / Comments Icons */}
-          {commentsCount > 0 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenComments?.();
-              }}
-              title={`${commentsCount} comments`}
-              className="text-[#8A8A8A] hover:text-[#FAFAFA]"
-            >
-              <MessageSquare className="h-3.5 w-3.5" />
-            </button>
           )}
 
-          {lockedBy ? (
+          {isLocked && (
             <span
-              title={`Editing by ${lockedBy.userName}`}
-              className="flex items-center gap-0.5 text-[9px] font-mono text-[#8A8A8A]"
+              title={lockedBy ? `Locked by ${lockedBy.userName}` : 'Node locked'}
+              className="text-[#8A8A8A] hover:text-[#FAFAFA] transition-colors"
             >
-              <Lock className="h-3 w-3" />
+              <Lock className="h-3.5 w-3.5" />
             </span>
-          ) : isLocked ? (
-            <Lock className="h-3.5 w-3.5 text-[#8A8A8A]" />
-          ) : null}
+          )}
+
+          {isBlocked ? (
+            <span className="w-2 h-2 rounded-full bg-[#8A8A8A]" title="Parent incomplete" />
+          ) : isComplete ? (
+            <span className="w-2 h-2 rounded-full bg-[#22C55E]" title="Ready" />
+          ) : (
+            <span className="w-2 h-2 rounded-full bg-[#FACC15]" title="Incomplete" />
+          )}
         </div>
       </div>
 
-      {/* Bottom Handle / Add Child Control */}
-      {nodeType !== 'batch' && (
-        <>
-          <HandlePill isVisible={showHandles} />
-          {isComplete && allowedChildTypes.length > 0 && !isLocked && (
-            <AddChildButton
-              nodeId={id}
-              allowedChildTypes={allowedChildTypes}
-              isHovered={isHovered}
-              isSelected={selected}
-            />
-          )}
-        </>
+      {/* Subtitle / Metric Line */}
+      {metricText && (
+        <div className="mt-1.5 text-[11px] font-mono text-[#8A8A8A] truncate">
+          {metricText}
+        </div>
       )}
+
+      {/* Footer Status Line */}
+      <div className="mt-2 pt-2 border-t border-[#1C1C1C] flex items-center justify-between text-[11px] font-mono text-[#8A8A8A]">
+        <div>
+          {isComplete ? (
+            <span className="text-[#22C55E]">Ready</span>
+          ) : (
+            <span className="text-[#FACC15]">
+              {issueCount} missing
+            </span>
+          )}
+        </div>
+
+        {commentsCount > 0 && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenComments?.();
+            }}
+            className="flex items-center gap-1 text-[#8A8A8A] hover:text-[#FAFAFA] transition-colors"
+          >
+            <MessageSquare className="h-3 w-3" />
+            <span>{commentsCount}</span>
+          </button>
+        )}
+      </div>
+
+      {/* Source Pill Handle at Bottom */}
+      <HandlePill nodeType={nodeType} show={showHandles} />
+
+      {/* Add Child "+" Control Button */}
+      <AddChildButton
+        nodeId={id}
+        allowedChildTypes={allowedChildTypes}
+        isHovered={isHovered}
+        isSelected={selected}
+      />
+
+      {/* Visually hidden issues summary for screen readers */}
+      <span id={`node-issues-summary-${id}`} className="sr-only">
+        {issuesSummary}
+      </span>
     </div>
   );
 });
