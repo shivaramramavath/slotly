@@ -93,11 +93,19 @@ export const DEFAULT_CONFIG = {
   },
   cache: {
     defaultTtl: 3600,
+    negativeTtl: 30,
+    maxBytes: 262144, // 256 KB
+    keyPrefixEnv: 'development',
+    schemaVersion: 1,
     blueprintTtl: 7200,
     readinessTtl: 600,
     treeTtl: 86400,
     slotsTtl: 7200,
     userProfileTtl: 3600,
+    projectListTtl: 3600,
+    libraryListTtl: 7200,
+    analyticsTtl: 60,
+    notificationsTtl: 300,
   },
   queue: {
     prefix: 'slotly',

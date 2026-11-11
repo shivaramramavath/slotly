@@ -1,4 +1,4 @@
-// Configuration factory for cache TTLs and eviction policies.
+// Configuration factory for cache TTLs, eviction policies, and size thresholds.
 import { registerAs, ConfigType } from '@nestjs/config';
 import { DEFAULT_CONFIG } from './defaults';
 
@@ -6,6 +6,24 @@ import { DEFAULT_CONFIG } from './defaults';
 export const cacheConfig = registerAs('cache', () => ({
   defaultTtl: parseInt(
     process.env['CACHE_DEFAULT_TTL'] || String(DEFAULT_CONFIG.cache.defaultTtl),
+    10,
+  ),
+  negativeTtl: parseInt(
+    process.env['CACHE_NEGATIVE_TTL'] ||
+      String(DEFAULT_CONFIG.cache.negativeTtl),
+    10,
+  ),
+  maxBytes: parseInt(
+    process.env['CACHE_MAX_BYTES'] || String(DEFAULT_CONFIG.cache.maxBytes),
+    10,
+  ),
+  keyPrefixEnv:
+    process.env['CACHE_KEY_PREFIX_ENV'] ||
+    process.env['NODE_ENV'] ||
+    DEFAULT_CONFIG.cache.keyPrefixEnv,
+  schemaVersion: parseInt(
+    process.env['CACHE_SCHEMA_VERSION'] ||
+      String(DEFAULT_CONFIG.cache.schemaVersion),
     10,
   ),
   blueprintTtl: parseInt(
@@ -29,6 +47,26 @@ export const cacheConfig = registerAs('cache', () => ({
   userProfileTtl: parseInt(
     process.env['CACHE_USER_PROFILE_TTL'] ||
       String(DEFAULT_CONFIG.cache.userProfileTtl),
+    10,
+  ),
+  projectListTtl: parseInt(
+    process.env['CACHE_PROJECT_LIST_TTL'] ||
+      String(DEFAULT_CONFIG.cache.projectListTtl),
+    10,
+  ),
+  libraryListTtl: parseInt(
+    process.env['CACHE_LIBRARY_LIST_TTL'] ||
+      String(DEFAULT_CONFIG.cache.libraryListTtl),
+    10,
+  ),
+  analyticsTtl: parseInt(
+    process.env['CACHE_ANALYTICS_TTL'] ||
+      String(DEFAULT_CONFIG.cache.analyticsTtl),
+    10,
+  ),
+  notificationsTtl: parseInt(
+    process.env['CACHE_NOTIFICATIONS_TTL'] ||
+      String(DEFAULT_CONFIG.cache.notificationsTtl),
     10,
   ),
 }));
