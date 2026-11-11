@@ -4,6 +4,8 @@ import type {
   ApplyOperationsDto,
   ApplyTemplateDto,
   BatchOperationResult,
+  BlueprintAiChatRequestDto,
+  BlueprintAiChatResponseDto,
   BlueprintCommentDto,
   BlueprintGraphDto,
   BlueprintHistoryEntryDto,
@@ -15,6 +17,8 @@ import type {
   CreateBlueprintSnapshotDto,
   CreateGraphTemplateDto,
   GraphTemplateDto,
+  PoolOpPayload,
+  ResolvedPool,
   ValidateProjectDto,
   ValidateVersionDto,
   ValidationReportDto,
@@ -206,6 +210,41 @@ export const blueprintApi = {
       {
         method: 'POST',
         body: JSON.stringify(dto),
+      },
+    );
+  },
+
+  // Slotly AI Chat for the whole blueprint
+  async chatAi(
+    projectId: string,
+    dto: BlueprintAiChatRequestDto,
+  ): Promise<BlueprintAiChatResponseDto> {
+    return apiClient<BlueprintAiChatResponseDto>(
+      `/projects/${projectId}/blueprint/ai/chat`,
+      {
+        method: 'POST',
+        body: JSON.stringify(dto),
+      },
+    );
+  },
+
+  // Resource Pools
+  async getNodePool(projectId: string, nodeId: string): Promise<ResolvedPool> {
+    return apiClient<ResolvedPool>(
+      `/projects/${projectId}/blueprint/nodes/${nodeId}/pool`,
+    );
+  },
+
+  async mutatePool(
+    projectId: string,
+    nodeId: string,
+    payload: PoolOpPayload,
+  ): Promise<unknown> {
+    return apiClient<unknown>(
+      `/projects/${projectId}/blueprint/nodes/${nodeId}/pool`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
       },
     );
   },

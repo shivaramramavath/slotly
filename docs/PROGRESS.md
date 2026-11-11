@@ -2495,6 +2495,84 @@ Merged via `ux/09-projects-sections`, tag `ux-09-projects-sections-merged`.
 
 Merged via `ux/10-blueprint-dnd-compact`, tag `ux-10-blueprint-dnd-compact-merged`.
 
+---
+
+## UX Task: Blueprint Canvas Inspector Redesign (`ux/12-blueprint-inspector`)
+
+### What Was Built
+
+1. **Inspector Panel Shell (`InspectorPanel` & `BlueprintSidebar`):**
+   - Docked on the right side of the canvas with CSS variable `--inspector-width`: 360px on viewports $\ge 1280$px, 320px on viewports 1024px–1279px.
+   - Fully responsive: transforms into an off-canvas slide-over drawer with dark scrim (`bg-black/50`), escape key listener, and focus trap below 1024px; transforms into a bottom sheet with snap heights (45% peek and 90% full height) below 768px.
+   - 32px collapse button in the tab bar collapses the panel to width 0 with local storage persistence (`slotly:inspector-collapsed`). A floating 32px button at the right edge reopens it.
+   - 36px SegmentedControl tab switcher between `Config`, `Constraints`, and `Slotly AI`.
+   - Loading skeleton (delayed by 150ms to prevent flashes, displayed for $\ge 300$ms) and shared error panel with Retry button.
+
+2. **Config Tab — Blueprint Overview (No Node Selected):**
+   - Renders when clicking empty canvas or deselecting nodes.
+   - Sticky header with project name and Draft status pill.
+   - 4px segmented readiness bar with health score and completion percentage.
+   - Grid of resource count metric cards (Nodes, Connections, Faculty, Rooms, Subjects).
+   - "Needs attention" list showing all incomplete nodes with their issue count; clicking a row smoothly pans the canvas and selects that node.
+   - Multi-selection support: displays count of selected nodes, type badges, and a batch Delete action.
+
+3. **Config Tab — Node Inspection & Issues Summary:**
+   - Sticky node header: 20px node type icon, 14px font-medium title, mono 12px subtitle (`code` / `type`), status chip ("Ready" check or "Incomplete" with yellow text, 16px warning icon, count "N to fix"), and comment button.
+   - Issues Summary alert card (`IssuesSummary`): 2px yellow left indicator line (no yellow box fill), "Fix automatically" outline button (28px) applying safe defaults, plain-language issue labels (`issue-label.ts`) with mono raw keys, and click-to-jump targets that scroll and focus basic fields or expand relevant resource accordion sections.
+   - Basic fields form: 13px label + "Required" text (muted, not colored asterisk), 40px inputs (`h-10`), radius 12px, surface background (`#111111`), neutral focus ring (`ring-1 ring-[#FAFAFA]`, not yellow).
+
+4. **Config Tab — Resource Sections (`InspectorSection` Accordion):**
+   - Accordion sections for Faculty, Rooms, Subjects, Times, and More, rendered dynamically only when applicable to the selected node type.
+   - 48px accordion header with count badge, `+` button for quick assignment, and expand/collapse chevron. Section state persisted in local storage.
+   - **Resource Rows (`ResourceRow`):** 44px rows with initials/glyph avatar, title, meta subtitle (workload/capacity/code), 32px remove button. Removal displays a 5-second inline "Removed. Undo" banner before committing deletion.
+   - **Resource Picker (`ResourcePicker`):** Popover combobox with live search, multi-select, currently assigned items checked first, "Done" button, empty state linking to Library, and ineligible items disabled with reason tooltips.
+   - **Times Editor (`TimesEditor`):** 7 working-day toggles (40px, `aria-pressed`, active state highlighted), start time input, period duration input, daily periods count, and break slots editor with add/remove rows.
+   - **More Section:** Collapsed by default, description textarea, tags input, node database ID with one-click copy button, Duplicate node button, and Delete node button (with confirmation dialog).
+   - Sticky footer: 64px height, "N unsaved changes" indicator, "Reset" ghost button (40px), "Apply changes" solid white button (`#FAFAFA` with black text `#000000`, 40px, radius 12px, check icon — NOT yellow, disabled until valid changes exist, loading spinner while saving, keyboard shortcut `Mod+Enter` applies).
+
+5. **Slotly AI Tab — Whole Blueprint Assistant Chat (`AiChatPanel`):**
+   - Dedicated whole-blueprint assistant chat backed by additive server endpoint `POST /projects/:projectId/blueprint/ai/chat`.
+   - Context bar: "Whole blueprint" chip + "Include selected node" toggle chip, and "New chat" button.
+   - Chat log: Accessible `role="log"` container with auto-scroll pinning to latest message, "Jump to latest" floating pill when scrolled up, copy message button, and sanitized markdown rendering.
+   - Empty state: 4 quick prompt suggestion cards ("Check for timetable bottlenecks", "Suggest break and period timings", "Summarize faculty allocations", "What is missing to make this blueprint ready?").
+   - Auto-growing composer: 1 to 5 lines textarea, Enter to send, Shift+Enter for new line, and Stop button during streaming generation.
+
+6. **Keyboard and Canvas Safety:**
+   - Typing in inspector inputs, textareas, search pickers, or the AI composer never triggers canvas hotkeys (Delete, Backspace, F, Z, C, V, D) via explicit `stopPropagation` handling on editable targets.
+
+7. **Server & Contracts:**
+   - Contracts: Added `BlueprintAiChatMessageSchema`, `BlueprintAiChatRequestDtoSchema`, `BlueprintAiChatResponseDtoSchema`.
+   - Server: Implemented `BlueprintAiService` with `buildContextSummary` (capped < 3500 chars), intelligent context-aware responses (blocking issues, hierarchy summary, faculty allocation, period timings), and suggested node IDs. Added `@Post('ai/chat')` endpoint in `BlueprintController` protected by `BLUEPRINT_READ` permission.
+   - Unit tests: Added comprehensive test coverage in `server/src/modules/blueprint/tests/blueprint-ai.spec.ts` and `client/src/features/blueprint/components/__tests__/blueprint-inspector.spec.ts`.
+
+### Decisions Made
+
+- **Color Budget**: Yellow (`#FACC15`) is strictly semantic (alerts, warning icons, count badges). Apply Changes button is solid white (`#FAFAFA`) with black text (`#000000`), focus rings are neutral light (`#FAFAFA`), and issue alert has a 2px left border rather than yellow fill.
+- **Section Applicability**: Filtered accordion sections by node type: `institution` has Faculty, Rooms, Subjects, Times, More; `department` has Faculty, Rooms, Subjects, More; `program` has Faculty, Subjects, More; `section` has Faculty, Rooms, Subjects, Times, More; `academicYear`, `semester`, `batch` have More only.
+- **Whole Blueprint AI Architecture**: AI assistant generates contextual recommendations, structural diagnostics, and explanations based on real-time node readiness and graph topology, but does not directly mutate project state, preserving the invariant that human designers and the deterministic constraint solver remain solely authoritative over schedule correctness.
+
+### Manual Test Checklist
+
+- [x] Open Blueprint canvas (`/projects/:id/blueprint`) — inspector opens on the right at 360px width with 3 tabs (`Config`, `Constraints`, `Slotly AI`).
+- [x] Deselect all nodes — inspector displays Blueprint Overview with project name, Draft chip, 4px readiness bar, resource count cards, and "Needs attention" list.
+- [x] Click a node in the "Needs attention" list — canvas pans and selects the node, switching inspector to that node's Config form.
+- [x] Check node header — shows 20px icon, title, code subtitle, and Ready/Incomplete status badge with warning icon and issue count.
+- [x] Inspect Issues Summary — 2px yellow left indicator alert shows plain-language issues; clicking "Fix automatically" applies safe defaults.
+- [x] Test Basic fields — 40px inputs with neutral light focus ring (not yellow), 13px label + "Required" text.
+- [x] Open Resource accordions — Faculty, Rooms, Subjects show 44px rows with initials/glyph, meta, and 32px remove button.
+- [x] Click remove on a resource row — displays 5-second inline "Removed. Undo" banner; clicking Undo restores the resource.
+- [x] Click "+" on a resource section — combobox Popover opens with search, multi-select, and disabled tooltips on ineligibles.
+- [x] Open Times section — 7 working-day toggles (40px, `aria-pressed`), start time, period duration, daily periods, and break slots editor render cleanly.
+- [x] Open More section — description, tags, node ID copy button, Duplicate and Delete buttons work as expected.
+- [x] Check sticky footer — shows unsaved count, Reset button, and solid white Apply Changes button with check icon (disabled until valid edits; `Mod+Enter` applies).
+- [x] Switch to Slotly AI tab — displays context chips ("Whole blueprint" / "Include selected node"), 4 suggestion chips, and auto-growing composer.
+- [x] Type in AI chat or input fields — pressing Delete, Backspace, F, Z, C, V does NOT trigger canvas actions.
+- [x] Collapse inspector — clicking collapse button shrinks width to 0; floating open button at right edge restores it.
+- [x] Resize browser < 1024px — inspector renders as slide-over drawer with backdrop scrim; resize < 768px renders as bottom sheet with snap heights.
+
+Merged via `ux/12-blueprint-inspector`, tag `ux-12-blueprint-inspector-merged`.
+
+
 
 
 

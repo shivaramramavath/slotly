@@ -9,6 +9,7 @@
 *HTTP controller handling blueprint.controller endpoints.*
 
 - **Controller** `BlueprintController` (base: `/projects/:projectId/blueprint`) - Controller handling blueprint controller HTTP endpoints.
+  - `POST /projects/:projectId/blueprint/ai/chat` -> `chatAi()` [perm: 'BLUEPRINT_READ']
   - `GET /projects/:projectId/blueprint` -> `getGraph()` [perm: 'BLUEPRINT_READ']
   - `GET /projects/:projectId/blueprint/readiness` -> `getReadiness()` [perm: 'BLUEPRINT_READ']
   - `GET /projects/:projectId/blueprint/nodes/:nodeId/impact` -> `getImpact()` [perm: 'BLUEPRINT_READ']
@@ -189,6 +190,11 @@
 - **Mongoose Schema** `Blueprint` (collection: `blueprints` (indexes: projectId)) - Class implementing blueprint.
 - **Type** `BlueprintDocument` - Type alias for blueprint document.
 - **Zod Schema** `BlueprintSchema` -> `Blueprint` - Zod schema validating blueprint.
+
+### `server/src/modules/blueprint/services/blueprint-ai.service.ts`
+*Service generating intelligent read-only whole-blueprint AI assistance.*
+
+- **Injectable** `BlueprintAiService` (deps: BlueprintService) - Service providing whole-blueprint AI assistant chat with compact context summarization.
 
 ### `server/src/modules/blueprint/services/blueprint.service.ts`
 *Domain service orchestrating blueprint.service business logic.*

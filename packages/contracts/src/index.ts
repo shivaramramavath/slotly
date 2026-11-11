@@ -3316,3 +3316,31 @@ export const ClientWebVitalsDtoSchema = z.object({
 });
 /** TypeScript type inferred from client web vitals metric DTO. */
 export type ClientWebVitalsDto = z.infer<typeof ClientWebVitalsDtoSchema>;
+
+/** Zod schema validating chat message history entry in AI assistant requests. */
+export const BlueprintAiChatMessageSchema = z.object({
+  role: z.enum(['user', 'assistant', 'system']),
+  content: z.string(),
+});
+/** TypeScript type inferred from blueprint AI chat message schema. */
+export type BlueprintAiChatMessage = z.infer<typeof BlueprintAiChatMessageSchema>;
+
+/** Zod schema validating blueprint AI chat request payload. */
+export const BlueprintAiChatRequestDtoSchema = z.object({
+  message: z.string().min(1).max(2000),
+  selectedNodeId: z.string().optional(),
+  includeSelectedNode: z.boolean().optional(),
+  history: z.array(BlueprintAiChatMessageSchema).optional(),
+});
+/** TypeScript type inferred from blueprint AI chat request DTO schema. */
+export type BlueprintAiChatRequestDto = z.infer<typeof BlueprintAiChatRequestDtoSchema>;
+
+/** Zod schema validating blueprint AI chat response payload. */
+export const BlueprintAiChatResponseDtoSchema = z.object({
+  reply: z.string(),
+  suggestedNodeIds: z.array(z.string()).optional(),
+  timestamp: z.string().optional(),
+});
+/** TypeScript type inferred from blueprint AI chat response DTO schema. */
+export type BlueprintAiChatResponseDto = z.infer<typeof BlueprintAiChatResponseDtoSchema>;
+

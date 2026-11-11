@@ -270,6 +270,9 @@
 - **Type** `QueueHealthItem` - TypeScript type inferred from queue health item DTO.
 - **Type** `QueuesHealthResponseDto` - TypeScript type inferred from queues health response DTO.
 - **Type** `ClientWebVitalsDto` - TypeScript type inferred from client web vitals metric DTO.
+- **Type** `BlueprintAiChatMessage` - TypeScript type inferred from blueprint AI chat message schema.
+- **Type** `BlueprintAiChatRequestDto` - TypeScript type inferred from blueprint AI chat request DTO schema.
+- **Type** `BlueprintAiChatResponseDto` - TypeScript type inferred from blueprint AI chat response DTO schema.
 - **Function** `normalizeReasonCode(code: string)`: `"REVISION_CONFLICT" | "PARENT_MISSING" | "PARENT_INCOMPLETE" | "PARENT_TYPE_NOT_ALLOWED" | "DUPLICATE_NAME" | "CAPACITY_EXCEEDED" | "CYCLE" | "ENDPOINT_INCOMPLETE" | "NOT_QUALIFIED" | "PROJECT_LOCKED" | "PERMISSION_DENIED" | "SINGLE_PARENT_VIOLATION" | "INVALID_OPERATION" | "INSUFFICIENT_LAB_CAPACITY" | "MISSING_ALLOCATION" | "FACULTY_OVERLOAD" | "INVALID_GRAPH" | "POOL_ITEM_NOT_FOUND" | "POOL_ITEM_ARCHIVED" | "POOL_ITEM_REQUIRED" | "POOL_ITEM_IN_USE" | "POOL_DEPARTMENT_FORBIDDEN" | "POOL_DUPLICATE" | "ASSIGNMENT_NOT_IN_POOL"` - Normalizes any legacy, aliased, or formatted reason code string into its canonical enum representation.
 - **Function** `normalizeAvailabilityMatrix(matrix: boolean[][] | null | undefined, daysCount: number, periodsCount: number)`: `boolean[][]` - Function normalizing availability matrix dimensions according to days and periods per day.
 - **Zod Schema** `ApiErrorResponseSchema` -> `ApiErrorResponse` - Zod schema validating api error response.
@@ -541,4 +544,7 @@
 - **Zod Schema** `QueueHealthItemSchema` -> `QueueHealthItem` - Zod schema validating queue health item DTO.
 - **Zod Schema** `QueuesHealthResponseDtoSchema` -> `QueuesHealthResponseDto` - Zod schema validating queues health response DTO.
 - **Zod Schema** `ClientWebVitalsDtoSchema` -> `ClientWebVitalsDto` - Zod schema validating client web vitals metric DTO.
+- **Zod Schema** `BlueprintAiChatMessageSchema` -> `BlueprintAiChatMessage` - Zod schema validating chat message history entry in AI assistant requests.
+- **Zod Schema** `BlueprintAiChatRequestDtoSchema` -> `BlueprintAiChatRequestDto` - Zod schema validating blueprint AI chat request payload.
+- **Zod Schema** `BlueprintAiChatResponseDtoSchema` -> `BlueprintAiChatResponseDto` - Zod schema validating blueprint AI chat response payload.
 

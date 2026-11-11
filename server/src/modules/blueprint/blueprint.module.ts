@@ -46,6 +46,7 @@ import { CacheModule } from '../../common/cache/cache.module';
 import { UsersModule } from '../users/users.module';
 import { LibraryModule } from '../library/library.module';
 import { PoolResolverService } from './services/pool-resolver.service';
+import { BlueprintAiService } from './services/blueprint-ai.service';
 
 /** Class implementing blueprint module. */
 @Module({
@@ -81,6 +82,7 @@ import { PoolResolverService } from './services/pool-resolver.service';
     GraphFromInstitutionBuilder,
     TemplateService,
     PoolResolverService,
+    BlueprintAiService,
     BlueprintService,
     BlueprintGateway,
     BlueprintWriteProcessor,
@@ -98,6 +100,7 @@ import { PoolResolverService } from './services/pool-resolver.service';
     GraphFromInstitutionBuilder,
     TemplateService,
     PoolResolverService,
+    BlueprintAiService,
     BlueprintService,
   ],
 })

@@ -27,6 +27,7 @@
   --blueprint-control-radius: 10px;
   --blueprint-grid-color: rgba(255, 255, 255, 0.03);
   --blueprint-edge-stroke: rgba(250, 250, 250, 0.55);
+  --inspector-width: 360px;
 
   /* shadcn semantic tokens mapped to strict B&W rules */
   --primary: #facc15;
@@ -41,6 +42,12 @@
   --destructive-foreground: #ffffff;
   --input: #232323;
   --ring: #facc15;
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  :root {
+    --inspector-width: 320px;
+  }
 }
 
 body {
