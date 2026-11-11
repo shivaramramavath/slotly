@@ -14,9 +14,12 @@ import { AuthGuard, type RequestUser } from '../../auth/guards/auth.guard';
 import { PermissionsGuard } from '../../../common/rbac/permissions.guard';
 import { RequirePermissions } from '../../../common/rbac/roles.decorator';
 import { BlueprintService } from '../services/blueprint.service';
+import { BlueprintAiService } from '../services/blueprint-ai.service';
 import type {
   ApplyOperationsDto,
   BatchOperationResult,
+  BlueprintAiChatRequestDto,
+  BlueprintAiChatResponseDto,
   BlueprintCommentDto,
   BlueprintGraphDto,
   BlueprintHistoryEntryDto,
@@ -35,7 +38,19 @@ import type {
 @Controller('projects/:projectId/blueprint')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class BlueprintController {
-  constructor(private readonly blueprintService: BlueprintService) {}
+  constructor(
+    private readonly blueprintService: BlueprintService,
+    private readonly blueprintAiService: BlueprintAiService,
+  ) {}
+
+  @Post('ai/chat')
+  @RequirePermissions('BLUEPRINT_READ')
+  async chatAi(
+    @Param('projectId') projectId: string,
+    @Body() dto: BlueprintAiChatRequestDto,
+  ): Promise<BlueprintAiChatResponseDto> {
+    return this.blueprintAiService.chat(projectId, dto);
+  }
 
   @Get()
   @RequirePermissions('BLUEPRINT_READ')
