@@ -1,5 +1,5 @@
 // Domain service orchestrating notification creation, preference evaluation, delivery, and user inbox management.
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable, Optional, Inject } from '@nestjs/common';
 import type {
   NotificationDto,
   NotificationPreferencesDto,
@@ -14,6 +14,8 @@ import {
   RecipientInfo,
 } from './recipient-resolver.service';
 import { EmailService } from '../../../common/email/email.service';
+import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
+import type { CacheService } from '../../../common/cache/cache.interface';
 
 /** Service coordinating notification storage, preference filtering, push, and email dispatch. */
 @Injectable()
@@ -25,6 +27,9 @@ export class NotificationsService {
     private readonly gateway: NotificationsGateway,
     @Optional()
     private readonly emailService?: EmailService,
+    @Optional()
+    @Inject(CACHE_SERVICE)
+    private readonly cache?: CacheService,
   ) {}
 
   /** Retrieves user notifications with optional unread filter. */
@@ -53,19 +58,31 @@ export class NotificationsService {
     }));
   }
 
-  /** Gets unread notifications count for a user. */
+  /** Gets unread notifications count for a user with cache-aside caching. */
   async getUnreadCount(userId: string): Promise<number> {
-    return this.notificationRepo.countUnread(userId);
+    const cacheKey = `slotly:notifications:unread:${userId}`;
+    if (!this.cache) {
+      return this.notificationRepo.countUnread(userId);
+    }
+    return this.cache.remember(cacheKey, 300, () =>
+      this.notificationRepo.countUnread(userId),
+    );
   }
 
-  /** Marks a specific notification as read. */
+  /** Marks a specific notification as read and busts unread count cache. */
   async markAsRead(id: string, userId: string): Promise<void> {
     await this.notificationRepo.markAsRead(id, userId);
+    if (this.cache) {
+      await this.cache.del(`slotly:notifications:unread:${userId}`);
+    }
   }
 
-  /** Marks all notifications as read for a user. */
+  /** Marks all notifications as read for a user and busts unread count cache. */
   async markAllAsRead(userId: string): Promise<void> {
     await this.notificationRepo.markAllAsRead(userId);
+    if (this.cache) {
+      await this.cache.del(`slotly:notifications:unread:${userId}`);
+    }
   }
 
   /** Retrieves notification preferences for a user with sensible defaults. */
@@ -143,6 +160,11 @@ export class NotificationsService {
         };
 
         this.gateway.emitToUser(recipient.userId, dto);
+        if (this.cache) {
+          await this.cache.del(
+            `slotly:notifications:unread:${recipient.userId}`,
+          );
+        }
       }
 
       // 2. Email delivery via EmailService / BullMQ worker

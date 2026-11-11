@@ -1,5 +1,7 @@
 // Domain service orchestrating template.service business logic.
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Optional, Inject } from '@nestjs/common';
+import { CACHE_SERVICE } from '../../../common/cache/cache.interface';
+import type { CacheService } from '../../../common/cache/cache.interface';
 import type {
   ApplyOperationsDto,
   BatchOperationResult,
@@ -30,6 +32,9 @@ export class TemplateService implements OnModuleInit {
     private readonly blueprintRepo: CachedBlueprintRepository,
     private readonly projectRepo: CachedProjectRepository,
     private readonly operationService: OperationService,
+    @Optional()
+    @Inject(CACHE_SERVICE)
+    private readonly cache?: CacheService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -316,18 +321,27 @@ export class TemplateService implements OnModuleInit {
   }
 
   async listTemplates(institutionId?: string): Promise<GraphTemplateDto[]> {
-    const list = await this.templateRepo.findAvailableTemplates(institutionId);
-    return list.map((t) => ({
-      id: getId(t),
-      name: t.name,
-      category: t.category,
-      subtree: t.subtree,
-      version: t.version,
-      visibility: t.visibility,
-      institutionId: t.institutionId || undefined,
-      createdById: t.createdById || undefined,
-      createdAt: t.createdAt?.toISOString() || new Date().toISOString(),
-    }));
+    const cacheKey = `slotly:blueprint-templates:${institutionId || 'global'}`;
+    const loader = async (): Promise<GraphTemplateDto[]> => {
+      const list =
+        await this.templateRepo.findAvailableTemplates(institutionId);
+      return list.map((t) => ({
+        id: getId(t),
+        name: t.name,
+        category: t.category,
+        subtree: t.subtree,
+        version: t.version,
+        visibility: t.visibility,
+        institutionId: t.institutionId || undefined,
+        createdById: t.createdById || undefined,
+        createdAt: t.createdAt?.toISOString() || new Date().toISOString(),
+      }));
+    };
+
+    if (this.cache) {
+      return this.cache.remember(cacheKey, 3600, loader);
+    }
+    return loader();
   }
 
   async getTemplate(templateId: string): Promise<GraphTemplateDto | null> {
@@ -361,6 +375,12 @@ export class TemplateService implements OnModuleInit {
       createdById: userId,
       anchorNodeType: dto.anchorNodeType || null,
     });
+    if (this.cache) {
+      await this.cache.del(
+        `slotly:blueprint-templates:${institutionId || 'global'}`,
+      );
+      await this.cache.del('slotly:blueprint-templates:global');
+    }
     const createdId = getId(created);
     return (await this.getTemplate(createdId))!;
   }

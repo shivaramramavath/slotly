@@ -185,6 +185,14 @@ export class LibraryService {
       limit?: number;
     },
   ): Promise<{ items: Faculty[]; total: number }> {
+    const hasFilters =
+      options && Object.values(options).some((v) => v !== undefined);
+    if (!hasFilters && this.cacheService) {
+      const cacheKey = `slotly:institution:${institutionId}:faculty:list`;
+      return this.cacheService.remember(cacheKey, 7200, () =>
+        this.facultyRepo.findByInstitution(institutionId, options),
+      );
+    }
     return this.facultyRepo.findByInstitution(institutionId, options);
   }
 
@@ -316,6 +324,14 @@ export class LibraryService {
       limit?: number;
     },
   ): Promise<{ items: Subject[]; total: number }> {
+    const hasFilters =
+      options && Object.values(options).some((v) => v !== undefined);
+    if (!hasFilters && this.cacheService) {
+      const cacheKey = `slotly:institution:${institutionId}:subjects:list`;
+      return this.cacheService.remember(cacheKey, 7200, () =>
+        this.subjectRepo.findByInstitution(institutionId, options),
+      );
+    }
     return this.subjectRepo.findByInstitution(institutionId, options);
   }
 
@@ -521,6 +537,14 @@ export class LibraryService {
       limit?: number;
     },
   ): Promise<{ items: Room[]; total: number }> {
+    const hasFilters =
+      options && Object.values(options).some((v) => v !== undefined);
+    if (!hasFilters && this.cacheService) {
+      const cacheKey = `slotly:institution:${institutionId}:rooms:list`;
+      return this.cacheService.remember(cacheKey, 7200, () =>
+        this.roomRepo.findByInstitution(institutionId, options),
+      );
+    }
     return this.roomRepo.findByInstitution(institutionId, options);
   }
 
@@ -899,6 +923,12 @@ export class LibraryService {
     action: string,
     entityId: string | undefined,
   ): Promise<void> {
+    if (this.cacheService) {
+      await this.cacheService.del(
+        `slotly:institution:${institutionId}:${entity}:list`,
+      );
+      await this.cacheService.invalidateTag(`library:${institutionId}`);
+    }
     await this.eventBus.publish('library.changed', {
       institutionId,
       entity,
