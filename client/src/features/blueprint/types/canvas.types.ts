@@ -11,7 +11,7 @@ export type LayoutDirection = 'TB' | 'LR' | 'BT' | 'RL';
 /** Type alias for layout algorithm. */
 export type LayoutAlgorithm = 'hierarchical' | 'compact' | 'department';
 /** Type alias for sidebar tab. */
-export type SidebarTab = 'config' | 'constraints' | 'ai';
+export type SidebarTab = 'node' | 'check' | 'ai' | 'config' | 'constraints';
 /** Type alias for autosave status. */
 export type AutosaveStatus = 'saved' | 'saving' | 'offline';
 
