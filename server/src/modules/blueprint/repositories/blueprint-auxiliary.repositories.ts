@@ -72,9 +72,14 @@ export class BlueprintHistoryRepository extends MongoBaseRepository<
   async findByProject(
     projectId: string,
     limit = 50,
+    nodeId?: string,
   ): Promise<BlueprintHistory[]> {
+    const filter: Record<string, unknown> = { projectId };
+    if (nodeId) {
+      filter.nodeId = nodeId;
+    }
     return this.model
-      .find({ projectId })
+      .find(filter)
       .sort({ revision: -1 })
       .limit(limit)
       .lean<BlueprintHistory[]>()

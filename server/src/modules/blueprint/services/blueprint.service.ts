@@ -157,12 +157,39 @@ export class BlueprintService {
 
     // Record history entry
     if (result.applied.length > 0) {
+      const targetOp = dto.operations[0];
+      const targetNodeId = targetOp?.targetId;
+      const changelog: Array<{
+        field: string;
+        oldValue?: unknown;
+        newValue?: unknown;
+      }> = [];
+      if (targetOp && targetOp.type === 'update_node') {
+        const oldNode = blueprint.nodes.find((n) => n.id === targetNodeId);
+        const newNode = result.nodes.find((n) => n.id === targetNodeId);
+        if (oldNode && newNode) {
+          const keys = new Set([
+            ...Object.keys(oldNode.data || {}),
+            ...Object.keys(newNode.data || {}),
+          ]);
+          for (const k of keys) {
+            const oldVal = (oldNode.data as Record<string, unknown>)?.[k];
+            const newVal = (newNode.data as Record<string, unknown>)?.[k];
+            if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+              changelog.push({ field: k, oldValue: oldVal, newValue: newVal });
+            }
+          }
+        }
+      }
+
       await this.historyRepo.create({
         projectId,
+        nodeId: targetNodeId ?? null,
         revision: newRevision,
         operationType: result.applied[0]?.type || 'batch',
         description: `Applied ${result.applied.length} operation(s); ${result.skipped.length} skipped`,
         userId,
+        changelog,
       });
 
       // Emit domain event
@@ -281,16 +308,21 @@ export class BlueprintService {
     return this.applyOperations(projectId, { operations: ops }, userId);
   }
 
-  async getHistory(projectId: string): Promise<BlueprintHistoryEntryDto[]> {
-    const list = await this.historyRepo.findByProject(projectId);
+  async getHistory(
+    projectId: string,
+    nodeId?: string,
+  ): Promise<BlueprintHistoryEntryDto[]> {
+    const list = await this.historyRepo.findByProject(projectId, 50, nodeId);
     return list.map((h) => ({
       id: getId(h),
       projectId: h.projectId,
+      nodeId: h.nodeId || undefined,
       revision: h.revision,
       operationType: h.operationType,
       description: h.description,
       userId: h.userId,
       timestamp: h.createdAt?.toISOString() || new Date().toISOString(),
+      changelog: h.changelog,
     }));
   }
 

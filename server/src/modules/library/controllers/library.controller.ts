@@ -47,6 +47,7 @@ import {
   type FacultyWorkloadDto,
   type ImportEntity,
   type ImportValidationReport,
+  type LibraryPeekDto,
 } from '@slotly/contracts';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import type { RequestUser } from '../../auth/guards/auth.guard';
@@ -719,5 +720,14 @@ export class LibraryController {
   @RequirePermissions('FACULTY_READ')
   async getItemUsage(@Param('type') type: string, @Param('id') id: string) {
     return this.libraryService.getItemUsage(type, id);
+  }
+
+  @Get(':type/:id/peek')
+  @RequirePermissions('FACULTY_READ')
+  async getItemPeek(
+    @Param('type') type: 'faculty' | 'subjects' | 'rooms',
+    @Param('id') id: string,
+  ): Promise<LibraryPeekDto> {
+    return this.libraryService.getPeek(type, id);
   }
 }
