@@ -396,29 +396,54 @@ Footer: summary line ("Odd term 2026–27, 6 days, 7 periods"). Primary **Create
   - Studio top-bar button removed to eliminate visual clutter and ensure clean single-row alignment at >= 1024px. Studio route remains active at `/projects/:id/editor`.
 
 **Right Inspector Sidebar (`InspectorPanel` & `BlueprintSidebar`):**
-- Docked panel on the right side of the canvas: `--inspector-width: 360px` (≥ 1280px), 320px (1024px to 1279px).
+- Docked panel on the right side of the canvas: default width 360px, resizable 320px to 480px with left-edge drag handle, width remembered in `localStorage` (`slotly:blueprint:inspector-width`).
 - Responsive behavior:
-  - Below 1024px: Transforms into an off-canvas slide-over drawer with dark scrim (`bg-black/50`), escape key dismissal, and focus trap.
-  - Below 768px: Transforms into a bottom sheet with snap heights (45% peek and 90% full height).
-- Collapse/expand: 32px collapse icon button (`PanelRightClose` / `PanelRightOpen`) in the tab bar collapses panel to 0 width; floating 32px open button appears at canvas right edge. Collapsed state persisted in `localStorage`.
-- Tab strip: 36px SegmentedControl tabs (`Config`, `Constraints`, `Slotly AI`) with counts where applicable.
+  - Below 1024px: Transforms into an off-canvas slide-over drawer with dark scrim (`bg-black/60`), escape key dismissal, and focus trap.
+  - Below 768px: Transforms into a bottom sheet with drag handle and snap heights (half 48vh and full 88vh).
+- Collapse/expand: 32px collapse icon button (`PanelRightClose` / `PanelRightOpen`) collapses panel to 0 width; floating 32px open button appears at canvas right edge. Collapsed state persisted in `localStorage`.
+- Tab strip: 36px SegmentedControl tabs (`Node`, `Check`, `AI`) with persisted selection.
 - Loading & Error states: Form skeleton shown after 150ms delay (kept >= 300ms); network/data failures show shared error panel with Retry button.
-- **Config Tab**:
-  - Sticky header: 20px node type icon, 14px font-medium title, mono 12px subtitle (`Node code` / `type`), status chip ("Ready" check or "Incomplete" with yellow text, 16px warning icon, count "N to fix"), comment button.
-  - Blueprint Overview (when no node is selected): project name, Draft status chip, 4px segmented readiness bar, resource count cards (nodes, connections, faculty, rooms, subjects), "Needs attention" list (node name + issue count, clicking pans and selects node). Multi-selection shows batch count, node type chips, and batch Delete action.
-  - Issues Summary (`IssuesSummary`): Alert card with 2px yellow left indicator (no yellow background fill), "Fix automatically" outline button (28px) applying safe defaults, plain-language issue labels (`issue-label.ts`) with mono raw keys, click-to-jump targets that scroll and focus basic fields or expand relevant resource accordion sections.
-  - Basic fields: 13px label + "Required" text (muted, no colored asterisk), 40px input (`h-10`), radius 12px, surface background, standard light neutral focus ring (`ring-1 ring-[#FAFAFA]`, not yellow).
-  - Resource sections (`InspectorSection` accordion: Faculty, Rooms, Subjects, Times, More — rendered only when applicable to node type):
-    - Faculty, Rooms, Subjects: 44px rows (`ResourceRow`) with initials/glyph avatar, name, meta (workload/capacity/code), 32px remove button. Removal immediately shows a 5-second inline "Removed. Undo" banner before committing deletion. "+" button in section header opens Popover combobox picker (`ResourcePicker`) with live search, multi-select, currently assigned items checked first, "Done" button, empty state linking to Library, and ineligible items disabled with reason tooltip.
-    - Times editor (`TimesEditor`): 7 working-day toggles (40px, `aria-pressed`, active state highlighted), start time input, period duration input, daily periods count, break slots editor with add/remove rows.
-    - More section: Collapsed by default, description textarea, tags input, node database ID with one-click copy button, Duplicate node button, and Delete node button (opens confirmation dialog).
-  - Sticky footer: 64px height, "N unsaved changes" indicator, "Reset" ghost button (40px), "Apply changes" solid white button (`#FAFAFA` with black text `#000000`, 40px, radius 12px, check icon — NOT yellow, disabled until valid changes exist, loading spinner while saving, keyboard shortcut `Mod+Enter` applies).
-- **Slotly AI Tab (`AiChatPanel` — Whole Blueprint Chat)**:
-  - Full blueprint AI assistant powered by `POST /projects/:projectId/blueprint/ai/chat` (rate-limited, Redis-cached context summary capped < 3500 chars).
-  - Context bar: "Whole blueprint" chip + "Include selected node" toggle chip, "New chat" icon button.
-  - Chat log: Accessible `role="log"` container with auto-scroll pinning to latest message, "Jump to latest" floating pill when scrolled up, copy message button, sanitized markdown rendering with formatted lists and bolding.
-  - Empty state: Clean prompt suggestion cards ("Check for timetable bottlenecks", "Suggest break and period timings", "Summarize faculty allocations", "What is missing to make this blueprint ready?").
-  - Auto-growing composer: 1 to 5 lines textarea, Enter to send, Shift+Enter for new line, Stop button during streaming generation.
+- Multi-select: When multiple nodes are selected (`selectedNodeIds.length > 1`), displays `BulkPanel` with shared fields (strength, working days, auto-fill policy) and bulk batch application.
+- **Sidebar Header (`SidebarHeader`)**:
+  - Type icon, 14px font-semibold title, uppercase mono node type chip (`INSTITUTION`, `DEPARTMENT`, `PROGRAM`, `ACADEMIC_YEAR`, `SEMESTER`, `SECTION`, `BATCH`).
+  - Clickable ancestor breadcrumbs trail allowing quick traversal to parent nodes.
+  - Status indicator (Complete with green check or Incomplete with yellow warning) with "N of M required" counts.
+  - Autosave status badge with polite live region (`role="status"`, `aria-live="polite"`): Saved, Saving..., Offline.
+  - Presence avatars showing active collaborators in the project.
+  - Header actions menu: Duplicate Node, Copy Settings... (opens modal), Lock/Unlock, Comments, Delete Node (opens impact preview).
+  - Locked banner: When locked by another user, displays banner and makes form read-only.
+- **Node Tab (`NodeConfigForm`)**:
+  - Open/Closed schema-driven form architecture (`NodeFormRegistry`) rendering Zod-validated field inputs:
+    - Text: Name, Code, Address, Label
+    - Number: Period Length (min), Duration (years), Periods Per Day (slots), Strength, Size, Intake, Expected Strength
+    - Select: Degree Level, Auto-Fill Borrow Policy
+    - Combobox: Pool-driven selectors for `classTeacherId` and `homeRoomId` (Section), `headOfDepartmentId` (Department), `labSubjectIds` (Batch)
+    - DayChips: Interactive 7-day selector (Mon-Sun)
+    - TimeInput: HH:mm start time picker
+    - BreakList: Break slots configuration via `TimesEditor`
+    - DateRange: Start and end term dates
+  - Autosave over WebSocket: Debounced ~400ms pause or on blur. Invalid fields do not save and display inline error messages. Successful saves display a transient green "Saved" tick.
+  - Parent Inheritance: Inherited timing and context fields display "From <Parent>" chips with "Overridden" pill and "Reset to inherited" button when modified.
+  - Resource Pools (`ResourceBlock`):
+    - Dedicated blocks for Faculty, Subjects, and Rooms.
+    - View tabs: `Effective | Own | Excluded` with search filter.
+    - Rows display name, code, origin badge (`From <Parent>`, `Added`, `Excluded`).
+    - Actions: Exclude for inherited, Remove for own, Restore for excluded.
+    - Toggles: Required (locks against child exclusion) and Pinned (survives ancestor removal) on own items.
+    - Hover peeks (`ResourcePeekCard`): Queries `/library/:type/:id/peek` displaying workload/capacity/credits summary.
+    - Candidate Picker (`PoolPicker`): Server-side cursor-paginated candidates (`GET /nodes/:id/pool/candidates`) with department and candidate type filters, multi-select, and disabled states for `alreadyInPool` and `doNotLend` items.
+  - Subject Assignments (`AssignmentsBlock` on Section and Batch):
+    - Subject -> Faculty -> Room assignment rows with read-only weekly hours.
+    - Row status indicators: missing faculty, conflict, or auto-filled with reason tooltips.
+    - "Auto-assign all" button: Calls `POST /assignments/suggest` applying ranked faculty/room recommendations.
+  - Rules & Overrides: Collapsible section containing Auto-fill Borrow Policy and embedded constraint overrides.
+- **Check Tab (`NodeCheckTab`)**:
+  - Queries `GET /projects/:projectId/blueprint/nodes/:nodeId/check` to present a unified readiness checklist.
+  - Mandatory configuration: Checklist of missing required fields with "Go fix" jump links that switch to Node tab and focus the invalid input.
+  - Warnings list: Surfaces pool warnings (`NO_QUALIFIED_FACULTY`, `LAB_ROOM_MISSING`, `ROOM_CAPACITY_DEFICIT`, `CLASS_TEACHER_NOT_IN_POOL`, `HOME_ROOM_NOT_IN_POOL`, `ARCHIVED_RESOURCE`, `SHARED_WORKLOAD`) with plain-language explanations and hints.
+  - Children summary: Total children count with ready vs incomplete breakdown.
+  - Recommended next actions: Actionable fix hints.
+- **Slotly AI Tab (`AiChatPanel`)**: Whole blueprint AI assistant with canvas preview and chat log.
 - **Keyboard & Canvas Safety**:
   - Typing in inspector inputs, textareas, search pickers, or the AI composer never triggers canvas-level hotkeys (Delete, Backspace, F, Z, C, V, D) via explicit `stopPropagation` handling on editable targets.
 
